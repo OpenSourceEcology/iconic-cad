@@ -1,0 +1,15 @@
+# Generated CAD files
+cad_library/
+*.FCStd
+*.FCBak
+
+# Python
+__pycache__/
+*.pyc
+
+# Claude Code
+CLAUDE.md
+.claude/
+
+# OS
+.DS_Store

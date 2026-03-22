@@ -1,0 +1,38 @@
+# Wall Instances
+# 3 concrete wall module specifications.
+# Each maps to a FreeCAD .FCStd file in cad_library/
+# Source: https://wiki.opensourceecology.org/wiki/Wall_instances.yaml
+
+instances:
+  - id: wall_4x8_2x6_24oc_osb716_south
+    family: framed_wall_panel
+    parameters:
+      nominal_width_ft: 4.0
+      nominal_height_ft: 8.0
+      stud_lumber_nominal: "2x6"
+      stud_spacing_oc_in: 24
+      osb_thickness_in: 0.4375
+      exterior_face: south
+      reference_house_orientation: faces_south
+
+  - id: wall_4x8_2x6_16oc_osb716_south
+    family: framed_wall_panel
+    parameters:
+      nominal_width_ft: 4.0
+      nominal_height_ft: 8.0
+      stud_lumber_nominal: "2x6"
+      stud_spacing_oc_in: 16
+      osb_thickness_in: 0.4375
+      exterior_face: south
+      reference_house_orientation: faces_south
+
+  - id: wall_3x8.5_2x6_16oc_osb716_south
+    family: framed_wall_panel
+    parameters:
+      nominal_width_ft: 3.0
+      nominal_height_ft: 8.5
+      stud_lumber_nominal: "2x6"
+      stud_spacing_oc_in: 16
+      osb_thickness_in: 0.4375
+      exterior_face: south
+      reference_house_orientation: faces_south

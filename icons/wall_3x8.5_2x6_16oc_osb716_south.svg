@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <g id="wall_3x8.5_2x6_16oc_osb716_south" data-module="wall_3x8.5_2x6_16oc_osb716_south">
+    <rect x="1" y="1" width="62" height="62" rx="3" fill="#f8f6f0" stroke="#444" stroke-width="1.5"/>
+    <rect x="6" y="8" width="52" height="3" fill="#b8860b"/>
+    <rect x="6" y="44" width="52" height="3" fill="#b8860b"/>
+    <rect x="6.0" y="11" width="2" height="33" fill="#daa520"/>
+    <rect x="23.3" y="11" width="2" height="33" fill="#daa520"/>
+    <rect x="40.7" y="11" width="2" height="33" fill="#daa520"/>
+    <rect x="58.0" y="11" width="2" height="33" fill="#daa520"/>
+    <line x1="28" y1="47" x2="36" y2="47" stroke="#228b22" stroke-width="2"/>
+    <polygon points="32,51 29,47 35,47" fill="#228b22"/>
+    <text x="32" y="58" text-anchor="middle" font-size="7" font-family="monospace" fill="#333">3'x8.5'</text>
+    <text x="32" y="7" text-anchor="middle" font-size="5" font-family="monospace" fill="#666">2x6 16OC</text>
+    <circle cx="2" cy="32" r="1.5" fill="#e00" opacity="0.6"/>
+    <circle cx="62" cy="32" r="1.5" fill="#00e" opacity="0.6"/>
+  </g>
+</svg>
