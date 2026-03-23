@@ -11,5 +11,8 @@ __pycache__/
 CLAUDE.md
 .claude/
 
+# Local stash
+icons/stash/
+
 # OS
 .DS_Store
