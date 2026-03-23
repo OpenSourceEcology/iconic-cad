@@ -39,7 +39,11 @@ CAD_LIBRARY = "cad_library"
 GRID = 64.0
 SVG_NS = {"svg": "http://www.w3.org/2000/svg"}
 
-DIRECTION_TO_ROT = {"south": 0.0, "east": 90.0, "north": 180.0, "west": 270.0}
+# Rotation mapping accounts for SVG Y-down → FreeCAD Y-up mismatch:
+# north/south are swapped from the naive CAD convention so that
+# OSB faces outward when icons are laid out in map orientation
+# (north at top of SVG, south at bottom).
+DIRECTION_TO_ROT = {"south": 180.0, "east": 90.0, "north": 0.0, "west": 270.0}
 
 
 # ===================================================================
