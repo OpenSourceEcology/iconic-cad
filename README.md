@@ -1,23 +1,23 @@
 # Iconic CAD
 
-A pipeline for designing houses by arranging visual icons in Inkscape SVG layouts, which compile into full 3D FreeCAD models with real framing details (studs, plates, OSB sheathing).
+A pipeline for designing houses by arranging wall modules visually, then compiling into full 3D FreeCAD models with real framing details (studs, plates, OSB sheathing).
 
 Developed as part of [Open Source Ecology](http://opensourceecology.org). See the [wiki page](https://wiki.opensourceecology.org/wiki/Iconic_CAD_Workflow_Example) for full project context.
 
 ## Status
 
-**Work in progress.** The compiler on `main` (`compile_house.py`) uses port-based BFS assembly. It handles straight wall runs correctly but has a known corner alignment bug ([issue #3](https://github.com/collindesantis/iconic-cad/issues/3)) — the port selection logic picks the wrong port at perpendicular connections because both ports share identical coordinates on the selection axis after rotation.
+**Active development.** The recommended workflow is on the [`web-ui-poc`](https://github.com/collindesantis/iconic-cad/tree/web-ui-poc) branch — a browser-based drag-and-snap layout tool that exports directly to FreeCAD. See that branch's README for setup and usage instructions.
 
-A **run-based compiler** on the `run-based-compiler` branch (`compile_house_runs.py`) solves this by eliminating ports entirely. It auto-detects wall runs from the SVG layout, places them as continuous lines, and connects them at corners using dimension-based intersection math. The key insight: at every corner, one wall is **primary** (runs through the corner) and the other is **secondary** (fits between primary walls). This rule makes corner geometry deterministic with zero gaps.
+The `main` branch contains the original SVG/Inkscape-based compiler (`compile_house.py`), which works for straight wall runs but has a known corner alignment bug ([issue #3](https://github.com/collindesantis/iconic-cad/issues/3)). The web UI approach bypasses this entirely by letting the user visually place walls with snap-to-port, eliminating the need for the compiler to infer corner geometry.
 
-The run-based compiler works for rectangles and L-shapes but is not yet merged to main — it needs testing with more complex layouts and mixed module widths (48" + 36") before replacing the port-based compiler.
+### Branches
 
-## How it works
-
-1. **YAML schema** defines wall module specs (lumber size, stud spacing, OSB thickness)
-2. **`generate_wall_library.py`** generates FreeCAD .FCStd wall modules from the YAML
-3. User arranges directional icons on a 64px snap grid in Inkscape — each icon's darkened border indicates wall facing direction (N/S/E/W)
-4. **`compile_house.py`** parses the SVG, reads direction from icon names, and assembles via graph-based BFS with port snapping
+| Branch | Description | Status |
+|--------|-------------|--------|
+| [`web-ui-poc`](https://github.com/collindesantis/iconic-cad/tree/web-ui-poc) | Browser-based wall layout + JSON-to-FreeCAD compiler | **Working** — rectangles and L-shapes |
+| [`run-based-compiler`](https://github.com/collindesantis/iconic-cad/tree/run-based-compiler) | SVG compiler using run detection instead of ports | Working for rectangles and L-shapes |
+| `main` | Original port-based SVG compiler | Corner bug at perpendicular connections |
+| [`grid-placement`](https://github.com/collindesantis/iconic-cad/tree/grid-placement) | Experimental grid-based compiler | Archived — non-square modules don't fit a grid |
 
 ## Dependencies
 
@@ -25,41 +25,23 @@ The run-based compiler works for rectangles and L-shapes but is not yet merged t
 sudo pacman -S freecad python-yaml   # Arch Linux
 ```
 
-## Quick start
-
-Generate the part library with port markers:
-```bash
-freecadcmd -c "import sys; sys.argv=['generate_wall_library.py','wall_instances.yaml']; exec(open('generate_wall_library.py').read())"
-```
-
-Generate SVG icons for Inkscape:
-```bash
-python generate_icons.py wall_instances.yaml
-```
-
-Compile a floor plan into a 3D house:
-```bash
-freecadcmd -c "import sys; sys.argv=['compile_house.py','examples/your_plan.svg']; exec(open('compile_house.py').read())"
-```
-
-Open the resulting `.FCStd` file in FreeCAD to view.
-
 ## Project structure
 
 ```
-compile_house.py        # Port-based house compiler (graph/BFS assembly)
-generate_wall_library.py # Generate FreeCAD wall modules with port markers
-generate_icons.py       # Auto-generate SVG icons from YAML with metadata
-wall_instances.yaml     # Wall module specifications
-icons/                  # SVG icons + Inkscape snap template
-examples/               # Hand-made floor plan layouts
-docs/                   # Protocol slides, replication documentation
-legacy/                 # Earlier compiler iterations
+compile_house.py         # Port-based SVG compiler (main branch)
+generate_wall_library.py # Generate FreeCAD wall modules from YAML
+wall_instances.yaml      # Wall module specifications (3 types)
+icons/                   # 12 directional SVG icons (3 types × 4 directions)
+examples/                # Example SVG layouts
+docs/                    # Protocol documentation
+legacy/                  # Marcin's original rectangular compiler
 ```
 
-## Legacy
+## Key concepts
 
-`legacy/compile_house_loop.py` is Marcin's original compiler which assembles walls by clustering icons into N/S/E/W runs and walking them sequentially. It works for rectangular buildings but cannot handle L-shapes, T-shapes, or other non-rectangular layouts. The current `compile_house.py` replaces this approach with port-based graph assembly.
+- **Directional icons**: each icon's darkened border shows which way the wall faces (N/S/E/W = OSB exterior side)
+- **Primary/secondary walls**: at corners, one wall runs through (primary) and the other fits between (secondary). This eliminates corner gaps. Per OSE spec, N/S walls are primary (they bear the roof).
+- **Snap-to-port**: in the web UI, modules snap to connection points at the corners of existing walls, giving the user direct control over corner geometry
 
 ## License
 
