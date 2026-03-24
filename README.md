@@ -6,19 +6,18 @@ Developed as part of [Open Source Ecology](http://opensourceecology.org). See th
 
 ## Status
 
-**Work in progress.** The core pipeline runs end-to-end but has known issues:
+**Work in progress.** The compiler on `main` (`compile_house.py`) uses port-based BFS assembly. It handles straight wall runs correctly but has a known corner alignment bug ([issue #3](https://github.com/collindesantis/iconic-cad/issues/3)) — the port selection logic picks the wrong port at perpendicular connections because both ports share identical coordinates on the selection axis after rotation.
 
-- Straight wall runs assemble correctly for all orientations (N, S, E, W)
-- Full L-shaped buildings compile with all modules placed (60 walls)
-- Corner alignment is broken at every horizontal/vertical wall transition — walls are offset or overlapping where N/S meets E/W
-- See [open issues](https://github.com/collindesantis/iconic-cad/issues) for details
+A **run-based compiler** on the `run-based-compiler` branch (`compile_house_runs.py`) solves this by eliminating ports entirely. It auto-detects wall runs from the SVG layout, places them as continuous lines, and connects them at corners using dimension-based intersection math. The key insight: at every corner, one wall is **primary** (runs through the corner) and the other is **secondary** (fits between primary walls). This rule makes corner geometry deterministic with zero gaps.
+
+The run-based compiler works for rectangles and L-shapes but is not yet merged to main — it needs testing with more complex layouts and mixed module widths (48" + 36") before replacing the port-based compiler.
 
 ## How it works
 
 1. **YAML schema** defines wall module specs (lumber size, stud spacing, OSB thickness)
-2. **`generate_icons.py`** produces SVG icons with metadata baked in from the YAML
-3. User arranges icons on a 64px snap grid in Inkscape, rotates for orientation (0°=S, 90°=E, 180°=N, 270°=W)
-4. **`compile_house.py`** parses the SVG, reads port markers from the CAD library, and assembles via graph-based BFS — works for any building shape (rectangles, L-shapes, T-shapes, etc.)
+2. **`generate_wall_library.py`** generates FreeCAD .FCStd wall modules from the YAML
+3. User arranges directional icons on a 64px snap grid in Inkscape — each icon's darkened border indicates wall facing direction (N/S/E/W)
+4. **`compile_house.py`** parses the SVG, reads direction from icon names, and assembles via graph-based BFS with port snapping
 
 ## Dependencies
 
