@@ -52,8 +52,22 @@ Open the resulting `.FCStd` file in FreeCAD.
 
 ## Dependencies
 
+- **FreeCAD** (with `freecadcmd` CLI) — generates and compiles wall modules
+- **Python 3** with **PyYAML** — reads wall instance definitions
+- **A web browser** — runs the layout tool (no internet required)
+
 ```bash
-sudo pacman -S freecad python-yaml   # Arch Linux
+# Arch Linux
+sudo pacman -S freecad python-yaml
+
+# Debian / Ubuntu
+sudo apt install freecad python3-yaml
+
+# Fedora
+sudo dnf install freecad python3-pyyaml
+
+# openSUSE
+sudo zypper install freecad python3-PyYAML
 ```
 
 ## How it works
