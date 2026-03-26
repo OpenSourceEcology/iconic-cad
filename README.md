@@ -87,6 +87,19 @@ wall_instances.yaml      # Wall module specifications
 icons/                   # 12 directional SVG icons
 ```
 
+## Legacy workflows
+
+Previous compiler approaches are archived on the [`legacy`](https://github.com/collindesantis/iconic-cad/tree/legacy) branch:
+
+| Compiler | Approach | Limitation |
+|----------|----------|------------|
+| `legacy/compile_house_loop.py` | Marcin's original — clusters icons into N/S/E/W runs, walks sequentially | Rectangular buildings only |
+| `compile_house.py` | Port-based BFS — graph traversal with port markers in CAD files | Corner alignment bug at perpendicular connections |
+| `legacy/grid-placement/compile_house_grid.py` | Grid-based placement on uniform grid | Non-square modules don't fit a grid |
+| `legacy/run-based-compiler/compile_house_runs.py` | Auto-detects wall runs from SVG, connects with dimension math | Complex, fragile at inner corners |
+
+All used the Inkscape/SVG workflow: place icons in Inkscape → parse SVG → assemble in FreeCAD. The web UI approach on `main` replaces this by letting the user control placement directly.
+
 ## License
 
 Open source — see [OSE licensing](https://www.opensourceecology.org/open-source-hardware-license/).
