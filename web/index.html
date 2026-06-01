@@ -261,8 +261,16 @@ const INTERIOR_MODULES = [
 const APERTURE_MODULES = [
   { id: 'window_4x8_2x6_36x48', label: 'Window 36x48', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
     aperture: { type: 'window', ro_w_in: 36, ro_h_in: 48, sill_in: 24, oc: 16, header_nominal: '2x8', header_plies: 2 } },
-  { id: 'door_4x8_2x6_38x83', label: 'Door 38x83', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
-    aperture: { type: 'door', ro_w_in: 38, ro_h_in: 83, sill_in: 0, oc: 16, header_nominal: '2x8', header_plies: 2 } },
+  { id: 'door_4x8_2x6_38x83', label: 'Door (in)', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
+    aperture: { type: 'door', ro_w_in: 38, ro_h_in: 83, sill_in: 0, oc: 16, header_nominal: '2x8', header_plies: 2, swing: 'in' } },
+  { id: 'door_out_4x8_2x6_38x83', label: 'Door (out)', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
+    aperture: { type: 'door', ro_w_in: 38, ro_h_in: 83, sill_in: 0, oc: 16, header_nominal: '2x8', header_plies: 2, swing: 'out' } },
+  { id: 'double_door_8x8_2x6_72x83', label: 'Double Door', width_mm: 8 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
+    aperture: { type: 'double_door', ro_w_in: 72, ro_h_in: 83, sill_in: 0, oc: 16, header_nominal: '2x12', header_plies: 2, swing: 'in' } },
+  { id: 'sliding_8x8_2x6_72x80', label: 'Sliding Door', width_mm: 8 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
+    aperture: { type: 'sliding', ro_w_in: 72, ro_h_in: 80, sill_in: 0, oc: 16, header_nominal: '2x12', header_plies: 2 } },
+  { id: 'garage_9x8_2x6_96x84', label: 'Garage Door', width_mm: 9 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
+    aperture: { type: 'garage', ro_w_in: 96, ro_h_in: 84, sill_in: 0, oc: 16, header_nominal: '2x12', header_plies: 2 } },
 ];
 
 const INT_APERTURE_MODULES = [
@@ -387,28 +395,72 @@ function drawAperturePlan(p, px, py, pw, ph) {
   const intCross = extAtZero ? crossLen : 0;     // interior face position
   const extCross = extAtZero ? 0 : crossLen;
 
+  // Which cross-face the door swings toward: interior by default, exterior if
+  // the module is flagged swing:'out'.
+  const swingCross = (a.swing === 'out') ? extCross : intCross;
+  const leafColor = p.mod.interior ? '#bb86fc' : '#4fc3f7';
+
   ctx.save();
   ctx.lineWidth = 1.5;
 
-  if (a.type === 'door') {
-    // Clear the opening (show floor through it)
+  const clearOpening = () => {
     const c0 = T(a0, 0), c1 = T(a1, crossLen);
     ctx.fillStyle = APERTURE_GAP;
     ctx.fillRect(Math.min(c0.x, c1.x), Math.min(c0.y, c1.y),
                  Math.abs(c1.x - c0.x), Math.abs(c1.y - c0.y));
-    // Door leaf + swing arc, hinged at the a0 jamb on the interior face
-    const hinge = T(a0, intCross);
-    const leafEnd = T(a0, intCross + (intCross === 0 ? roW : -roW));
-    const open = T(a1, intCross);
-    ctx.strokeStyle = p.mod.interior ? '#bb86fc' : '#4fc3f7';
+  };
+  const jambTicks = () => {
+    ctx.strokeStyle = '#4fc3f7';
+    for (const j of [a0, a1]) {
+      const t0 = T(j, 0), t1 = T(j, crossLen);
+      ctx.beginPath(); ctx.moveTo(t0.x, t0.y); ctx.lineTo(t1.x, t1.y); ctx.stroke();
+    }
+  };
+  // One door leaf: hinged at `hingeAlong`, opening toward `openAlong`, swinging
+  // out to `swingCross` over `radius`.
+  const drawLeaf = (hingeAlong, openAlong, radius) => {
+    const sign = swingCross === 0 ? 1 : -1;
+    const hinge = T(hingeAlong, swingCross);
+    const leafEnd = T(hingeAlong, swingCross + sign * radius);
+    const open = T(openAlong, swingCross);
+    ctx.strokeStyle = leafColor;
     ctx.beginPath(); ctx.moveTo(hinge.x, hinge.y); ctx.lineTo(leafEnd.x, leafEnd.y); ctx.stroke();
-    ctx.beginPath();
-    const r = roW;
-    const a_start = Math.atan2(leafEnd.y - hinge.y, leafEnd.x - hinge.x);
-    const a_open  = Math.atan2(open.y - hinge.y, open.x - hinge.x);
+    const aS = Math.atan2(leafEnd.y - hinge.y, leafEnd.x - hinge.x);
+    const aO = Math.atan2(open.y - hinge.y, open.x - hinge.x);
     ctx.strokeStyle = 'rgba(120,160,200,0.5)';
-    ctx.arc(hinge.x, hinge.y, r, a_start, a_open, leafSweepCCW(a_start, a_open));
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(hinge.x, hinge.y, radius, aS, aO, leafSweepCCW(aS, aO)); ctx.stroke();
+  };
+
+  if (a.type === 'door') {
+    clearOpening();
+    drawLeaf(a0, a1, roW);
+  } else if (a.type === 'double_door') {
+    clearOpening();
+    const mid = (a0 + a1) / 2;
+    drawLeaf(a0, mid, roW / 2);   // left leaf
+    drawLeaf(a1, mid, roW / 2);   // right leaf
+  } else if (a.type === 'sliding') {
+    clearOpening();
+    // Two overlapping panels at different depths; arrow shows the sliding leaf.
+    const mid = (a0 + a1) / 2;
+    const near = crossLen * 0.35, far = crossLen * 0.65;
+    ctx.strokeStyle = leafColor; ctx.lineWidth = 2.5;
+    let s = T(a0, near), e = T(mid + roW * 0.05, near);
+    ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();   // fixed panel
+    s = T(mid - roW * 0.05, far); e = T(a1, far);
+    ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();   // sliding panel
+    ctx.lineWidth = 1.5;
+  } else if (a.type === 'garage') {
+    clearOpening();
+    // Sectioned roll-up door: evenly spaced lines across the opening.
+    ctx.strokeStyle = leafColor;
+    const n = 4;
+    for (let i = 1; i < n; i++) {
+      const c = crossLen * (i / n);
+      const s = T(a0, c), e = T(a1, c);
+      ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(e.x, e.y); ctx.stroke();
+    }
+    jambTicks();
   } else {
     // Window: keep the wall, draw the glazing as a double line across the
     // opening, plus jamb ticks at each end.
@@ -418,12 +470,7 @@ function drawAperturePlan(p, px, py, pw, ph) {
     ctx.strokeStyle = '#9fd8ff';
     ctx.beginPath(); ctx.moveTo(g1a.x, g1a.y); ctx.lineTo(g1b.x, g1b.y); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(g2a.x, g2a.y); ctx.lineTo(g2b.x, g2b.y); ctx.stroke();
-    // jamb ticks
-    ctx.strokeStyle = '#4fc3f7';
-    for (const j of [a0, a1]) {
-      const t0 = T(j, 0), t1 = T(j, crossLen);
-      ctx.beginPath(); ctx.moveTo(t0.x, t0.y); ctx.lineTo(t1.x, t1.y); ctx.stroke();
-    }
+    jambTicks();
   }
   ctx.restore();
 }
@@ -798,30 +845,47 @@ function nearACorner(p, contactAlong) {
   return false;
 }
 
-// Push contact away from existing interior wall exclusion zones; returns null if no valid spot
-function adjustContactForSpacing(contact, targetId, axis, faceMin, faceMax) {
-  const existing = [];
+// Reject a proposed interior-wall contact that is within one module of an
+// existing interior wall's contact on the same exterior run. Global (across all
+// targets) and symmetric (both sides), measured along the run — fixes the old
+// per-target, wrong-axis check that only enforced spacing on one side.
+function interiorContactTooClose(contactX, contactY, faceAxis) {
   for (const q of placed) {
-    if (!q.connections) continue;
+    if (!q.mod.interior || !q.connections) continue;
     for (const c of q.connections) {
-      if (c.target_id !== targetId) continue;
-      existing.push(axis === 'x' ? c.contact_x_mm : c.contact_y_mm);
+      if (faceAxis === 'x') {                                  // horizontal run: same Y line, space along X
+        if (Math.abs(c.contact_y_mm - contactY) < WALL_DEPTH &&
+            Math.abs(c.contact_x_mm - contactX) < MIN_IWALL_SPACING_MM) return true;
+      } else {                                                 // vertical run: same X line, space along Y
+        if (Math.abs(c.contact_x_mm - contactX) < WALL_DEPTH &&
+            Math.abs(c.contact_y_mm - contactY) < MIN_IWALL_SPACING_MM) return true;
+      }
     }
   }
-  if (existing.length === 0) return contact;
+  return false;
+}
 
-  let adjusted = contact;
-  for (const e of existing) {
-    if (Math.abs(adjusted - e) < MIN_IWALL_SPACING_MM) {
-      adjusted = (adjusted >= e) ? e + MIN_IWALL_SPACING_MM : e - MIN_IWALL_SPACING_MM;
-    }
+// True if an inward-swinging exterior door touches the given seam — used to stop
+// an interior door from being hung right where an exterior door swings in, which
+// would put two door swings in the same space.
+function inwardDoorAtSeam(seamAlong, faceLine, isH) {
+  // seamAlong: position along the exterior run; faceLine: the exterior run's
+  // cross-axis coordinate; isH: exterior run is horizontal.
+  const TOL = 2;
+  for (const q of placed) {
+    if (q.mod.interior || !q.mod.aperture) continue;
+    const ap = q.mod.aperture;
+    if (ap.type === 'window' || ap.swing === 'out') continue;
+    // The exterior door must lie on the same wall run (same face line).
+    const qIsH = isHorizontal(q.dir);
+    if (qIsH !== isH) continue;
+    const qLine = isH ? q.y_mm : q.x_mm;
+    if (Math.abs(qLine - faceLine) > q.mod.depth_mm + 2) continue;
+    // Check whether the seam coincides with a panel edge of the door module.
+    const qStart = isH ? q.x_mm : q.y_mm, qEnd = qStart + q.mod.width_mm;
+    if (Math.abs(qStart - seamAlong) < TOL || Math.abs(qEnd - seamAlong) < TOL) return true;
   }
-  adjusted = Math.max(faceMin, Math.min(faceMax, adjusted));
-  // Verify still valid after clamping
-  for (const e of existing) {
-    if (Math.abs(adjusted - e) < MIN_IWALL_SPACING_MM) return null;
-  }
-  return adjusted;
+  return false;
 }
 
 // Check if a proposed interior wall position is too close to any existing interior wall
@@ -838,7 +902,7 @@ function iwallTooCloseToExisting(x_mm, y_mm, dir) {
 
 // Interior walls may not run parallel to and very close to an exterior wall —
 // there's no useful place to bolt and it crowds the framing. Keep-out ~24".
-const MIN_IWALL_TO_EXT_PARALLEL_MM = 24 * IN_TO_MM;
+const MIN_IWALL_TO_EXT_PARALLEL_MM = 48 * IN_TO_MM;
 function iwallTooCloseToExteriorParallel(x_mm, y_mm, mod, dir) {
   const isH = isHorizontal(dir);
   const bb = getModuleBBox(mod, dir);
@@ -930,11 +994,9 @@ function findTJunctionSnap(cursorX_mm, cursorY_mm, mod, dir) {
       }
 
       if (contactX < face.x1 || contactX > face.x2) continue;
-      if (!p.mod.aperture) {
-        contactX = adjustContactForSpacing(contactX, p.id, 'x', face.x1, face.x2);
-        if (contactX === null) continue;
-      }
-      if (nearACorner(p, contactX)) continue; // keep one module clear of corners
+      if (nearACorner(p, contactX)) continue;                       // keep clear of corners
+      if (interiorContactTooClose(contactX, faceY, 'x')) continue;  // 48" between interior walls
+      if (mod.aperture && inwardDoorAtSeam(contactX, faceY, true)) continue; // no door-vs-door
 
       const snapX = contactX - bb.w / 2;
       const snapY = (p.dir === 'north') ? faceY : faceY - bb.h;
@@ -974,11 +1036,9 @@ function findTJunctionSnap(cursorX_mm, cursorY_mm, mod, dir) {
       }
 
       if (contactY < face.y1 || contactY > face.y2) continue;
-      if (!p.mod.aperture) {
-        contactY = adjustContactForSpacing(contactY, p.id, 'y', face.y1, face.y2);
-        if (contactY === null) continue;
-      }
-      if (nearACorner(p, contactY)) continue; // keep one module clear of corners
+      if (nearACorner(p, contactY)) continue;                       // keep clear of corners
+      if (interiorContactTooClose(faceX, contactY, 'y')) continue;  // 48" between interior walls
+      if (mod.aperture && inwardDoorAtSeam(contactY, faceX, false)) continue; // no door-vs-door
 
       const snapY = contactY - bb.h / 2;
       const snapX = (p.dir === 'east') ? faceX - bb.w : faceX;
@@ -1194,15 +1254,30 @@ function buildSidebar() {
   // Aperture palette (temporary): one tile per module, inline plan-symbol
   // thumbnail, no per-direction icons — pick it, then rotate with R.
   function apertureThumb(mod) {
-    const win = mod.aperture.type === 'window';
-    const body = win
-      ? `<line x1="14" y1="20" x2="30" y2="20" stroke="#9fd8ff" stroke-width="1.5"/>
-         <line x1="14" y1="24" x2="30" y2="24" stroke="#9fd8ff" stroke-width="1.5"/>
-         <line x1="14" y1="14" x2="14" y2="30" stroke="#4fc3f7" stroke-width="1.5"/>
-         <line x1="30" y1="14" x2="30" y2="30" stroke="#4fc3f7" stroke-width="1.5"/>`
-      : `<line x1="14" y1="30" x2="14" y2="14" stroke="#4fc3f7" stroke-width="1.5"/>
-         <path d="M14 30 A16 16 0 0 1 30 14" fill="none" stroke="rgba(120,160,200,0.6)" stroke-width="1.2"/>
-         <line x1="30" y1="30" x2="30" y2="14" stroke="#4fc3f7" stroke-width="1.5"/>`;
+    const t = mod.aperture.type;
+    const arc = 'fill="none" stroke="rgba(120,160,200,0.6)" stroke-width="1.2"';
+    const jamb = (x) => `<line x1="${x}" y1="14" x2="${x}" y2="30" stroke="#4fc3f7" stroke-width="1.5"/>`;
+    let body;
+    if (t === 'window') {
+      body = `<line x1="14" y1="20" x2="30" y2="20" stroke="#9fd8ff" stroke-width="1.5"/>
+              <line x1="14" y1="24" x2="30" y2="24" stroke="#9fd8ff" stroke-width="1.5"/>${jamb(14)}${jamb(30)}`;
+    } else if (t === 'double_door') {
+      body = `<line x1="14" y1="30" x2="14" y2="18" stroke="#4fc3f7" stroke-width="1.5"/>
+              <line x1="30" y1="30" x2="30" y2="18" stroke="#4fc3f7" stroke-width="1.5"/>
+              <path d="M14 30 A8 8 0 0 1 22 22" ${arc}/><path d="M30 30 A8 8 0 0 0 22 22" ${arc}/>`;
+    } else if (t === 'sliding') {
+      body = `<line x1="13" y1="21" x2="23" y2="21" stroke="#4fc3f7" stroke-width="2"/>
+              <line x1="21" y1="25" x2="31" y2="25" stroke="#4fc3f7" stroke-width="2"/>`;
+    } else if (t === 'garage') {
+      body = `<line x1="13" y1="19" x2="31" y2="19" stroke="#4fc3f7" stroke-width="1"/>
+              <line x1="13" y1="23" x2="31" y2="23" stroke="#4fc3f7" stroke-width="1"/>
+              <line x1="13" y1="27" x2="31" y2="27" stroke="#4fc3f7" stroke-width="1"/>`;
+    } else { // door — arc direction hints in/out
+      const out = mod.aperture.swing === 'out';
+      body = out
+        ? `${jamb(14)}<path d="M14 14 A16 16 0 0 0 30 30" ${arc}/>`
+        : `${jamb(14)}<path d="M14 30 A16 16 0 0 1 30 14" ${arc}/>`;
+    }
     const col = mod.interior ? '#bb86fc' : '#4fc3f7';
     return `<svg width="44" height="44" viewBox="0 0 44 44">
       <rect x="6" y="14" width="32" height="16" fill="none" stroke="${col}" stroke-width="1.5"

@@ -118,6 +118,85 @@ instances:
         header_lumber_nominal: "2x8"
         header_plies: 2
 
+  # Exterior door (out-swing) — same framing as door_4x8_2x6_38x83, swing flag only.
+  - id: door_out_4x8_2x6_38x83_south
+    family: aperture_wall_panel
+    parameters:
+      nominal_width_ft: 4.0
+      nominal_height_ft: 8.0
+      stud_lumber_nominal: "2x6"
+      stud_spacing_oc_in: 16
+      osb_thickness_in: 0.4375
+      exterior_face: south
+      reference_house_orientation: faces_south
+      aperture:
+        type: door
+        rough_opening_width_in: 38
+        rough_opening_height_in: 83
+        sill_height_in: 0
+        header_lumber_nominal: "2x8"
+        header_plies: 2
+        swing: out
+
+  # Double door — 8' wide panel, 72" x 83" RO, doubled 2x12 header.
+  # Standard double-door RO per IRC: two 3'-0" doors + center stile = ~72" total.
+  - id: double_door_8x8_2x6_72x83_south
+    family: aperture_wall_panel
+    parameters:
+      nominal_width_ft: 8.0
+      nominal_height_ft: 8.0
+      stud_lumber_nominal: "2x6"
+      stud_spacing_oc_in: 16
+      osb_thickness_in: 0.4375
+      exterior_face: south
+      reference_house_orientation: faces_south
+      aperture:
+        type: double_door
+        rough_opening_width_in: 72
+        rough_opening_height_in: 83
+        sill_height_in: 0
+        header_lumber_nominal: "2x12"
+        header_plies: 2
+
+  # Sliding glass door — 8' wide panel, 72" x 80" RO (standard 6-0 x 6-8 patio).
+  - id: sliding_8x8_2x6_72x80_south
+    family: aperture_wall_panel
+    parameters:
+      nominal_width_ft: 8.0
+      nominal_height_ft: 8.0
+      stud_lumber_nominal: "2x6"
+      stud_spacing_oc_in: 16
+      osb_thickness_in: 0.4375
+      exterior_face: south
+      reference_house_orientation: faces_south
+      aperture:
+        type: sliding
+        rough_opening_width_in: 72
+        rough_opening_height_in: 80
+        sill_height_in: 0
+        header_lumber_nominal: "2x12"
+        header_plies: 2
+
+  # Garage door — 9' wide panel, 96" x 84" RO (standard 8-0 x 7-0 single garage).
+  # Header is a built-up LVL or doubled 2x12 over the 8' span.
+  - id: garage_9x8_2x6_96x84_south
+    family: aperture_wall_panel
+    parameters:
+      nominal_width_ft: 9.0
+      nominal_height_ft: 8.0
+      stud_lumber_nominal: "2x6"
+      stud_spacing_oc_in: 16
+      osb_thickness_in: 0.4375
+      exterior_face: south
+      reference_house_orientation: faces_south
+      aperture:
+        type: garage
+        rough_opening_width_in: 96
+        rough_opening_height_in: 84
+        sill_height_in: 0
+        header_lumber_nominal: "2x12"
+        header_plies: 2
+
   # Interior door — 2x4, 38"x83" rough opening (matches Seh2 8ft interior door).
   - id: idoor_4x8_2x4_38x83
     family: aperture_wall_panel
@@ -134,5 +213,5 @@ instances:
         rough_opening_width_in: 38
         rough_opening_height_in: 83
         sill_height_in: 0
-        header_lumber_nominal: "2x4"  # interior, non-bearing
+        header_lumber_nominal: "2x4"
         header_plies: 1
