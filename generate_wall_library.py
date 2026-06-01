@@ -256,14 +256,33 @@ def build_aperture_panel(instance):
         for x_in in cripple_xs:
             box(st, sd, z_stud_top - z_above, in_mm(x_in), 0, z_above)
 
-    # --- Window only: sill + lower cripples ---
+    # --- Window only: sill + subheader + lower cripples + blocking ---
+    # Per OSE spec (Marcin's window checklist):
+    #   - Sill (rough sill) at the bottom of the rough opening
+    #   - Subheader: horizontal nailer at the sole-plate end of the lower cripple zone,
+    #     provides required fastening surface for sheathing/trim
+    #   - Lower cripples (vertical): sole plate → sill
+    #   - Horizontal blocking every 24" from subheader up through the lower cripple zone
     if is_window:
-        sill_t = st  # sill is a flat 2x (1.5" tall), full opening width
-        box(ro_w, sd, sill_t, ro_x0, 0, ro_z_bottom - sill_t)
-        z_below_top = ro_z_bottom - sill_t
-        if z_below_top - z_stud_bot > 1.0:
+        sill_t = st  # sill/subheader are flat 2x members (1.5" tall)
+        z_sill_bot = ro_z_bottom - sill_t    # underside of sill
+        # Sill (rough sill at bottom of RO)
+        box(ro_w, sd, sill_t, ro_x0, 0, z_sill_bot)
+        z_cripple_top = z_sill_bot
+        z_cripple_bot = z_stud_bot
+        # Lower vertical cripples
+        if z_cripple_top - z_cripple_bot > 1.0:
             for x_in in cripple_xs:
-                box(st, sd, z_below_top - z_stud_bot, in_mm(x_in), 0, z_stud_bot)
+                box(st, sd, z_cripple_top - z_cripple_bot, in_mm(x_in), 0, z_cripple_bot)
+        # Subheader: horizontal nailer just above the sole plate
+        if z_cripple_top - z_cripple_bot > sill_t + 1.0:
+            box(ro_w, sd, sill_t, ro_x0, 0, z_cripple_bot)
+        # Horizontal blocking every 24" from subheader upward through lower cripple zone
+        block_spacing = in_mm(24.0)
+        z_blk = z_cripple_bot + block_spacing
+        while z_blk + sill_t < z_cripple_top - 1.0:
+            box(ro_w, sd, sill_t, ro_x0, 0, z_blk)
+            z_blk += block_spacing
 
     # --- OSB sheathing over the panel face, with the rough opening cut out ---
     if osb_thick_in > 0:

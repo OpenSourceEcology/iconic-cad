@@ -13,6 +13,21 @@ The wiki lists 5 wall types — wall, window, door, double door, sliding door �
 all 48"-wide wall panels that snap exactly like a plain wall module. So an
 aperture is one parametric object, not two.
 
+### Authoritative framing checklist (Marcin / OSE, wiki Windows slide — updated)
+
+Additional spec items added in the latest revision:
+- **Module heights 8', 9', 10'** — all three are valid window module heights. 36×48 RO in all.
+- **Precut studs** are 3/8" shorter than full-length (e.g., 92-5/8" for an 8' wall). The generator
+  currently uses theoretical dimensions (full-length equivalent). A `use_precut: bool` param can be
+  added later if exact stud lists are needed.
+- **Subheader** — a horizontal 2x nailer at the bottom of the lower cripple zone (just above the
+  sole plate), provides a required fastening surface for sheathing/trim.
+- **Horizontal blocking every 24"** from the subheader upward through the lower cripple zone.
+  If the zone is <24" tall (standard 8' window with 24" sill = 21" lower zone), only the subheader
+  appears — correct, no room for intermediate blocks.
+- **Single vs double jack studs** — determined by header span table. Single is fine for ≤30" span;
+  our 36" RO uses double jacks (already in the generator). See Header Span Table for larger spans.
+
 ### Authoritative framing checklist (Marcin / OSE, wiki Windows slide)
 
 1. Use 4'-wide modules whenever possible.

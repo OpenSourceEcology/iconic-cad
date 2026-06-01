@@ -259,8 +259,12 @@ const INTERIOR_MODULES = [
 // Sill_in = 0 means the opening runs to the floor (door). These snap exactly
 // like a plain 48" wall panel. See docs/aperture_framing_reference.md.
 const APERTURE_MODULES = [
-  { id: 'window_4x8_2x6_36x48', label: 'Window 36x48', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
+  { id: 'window_4x8_2x6_36x48', label: 'Window 36x48 (8\')', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
     aperture: { type: 'window', ro_w_in: 36, ro_h_in: 48, sill_in: 24, oc: 16, header_nominal: '2x8', header_plies: 2 } },
+  { id: 'window_4x9_2x6_36x48', label: 'Window 36x48 (9\')', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
+    aperture: { type: 'window', ro_w_in: 36, ro_h_in: 48, sill_in: 24, oc: 16, header_nominal: '2x8', header_plies: 2, height_ft: 9 } },
+  { id: 'window_4x10_2x6_36x48', label: 'Window 36x48 (10\')', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
+    aperture: { type: 'window', ro_w_in: 36, ro_h_in: 48, sill_in: 24, oc: 16, header_nominal: '2x8', header_plies: 2, height_ft: 10 } },
   { id: 'door_4x8_2x6_38x83', label: 'Door (in)', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
     aperture: { type: 'door', ro_w_in: 38, ro_h_in: 83, sill_in: 0, oc: 16, header_nominal: '2x8', header_plies: 2, swing: 'in' } },
   { id: 'door_out_4x8_2x6_38x83', label: 'Door (out)', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
@@ -865,28 +869,6 @@ function interiorContactTooClose(contactX, contactY, faceAxis) {
   return false;
 }
 
-// True if an inward-swinging exterior door touches the given seam — used to stop
-// an interior door from being hung right where an exterior door swings in, which
-// would put two door swings in the same space.
-function inwardDoorAtSeam(seamAlong, faceLine, isH) {
-  // seamAlong: position along the exterior run; faceLine: the exterior run's
-  // cross-axis coordinate; isH: exterior run is horizontal.
-  const TOL = 2;
-  for (const q of placed) {
-    if (q.mod.interior || !q.mod.aperture) continue;
-    const ap = q.mod.aperture;
-    if (ap.type === 'window' || ap.swing === 'out') continue;
-    // The exterior door must lie on the same wall run (same face line).
-    const qIsH = isHorizontal(q.dir);
-    if (qIsH !== isH) continue;
-    const qLine = isH ? q.y_mm : q.x_mm;
-    if (Math.abs(qLine - faceLine) > q.mod.depth_mm + 2) continue;
-    // Check whether the seam coincides with a panel edge of the door module.
-    const qStart = isH ? q.x_mm : q.y_mm, qEnd = qStart + q.mod.width_mm;
-    if (Math.abs(qStart - seamAlong) < TOL || Math.abs(qEnd - seamAlong) < TOL) return true;
-  }
-  return false;
-}
 
 // Check if a proposed interior wall position is too close to any existing interior wall
 function iwallTooCloseToExisting(x_mm, y_mm, dir) {
@@ -996,7 +978,6 @@ function findTJunctionSnap(cursorX_mm, cursorY_mm, mod, dir) {
       if (contactX < face.x1 || contactX > face.x2) continue;
       if (nearACorner(p, contactX)) continue;                       // keep clear of corners
       if (interiorContactTooClose(contactX, faceY, 'x')) continue;  // 48" between interior walls
-      if (mod.aperture && inwardDoorAtSeam(contactX, faceY, true)) continue; // no door-vs-door
 
       const snapX = contactX - bb.w / 2;
       const snapY = (p.dir === 'north') ? faceY : faceY - bb.h;
@@ -1038,7 +1019,6 @@ function findTJunctionSnap(cursorX_mm, cursorY_mm, mod, dir) {
       if (contactY < face.y1 || contactY > face.y2) continue;
       if (nearACorner(p, contactY)) continue;                       // keep clear of corners
       if (interiorContactTooClose(faceX, contactY, 'y')) continue;  // 48" between interior walls
-      if (mod.aperture && inwardDoorAtSeam(contactY, faceX, false)) continue; // no door-vs-door
 
       const snapY = contactY - bb.h / 2;
       const snapX = (p.dir === 'east') ? faceX - bb.w : faceX;
@@ -1685,7 +1665,7 @@ function buildAperture3D(mod, dir, xPos, yPos) {
   const a = mod.aperture;
 
   const W = mod.width_mm;
-  const H = 8 * 12 * IN_TO_MM;
+  const H = (a.height_ft || (mod.id.includes('4x9') ? 9 : mod.id.includes('4x10') ? 10 : 8)) * 12 * IN_TO_MM;
   const D = isInt ? (3.5 * IN_TO_MM) : STUD_DEPTH;
   const O = isInt ? 0 : OSB_THICK;
   const PT = STUD_THICK, ST = STUD_THICK;
@@ -1738,10 +1718,19 @@ function buildAperture3D(mod, dir, xPos, yPos) {
   // Top cripples
   const zAbove = roZ1 + hdrDep;
   for (const cx of cripX) member(cx, ST, zAbove, zStudTop - zAbove, wallMat);
-  // Window sill + lower cripples
+  // Window: sill + subheader + lower cripples + horizontal blocking every 24"
   if (isWin) {
-    member(roX0, roW, roZ0 - PT, PT, wallMat);
-    for (const cx of cripX) member(cx, ST, zStudBot, (roZ0 - PT) - zStudBot, wallMat);
+    const zSillBot = roZ0 - PT;
+    member(roX0, roW, zSillBot, PT, wallMat);                              // sill
+    const zCripBot = zStudBot;
+    for (const cx of cripX) member(cx, ST, zCripBot, zSillBot - zCripBot, wallMat); // lower cripples
+    if (zSillBot - zCripBot > PT + 1) {
+      member(roX0, roW, zCripBot, PT, wallMat);                            // subheader
+      const blockSpacing = 24 * IN_TO_MM;
+      for (let zb = zCripBot + blockSpacing; zb + PT < zSillBot - 1; zb += blockSpacing) {
+        member(roX0, roW, zb, PT, wallMat);                                // horizontal blocking
+      }
+    }
   }
 
   // OSB with the opening cut out: left, right, above, below the rough opening
