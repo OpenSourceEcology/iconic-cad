@@ -19,6 +19,9 @@ jobs:
       - name: Install Python deps
         run: pip install -r requirements.txt
 
+      - name: Assert specs.json is in sync with wall_instances.yaml
+        run: python scripts/gen_specs.py && git diff --exit-code web/assets/lib/specs.json
+
       - name: Python blocking-math unit tests
         run: python -m pytest tests/test_blocking_math.py -v
 

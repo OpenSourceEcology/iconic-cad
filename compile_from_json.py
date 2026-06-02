@@ -138,7 +138,8 @@ def get_frame_depth_range(direction, tx, ty, sd_mm, osb_mm):
 
 
 def create_blocking(conn, target_mod, modules_by_id, yaml_specs, min_x, min_y):
-    """Create blocking geometry shapes for a T-junction connection."""
+    """Create blocking geometry shapes for a T-junction connection.
+    Parity contract with web/js/fcstd.js createBlocking: tests/parity.mjs"""
     target = modules_by_id.get(conn["target_id"])
     if not target:
         return []

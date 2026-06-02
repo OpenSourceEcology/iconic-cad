@@ -18,8 +18,10 @@ const NOMINAL_TO_ACTUAL = {
   '2x8': [1.5, 7.25], '2x10': [1.5, 9.25], '2x12': [1.5, 11.25],
 };
 
-// Wall specs from wall_instances.yaml (only target-wall framing params needed).
-const WALL_SPECS = {"wall_4x8_2x6_24oc_osb716_south":{"w":4.0,"h":8.0,"lum":"2x6","oc":24,"osb":0.4375},"wall_4x8_2x6_16oc_osb716_south":{"w":4.0,"h":8.0,"lum":"2x6","oc":16,"osb":0.4375},"wall_3x8.5_2x6_16oc_osb716_south":{"w":3.0,"h":8.5,"lum":"2x6","oc":16,"osb":0.4375},"iwall_4x8_2x4_16oc":{"w":4.0,"h":8.0,"lum":"2x4","oc":16,"osb":0},"iwall_4x8_2x4_24oc":{"w":4.0,"h":8.0,"lum":"2x4","oc":24,"osb":0},"iwall_3x8.5_2x4_single":{"w":3.0,"h":8.5,"lum":"2x4","oc":18,"osb":0},"window_4x8_2x6_36x48_south":{"w":4.0,"h":8.0,"lum":"2x6","oc":16,"osb":0.4375},"window_4x9_2x6_36x48_south":{"w":4.0,"h":9.0,"lum":"2x6","oc":16,"osb":0.4375},"window_4x10_2x6_36x48_south":{"w":4.0,"h":10.0,"lum":"2x6","oc":16,"osb":0.4375},"door_4x8_2x6_38x83_south":{"w":4.0,"h":8.0,"lum":"2x6","oc":16,"osb":0.4375},"door_out_4x8_2x6_38x83_south":{"w":4.0,"h":8.0,"lum":"2x6","oc":16,"osb":0.4375},"double_door_8x8_2x6_72x83_south":{"w":8.0,"h":8.0,"lum":"2x6","oc":16,"osb":0.4375},"sliding_8x8_2x6_72x80_south":{"w":8.0,"h":8.0,"lum":"2x6","oc":16,"osb":0.4375},"garage_9x8_2x6_96x84_south":{"w":9.0,"h":8.0,"lum":"2x6","oc":16,"osb":0.4375},"idoor_4x8_2x4_38x83":{"w":4.0,"h":8.0,"lum":"2x4","oc":16,"osb":0}};
+// Wall specs — generated from wall_instances.yaml by scripts/gen_specs.py.
+// Loaded lazily from assets/lib/specs.json on first export; do NOT hand-edit here.
+// Parity contract with compile_from_json.py: tests/parity.mjs
+let WALL_SPECS = null;
 
 // %.15g-style: up to 15 significant digits, no trailing zeros.
 const g15 = (v) => (+v.toPrecision(15)).toString();
@@ -172,11 +174,13 @@ async function libBrep(modId, dir) {
 export const _test = {
   translateBrep, createBlocking, documentXml, objBlock,
   boxBrep: (dx, dy, dz, tx, ty, tz, tmpl) => { BOX_TEMPLATE = tmpl; return boxBrep(dx, dy, dz, tx, ty, tz); },
+  setWallSpecs: (s) => { WALL_SPECS = s; },
 };
 
 export async function exportFcstd() {
   const ents = doc.entities;
   if (ents.length === 0) { alert('Place some modules first.'); return; }
+  if (!WALL_SPECS) WALL_SPECS = await (await fetch('assets/lib/specs.json')).json();
   if (!BOX_TEMPLATE) BOX_TEMPLATE = await (await fetch('assets/box_template.brp')).text();
 
   const minx = Math.min(...ents.map(e => e.x_mm));

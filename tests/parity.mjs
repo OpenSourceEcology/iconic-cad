@@ -20,6 +20,11 @@ const root = path.resolve(__dirname, '..');
 
 import { _test } from '../web/js/fcstd.js';
 
+// Load specs.json so createBlocking can look up wall framing params
+const specs = JSON.parse(readFileSync(
+  path.join(root, 'web', 'assets', 'lib', 'specs.json'), 'utf8'));
+_test.setWallSpecs(specs);
+
 const golden = JSON.parse(readFileSync(path.join(__dirname, 'fixtures', 'golden.json'), 'utf8'));
 
 const FIXTURES = ['layout_c1', 'layout_c2', 'layout_t', 'layout_multi'];
