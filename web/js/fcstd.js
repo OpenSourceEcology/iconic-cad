@@ -209,6 +209,6 @@ export async function exportFcstd() {
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'house.fcstd'; a.click();
+  a.href = url; a.download = 'house.FCStd'; a.click();
   URL.revokeObjectURL(url);
 }
