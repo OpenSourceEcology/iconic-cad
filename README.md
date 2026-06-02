@@ -6,9 +6,13 @@ Usage video: https://youtu.be/L8IsKB0XknQ
 
 Browser-based drag-and-snap wall layout tool that compiles directly to 3D FreeCAD models.
 
-**Status:** Exterior walls, interior walls with blocking (continuous/transverse), window and door aperture modules, live 3D preview, BOM estimator, save/load, and JSON-to-FreeCAD compiler are all working.
+**Status:** Exterior walls, interior walls with blocking (continuous/transverse), window and door aperture modules, live 3D preview, BOM estimator, save/load, in-browser FreeCAD (`.FCStd`) export, and the JSON-to-FreeCAD compiler are all working. An IFC4 export (one box `IfcWall` per module, no framing) is **experimental and in testing — not a fully supported feature**.
 
 ## Quick start
+
+> **Just want the layout tool + FreeCAD export?** Do steps 1, 4, 5, 6 only. The
+> in-browser **Export FreeCAD** button needs no Python deps and no library
+> generation — those (steps 2–3) are only for the command-line compiler and IFC export.
 
 ### 1. Clone the repo
 
@@ -44,13 +48,17 @@ freecadcmd -c "import sys; sys.argv=['generate_wall_library.py','wall_instances.
 
 ### 4. Start the web server
 
+From the repository root:
+
 ```bash
-python3 -m http.server 8080
+python3 -m http.server 8080 --directory web
 ```
+
+The `--directory web` flag serves the `web/` folder at the root URL, so you can run the command from the base directory without `cd`-ing into `web/`.
 
 ### 5. Design your layout
 
-Open http://localhost:8080/web/ in your browser.
+Open http://localhost:8080/ in your browser.
 
 - Click a directional wall icon in the sidebar to pick it up
 - Click on the canvas to place the first module (free placement)
@@ -59,27 +67,42 @@ Open http://localhost:8080/web/ in your browser.
 - Interior walls (dashed border) snap perpendicular to exterior walls
 - Press **C** or **T** to switch blocking mode before placing interior walls
 - Right-click or Escape to cancel a placement
-- Click **Export JSON** when done
 
-### 6. Compile to 3D
+### 6. Export to FreeCAD
+
+When the layout is done, click **Export FreeCAD** to download a ready-to-open
+`.FCStd` file built entirely in the browser — no terminal, FreeCAD install, or
+the library-generation step (3) required. The geometry (walls, blocking, aperture
+framing) matches the Python compiler exactly.
+
+Open the downloaded `.FCStd` file in FreeCAD to view the result.
+
+<details>
+<summary>Prefer the command line? Export JSON and compile instead</summary>
+
+Click **Export JSON** instead, then run:
 
 ```bash
 ./compile.sh layout.json
 ```
 
-Replace `layout.json` with whatever your exported file is named (e.g. `layout(2).json`). The output `.FCStd` file will have the same name.
+Replace `layout.json` with whatever your exported file is named (e.g. `layout(2).json`). The output `.FCStd` file will have the same name. This path needs FreeCAD and the generated `cad_library/` (step 3).
 
-<details>
-<summary>Raw freecadcmd command</summary>
+Raw `freecadcmd` equivalent:
 
 ```bash
 freecadcmd -c "import sys; sys.argv=['compile_from_json.py','layout.json']; exec(open('compile_from_json.py').read())"
 ```
+
+> **Experimental — not fully supported, in testing.** There is also an IFC4
+> export — one box-shaped `IfcWall` per module (no stud/blocking/opening
+> geometry), a placeholder for trade-software hand-off rather than a detailed
+> model:
+>
+> ```bash
+> python3 export_ifc.py layout.json
+> ```
 </details>
-
-### 7. View the result
-
-Open the resulting `.FCStd` file in FreeCAD.
 
 ## Dependencies
 
@@ -114,7 +137,7 @@ sudo zypper install freecad
 3. **Three output paths:**
    - **Browser FreeCAD export** (`web/js/fcstd.js`) — builds a `.FCStd` directly in the browser using pre-baked BREPs from `web/assets/lib/` and the same blocking math as the Python compiler. No terminal needed.
    - **Python FreeCAD compiler** (`compile_from_json.py`) — loads wall shapes from `cad_library/`, rotates, places, and builds blocking geometry via FreeCAD. Run via `./compile.sh layout.json`.
-   - **IFC export** (`export_ifc.py`) — emits an IFC4 model (one `IfcWall` per module) for use in any IFC viewer or trade software. Run via `python3 export_ifc.py layout.json`.
+   - **IFC export** (`export_ifc.py`) — **experimental, in testing, not fully supported.** Emits an IFC4 model with one box `IfcWall` per module (no framing geometry). Run via `python3 export_ifc.py layout.json`.
 
 ## Wall modules
 
