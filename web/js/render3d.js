@@ -1,33 +1,87 @@
 // =====================================================
 // RENDER 3D — three.js preview / experiment view.
 //
-// Performance model (the old version rebuilt the whole scene + leaked GPU
-// memory on every mousemove). Now:
-//   • rebuildModel3D() runs ONLY on model change; it disposes old geometry.
-//   • render is on-demand (controls 'change', rebuild, tab switch, resize) —
-//     no perpetual requestAnimationFrame burning the GPU while idle.
-//   • damping is off, so render-on-change is sufficient.
-//   • one renderer hops between the small preview panel and the big 3D tab.
+// Manual spherical orbit (Z-up). No OrbitControls.
+//   azimuth  — auto-increments; mouse drag X changes speed/direction;
+//              speed damps back to DEFAULT_SPEED (preserving sign) on release.
+//   polar    — mouse drag Y tilts up/down; no damp, stays where you leave it.
+//   radius   — scroll wheel zoom.
+// rAF runs ONLY while preview is enabled — toggle-off = zero GPU work.
 // =====================================================
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { doc } from './state.js';
 import { IN_TO_MM, STUD_DEPTH, OSB_THICK } from './constants.js';
 import { enumerateMembers } from './members.js';
 
-let renderer, scene, camera, controls, modelRoot;
+// One revolution every ~35 s at 60 fps.
+const DEFAULT_SPEED = 2 * Math.PI / (35 * 60);
+
+let renderer, scene, camera, modelRoot;
 let hasFitted = false;
 let _previewEnabled = true;
 let _dirty = false;
+let _rafId = null;
+
+// Spherical state (Z-up: polar=0 → top, polar=PI/2 → equator)
+const _target        = new THREE.Vector3();
+let _azimuth         = 0;
+let _polar           = Math.PI * 5 / 12;  // 75° from top ≈ 15° above horizontal
+let _radius          = 5000;
+let _azimuthSpeed    = DEFAULT_SPEED;
+let _minRadius       = 500;
+let _maxRadius       = 100000;
+
+// Drag tracking
+let _dragStartX        = null;
+let _dragStartY        = null;
+let _speedAtDragStart  = DEFAULT_SPEED;
+let _polarAtDragStart  = Math.PI * 5 / 12;
+
+const matLumber      = new THREE.MeshLambertMaterial({ color: 0xdaa520 });
+const matOSB         = new THREE.MeshLambertMaterial({ color: 0x8fbc8f });
+const matIWallLumber = new THREE.MeshLambertMaterial({ color: 0xc4a882 });
+
+function updateCamera() {
+  const sp = Math.sin(_polar), cp = Math.cos(_polar);
+  const sa = Math.sin(_azimuth), ca = Math.cos(_azimuth);
+  camera.position.set(
+    _target.x + _radius * sp * ca,
+    _target.y + _radius * sp * sa,
+    _target.z + _radius * cp
+  );
+  camera.up.set(0, 0, 1);
+  camera.lookAt(_target);
+}
+
+function startLoop() {
+  if (_rafId !== null || !renderer || !scene || !_previewEnabled) return;
+  const tick = () => {
+    _rafId = requestAnimationFrame(tick);
+    if (_dragStartX === null) {
+      // Damp azimuth speed toward DEFAULT_SPEED, preserve direction.
+      const sign = _azimuthSpeed >= 0 ? 1 : -1;
+      _azimuthSpeed += (DEFAULT_SPEED * sign - _azimuthSpeed) * 0.008;
+    }
+    _azimuth += _azimuthSpeed;
+    updateCamera();
+    renderer.render(scene, camera);
+  };
+  _rafId = requestAnimationFrame(tick);
+}
+
+function stopLoop() {
+  if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
+}
 
 export function set3dPreviewEnabled(on) {
   _previewEnabled = on;
-  if (on && _dirty) { _dirty = false; rebuildModel3D(); }
+  if (on) {
+    if (_dirty) { _dirty = false; rebuildModel3D(); }
+    else startLoop();
+  } else {
+    stopLoop();
+  }
 }
-
-const matLumber = new THREE.MeshLambertMaterial({ color: 0xdaa520 });
-const matOSB = new THREE.MeshLambertMaterial({ color: 0x8fbc8f });
-const matIWallLumber = new THREE.MeshLambertMaterial({ color: 0xc4a882 });
 
 export function init3d() {
   const previewContainer = document.getElementById('preview-container');
@@ -38,12 +92,6 @@ export function init3d() {
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(45, 1, 1, 100000);
-  camera.position.set(3000, 3000, 4000);
-  camera.lookAt(0, 0, 0);
-
-  controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableDamping = false;            // render-on-change, no idle rAF
-  controls.addEventListener('change', renderOnce);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.6));
   const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -53,11 +101,41 @@ export function init3d() {
   modelRoot = new THREE.Group();
   scene.add(modelRoot);
 
+  const el = renderer.domElement;
+  el.style.userSelect = 'none';
+
+  el.addEventListener('mousedown', e => {
+    e.preventDefault();
+    _dragStartX       = e.clientX;
+    _dragStartY       = e.clientY;
+    _speedAtDragStart = _azimuthSpeed;
+    _polarAtDragStart = _polar;
+  });
+  el.addEventListener('mousemove', e => {
+    if (_dragStartX === null) return;
+    const dx = e.clientX - _dragStartX;
+    const dy = e.clientY - _dragStartY;
+    _azimuthSpeed = _speedAtDragStart + dx * 0.00015;
+    _polar = Math.max(0.05, Math.min(Math.PI - 0.05,
+      _polarAtDragStart + dy * 0.004));
+  });
+  el.addEventListener('mouseup',    () => { _dragStartX = null; _dragStartY = null; });
+  el.addEventListener('mouseleave', () => { _dragStartX = null; _dragStartY = null; });
+
+  el.addEventListener('wheel', e => {
+    e.preventDefault();
+    _radius *= 1 + e.deltaY * 0.001;
+    _radius  = Math.max(_minRadius, Math.min(_radius, _maxRadius));
+  }, { passive: false });
+
   rebuildModel3D();
 }
 
 export function renderOnce() {
-  if (renderer && _previewEnabled) renderer.render(scene, camera);
+  if (renderer && _previewEnabled && _rafId === null) {
+    updateCamera();
+    renderer.render(scene, camera);
+  }
 }
 
 function addBoxTo(group, sx, sy, sz, px, py, pz, mat) {
@@ -103,14 +181,13 @@ export function buildWall3D(mod, dir, xPos, yPos) {
 // Rebuild the scene from the document. Disposes prior geometry (no leak).
 export function rebuildModel3D() {
   if (!_previewEnabled) { _dirty = true; return; }
-  // dispose + clear previous meshes
   modelRoot.traverse(obj => { if (obj.isMesh && obj.geometry) obj.geometry.dispose(); });
   modelRoot.clear();
 
   const placed = doc.entities;
   if (placed.length === 0) {
     hasFitted = false;
-    renderOnce();
+    startLoop();
     return;
   }
 
@@ -120,25 +197,30 @@ export function rebuildModel3D() {
     modelRoot.add(buildWall3D(p.mod, p.dir, p.x_mm - minX, p.y_mm - minY));
   }
 
-  // Fit the camera ONCE (when going from empty to populated) so it doesn't
-  // snap back / fight the user's orbit on every edit.
+  const box    = new THREE.Box3().setFromObject(modelRoot);
+  const center = new THREE.Vector3(); box.getCenter(center);
+  const size   = box.getSize(new THREE.Vector3());
+  const maxDim = Math.max(size.x, size.y, size.z) || 3000;
+
+  _target.copy(center);
+
+  _minRadius = maxDim * 3.25;
+  _maxRadius = maxDim * 12;
+
   if (!hasFitted) {
-    const box = new THREE.Box3().setFromObject(modelRoot);
-    const center = new THREE.Vector3(); box.getCenter(center);
-    const size = box.getSize(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z) || 3000;
-    controls.target.copy(center);
-    camera.position.set(center.x + maxDim, center.y + maxDim, maxDim * 1.2);
-    controls.update();
+    _radius = _minRadius;
     hasFitted = true;
+  } else {
+    _radius = Math.max(_minRadius, Math.min(_radius, _maxRadius));
   }
-  renderOnce();
+
+  startLoop();
 }
 
-// Recenter on demand (e.g. a "fit" button or tab switch after big edits).
+// Recenter + refit radius (e.g. "fit" button or tab switch after big edits).
 export function fitCamera() { hasFitted = false; rebuildModel3D(); }
 
-// Move the single renderer between the small preview and the big 3D tab.
+// Move the single renderer between the small preview panel and the big 3D tab.
 export function setViewport(tab) {
   if (!renderer) return;
   const el = renderer.domElement;
@@ -152,7 +234,6 @@ export function setViewport(tab) {
     renderer.setSize(236, 236);
     camera.aspect = 1;
     camera.updateProjectionMatrix();
-    renderOnce();
   }
 }
 
@@ -162,5 +243,4 @@ export function resize3d() {
   renderer.setSize(wrap.clientWidth, wrap.clientHeight);
   camera.aspect = wrap.clientWidth / wrap.clientHeight;
   camera.updateProjectionMatrix();
-  renderOnce();
 }
