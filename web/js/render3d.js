@@ -17,6 +17,13 @@ import { enumerateMembers } from './members.js';
 
 let renderer, scene, camera, controls, modelRoot;
 let hasFitted = false;
+let _previewEnabled = true;
+let _dirty = false;
+
+export function set3dPreviewEnabled(on) {
+  _previewEnabled = on;
+  if (on && _dirty) { _dirty = false; rebuildModel3D(); }
+}
 
 const matLumber = new THREE.MeshLambertMaterial({ color: 0xdaa520 });
 const matOSB = new THREE.MeshLambertMaterial({ color: 0x8fbc8f });
@@ -50,7 +57,7 @@ export function init3d() {
 }
 
 export function renderOnce() {
-  if (renderer) renderer.render(scene, camera);
+  if (renderer && _previewEnabled) renderer.render(scene, camera);
 }
 
 function addBoxTo(group, sx, sy, sz, px, py, pz, mat) {
@@ -95,6 +102,7 @@ export function buildWall3D(mod, dir, xPos, yPos) {
 
 // Rebuild the scene from the document. Disposes prior geometry (no leak).
 export function rebuildModel3D() {
+  if (!_previewEnabled) { _dirty = true; return; }
   // dispose + clear previous meshes
   modelRoot.traverse(obj => { if (obj.isMesh && obj.geometry) obj.geometry.dispose(); });
   modelRoot.clear();

@@ -12,7 +12,7 @@ import { getModuleBBox } from './geometry.js';
 import { mmToPx, pxToMm } from './view.js';
 import { findSnap } from './snap.js';
 import { markModelChanged, requestDraw } from './app.js';
-import { setViewport, resize3d } from './render3d.js';
+import { setViewport, resize3d, set3dPreviewEnabled } from './render3d.js';
 import { exportJSON, saveLayout, loadLayout } from './io.js';
 import { exportFcstd } from './fcstd.js';
 import { exportFabDrawings } from './render_fab.js';
@@ -276,14 +276,24 @@ function findModuleAt(px_x, px_y) {
 // =====================================================
 // TABS
 // =====================================================
+let _preview3dOn = true;
+
 function switchTab(name) {
   ui.activeTab = name;
   const is3d = name === '3d';
   document.getElementById('canvas-wrap').style.display = is3d ? 'none' : 'block';
   document.getElementById('canvas3d-wrap').style.display = is3d ? 'block' : 'none';
-  document.getElementById('preview-wrap').style.display = is3d ? 'none' : 'block';
   document.getElementById('btn-tab-framing').classList.toggle('active', !is3d);
   document.getElementById('btn-tab-3d').classList.toggle('active', is3d);
+  if (is3d) {
+    // Renderer moves to big viewport — enable regardless of sidebar toggle.
+    set3dPreviewEnabled(true);
+    document.getElementById('preview-wrap').style.display = 'none';
+  } else {
+    // Restore sidebar preview state.
+    document.getElementById('preview-wrap').style.display = '';
+    set3dPreviewEnabled(_preview3dOn);
+  }
   setViewport(name);
 }
 
@@ -448,6 +458,18 @@ export function initUI() {
 
   // Load input (hidden file picker)
   document.getElementById('load-input').addEventListener('change', loadLayout);
+
+  // Sidebar panel toggles (independent on/off)
+  document.getElementById('btn-toggle-3d').addEventListener('click', () => {
+    _preview3dOn = !_preview3dOn;
+    document.getElementById('btn-toggle-3d').classList.toggle('active', _preview3dOn);
+    document.getElementById('preview-container').style.display = _preview3dOn ? '' : 'none';
+    set3dPreviewEnabled(_preview3dOn);
+  });
+  document.getElementById('btn-toggle-bom').addEventListener('click', () => {
+    const on = document.getElementById('btn-toggle-bom').classList.toggle('active');
+    document.getElementById('bom-content').style.display = on ? '' : 'none';
+  });
 
   // Export modal
   const exportModal = document.getElementById('export-modal');
