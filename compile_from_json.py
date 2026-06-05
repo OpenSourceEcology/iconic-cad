@@ -18,6 +18,7 @@ import json
 import math
 import os
 import sys
+import zipfile
 
 import yaml
 
@@ -95,6 +96,19 @@ def prepare_shape(base_module, rot_deg):
     bb = shape.BoundBox
     shape.translate(App.Vector(-bb.XMin, -bb.YMin, -bb.ZMin))
     return shape
+
+
+def mirror_y(shape):
+    """Reflect the assembled shape across the X-axis (Y -> -Y).
+
+    The web UI authors layouts in screen coordinates (Y points DOWN); the 2D
+    plan and the 3D preview (render3d.js) both present a Y-up world by flipping
+    Y. The export must apply the same flip or it builds the mirror image of the
+    designed house. Applied as one global reflection of every finished shape
+    (walls + blocking together) so their relative alignment is preserved.
+    fcstd.js does the identical flip via a -1 BREP Location (tests/parity.mjs).
+    """
+    return shape.mirror(App.Vector(0, 0, 0), App.Vector(0, 1, 0))
 
 
 def get_canonical_contact(direction, width_mm, contact_x, contact_y, wall_x, wall_y):
@@ -326,6 +340,62 @@ def create_blocking(conn, target_mod, modules_by_id, yaml_specs, min_x, min_y):
     return shapes
 
 
+# Fixed isometric orientation quat (view dir (-1,-1,-1), up +Z) — matches
+# web/js/fcstd.js guiDocumentXml so both exporters open the same upright view.
+ISO_ORIENT = "0.1870 0.4516 0.8722  2.4476"
+
+
+def _camera_settings(bb):
+    cx = (bb.XMin + bb.XMax) / 2.0
+    cy = (bb.YMin + bb.YMax) / 2.0
+    cz = bb.ZMax / 2.0
+    m = max(bb.XMax - bb.XMin, bb.ZMax, 1000.0)
+    k = m * 1.5
+    focal = k * math.sqrt(3)
+    lines = [
+        "#Inventor V2.1 ascii", "", "",
+        "OrthographicCamera {",
+        "  viewportMapping ADJUST_CAMERA",
+        "  position %g %g %g" % (cx + k, cy + k, cz + k),
+        "  orientation " + ISO_ORIENT,
+        "  nearDistance 1",
+        "  farDistance %g" % (focal * 3),
+        "  aspectRatio 1",
+        "  focalDistance %g" % focal,
+        "  height %g" % (m * 1.5),
+        "}", ""]
+    return "&#10;".join(lines)
+
+
+def write_gui_document(out_abs, doc):
+    """Inject GuiDocument.xml (per-object Visibility + saved camera) into the
+    saved .FCStd. freecadcmd has no GUI so saveAs writes no GuiDocument.xml,
+    which makes FreeCAD open the objects hidden with a non-deterministic camera.
+    Mirrors web/js/fcstd.js guiDocumentXml."""
+    objs = [o for o in doc.Objects if hasattr(o, "Shape") and o.Shape.Volume != 0]
+    if not objs:
+        return
+    bb = objs[0].Shape.BoundBox
+    for o in objs[1:]:
+        bb = bb.united(o.Shape.BoundBox)
+    vps = "".join(
+        '        <ViewProvider name="%s" expanded="0">\n'
+        '            <Properties Count="1" TransientCount="0">\n'
+        '                <Property name="Visibility" type="App::PropertyBool"><Bool value="true"/></Property>\n'
+        '            </Properties>\n'
+        '        </ViewProvider>\n' % o.Name for o in objs)
+    xml = (
+        "<?xml version='1.0' encoding='utf-8'?>\n"
+        "<!DOCTYPE GuiDocument>\n"
+        '<Document SchemaVersion="1">\n'
+        '    <ViewProviderData Count="%d">\n%s    </ViewProviderData>\n'
+        '    <Camera settings="%s"/>\n'
+        "</Document>\n" % (len(objs), vps, _camera_settings(bb)))
+    with zipfile.ZipFile(out_abs, "a", zipfile.ZIP_DEFLATED) as z:
+        if "GuiDocument.xml" not in z.namelist():
+            z.writestr("GuiDocument.xml", xml)
+
+
 def main():
     if not _FREECAD:
         print("Error: FreeCAD not available. Run via freecadcmd.")
@@ -365,6 +435,7 @@ def main():
         x = m["x_mm"] - min_x
         y = m["y_mm"] - min_y
         shape.translate(App.Vector(x, y, 0))
+        shape = mirror_y(shape)  # screen-down -> Y-up world (match preview/export)
 
         name = f"wall_{i:02d}_{m['id']}"
         obj = doc.addObject("Part::Feature", name)
@@ -379,6 +450,7 @@ def main():
             blocking_shapes = create_blocking(conn, m, modules_by_id,
                                               yaml_specs, min_x, min_y)
             for bs in blocking_shapes:
+                bs = mirror_y(bs)  # same global flip as the walls
                 bname = f"blocking_{blocking_idx:02d}_{conn.get('blocking', 'C')}"
                 bobj = doc.addObject("Part::Feature", bname)
                 bobj.Shape = bs
@@ -394,6 +466,7 @@ def main():
     out = os.path.splitext(json_path)[0] + ".FCStd"
     out_abs = os.path.abspath(out)
     doc.saveAs(out_abs)
+    write_gui_document(out_abs, doc)
     print(f"\nSaved {out_abs} ({len(modules)} walls, {blocking_idx} blocking pieces)")
 
 

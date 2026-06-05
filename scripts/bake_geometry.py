@@ -101,6 +101,16 @@ def write_artifacts(libdir, cadlibdir):
         volumes[iid] = int(round(base.Volume))
         for direction, rot in DIRECTION_TO_ROT.items():
             solid = baked_for_direction(base, rot)
+            # Browser places solids by plain translation only. Bake the global
+            # Y-mirror (the web UI authors Y screen-DOWN; the export world is
+            # Y-up) in HERE via Part.Shape.mirror, so fcstd.js never injects a
+            # runtime det-(-1) mirror Location. That hack produced a reversed
+            # top-shape flag which FreeCAD's GUI refuses to render (invisible).
+            # mirror() yields clean, forward, proper-normal geometry matching
+            # compile_from_json.mirror_y. Mirror about Y=0 (no re-drop): the
+            # solid now sits at Y in [-extent, 0], so the browser just translates
+            # by (x-minx, -(y-miny), 0). See web/js/fcstd.js exportFcstd.
+            solid = solid.mirror(App.Vector(0, 0, 0), App.Vector(0, 1, 0))
             solid.exportBrep(os.path.join(libdir, "%s__%s.brp" % (iid, direction)))
         App.closeDocument(doc.Name)
         print("  baked %s (vol=%d, 4 brp)" % (iid, volumes[iid]))

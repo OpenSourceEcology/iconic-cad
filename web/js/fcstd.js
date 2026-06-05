@@ -28,6 +28,11 @@ const g15 = (v) => (+v.toPrecision(15)).toString();
 
 // Inject a global translation into a BREP by appending OCCT Locations and
 // repointing the top shape (proven equivalent to shape.translate in FreeCAD).
+// Translation ONLY — the Y-mirror that makes the export match the Y-up world is
+// baked into the library solids at build time (scripts/bake_geometry.py), so we
+// never inject a det-(-1) mirror Location here. A runtime mirror reverses the
+// top-shape orientation flag, which FreeCAD's GUI refuses to render (the solids
+// load but draw invisible). Plain translation keeps the geometry forward/clean.
 function translateBrep(text, tx, ty, tz) {
   const lines = text.split('\n');
   const li = lines.findIndex(l => l.startsWith('Locations '));
@@ -142,8 +147,13 @@ function createBlocking(conn, byId, minx, miny) {
 }
 
 function objBlock(name, label) {
-  return `        <Object name="${name}"><Properties Count="3" TransientCount="0">
+  // App-side Visibility is required: with a GuiDocument.xml present, FreeCAD
+  // blanks objects whose App object has no Visibility property (even though the
+  // Gui ViewProvider says visible). The terminal/FreeCAD-written Document.xml
+  // includes it; we must too.
+  return `        <Object name="${name}"><Properties Count="4" TransientCount="0">
                 <Property name="Label" type="App::PropertyString" status="134217728"><String value="${label}"/></Property>
+                <Property name="Visibility" type="App::PropertyBool" status="1"><Bool value="true"/></Property>
                 <Property name="Placement" type="App::PropertyPlacement" status="8388608"><PropertyPlacement Px="0.0" Py="0.0" Pz="0.0" Q0="0.0" Q1="0.0" Q2="0.0" Q3="1.0" A="0.0" Ox="0.0" Oy="0.0" Oz="1.0"/></Property>
                 <Property name="Shape" type="Part::PropertyPartShape"><Part file="${name}.brp"/><ElementMap/></Property>
         </Properties></Object>\n`;
@@ -163,10 +173,51 @@ ${data}    </ObjectData>
 `;
 }
 
+// GuiDocument.xml — FreeCAD stores per-object visibility + the saved camera here.
+// Without it, FreeCAD opens our objects HIDDEN and with a non-deterministic
+// default camera (which reads as "upside down"). We write Visibility=true for
+// every object and an isometric, Z-up camera framing the model from the +Y
+// (exterior) side, matching the 3D preview. Orientation is the fixed iso quat
+// for view direction (-1,-1,-1) with up +Z.
+const ISO_ORIENT = '0.1870 0.4516 0.8722  2.4476';
+function cameraSettings(b) {
+  const cx = (b.minX + b.maxX) / 2, cy = (b.minY + b.maxY) / 2, cz = b.maxZ / 2;
+  const m = Math.max(b.maxX - b.minX, b.maxZ, 1000), k = m * 1.5;
+  const focal = k * Math.sqrt(3);
+  const L = [
+    '#Inventor V2.1 ascii', '', '',
+    'OrthographicCamera {',
+    '  viewportMapping ADJUST_CAMERA',
+    `  position ${g15(cx + k)} ${g15(cy + k)} ${g15(cz + k)}`,
+    `  orientation ${ISO_ORIENT}`,
+    '  nearDistance 1',
+    `  farDistance ${g15(focal * 3)}`,
+    '  aspectRatio 1',
+    `  focalDistance ${g15(focal)}`,
+    `  height ${g15(m * 1.5)}`,
+    '}', ''];
+  return L.join('&#10;');
+}
+function guiDocumentXml(objs, bounds) {
+  const vps = objs.map(o => `        <ViewProvider name="${o.name}" expanded="0">
+            <Properties Count="1" TransientCount="0">
+                <Property name="Visibility" type="App::PropertyBool"><Bool value="true"/></Property>
+            </Properties>
+        </ViewProvider>\n`).join('');
+  return `<?xml version='1.0' encoding='utf-8'?>
+<!DOCTYPE GuiDocument>
+<Document SchemaVersion="1">
+    <ViewProviderData Count="${objs.length}">
+${vps}    </ViewProviderData>
+    <Camera settings="${cameraSettings(bounds)}"/>
+</Document>
+`;
+}
+
 const brepCache = {};
 async function libBrep(modId, dir) {
   const key = `${modId}__${dir}`;
-  if (!brepCache[key]) brepCache[key] = await (await fetch(`assets/lib/${key}.brp`)).text();
+  if (!brepCache[key]) brepCache[key] = await (await fetch(`assets/lib/${key}.brp`, { cache: 'reload' })).text();
   return brepCache[key];
 }
 
@@ -180,23 +231,42 @@ export const _test = {
 export async function exportFcstd() {
   const ents = doc.entities;
   if (ents.length === 0) { alert('Place some modules first.'); return; }
-  if (!WALL_SPECS) WALL_SPECS = await (await fetch('assets/lib/specs.json')).json();
-  if (!BOX_TEMPLATE) BOX_TEMPLATE = await (await fetch('assets/box_template.brp')).text();
+  // cache: 'reload' — always pull the current library assets from the network.
+  // The export geometry is baked into these .brp/.json files; a stale HTTP-cached
+  // copy (e.g. pre-mirror breps) silently produces a wrong/mirrored export even
+  // though the rest of the page is up to date. The files are tiny.
+  if (!WALL_SPECS) WALL_SPECS = await (await fetch('assets/lib/specs.json', { cache: 'reload' })).json();
+  if (!BOX_TEMPLATE) BOX_TEMPLATE = await (await fetch('assets/box_template.brp', { cache: 'reload' })).text();
 
   const minx = Math.min(...ents.map(e => e.x_mm));
   const miny = Math.min(...ents.map(e => e.y_mm));
   const byId = {}; for (const e of ents) byId[e.id] = e;
 
+  // Model bounds (mm), Y already mirrored to match the exported geometry, for
+  // the GuiDocument.xml camera framing.
+  const bounds = { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity, maxZ: 0 };
+  for (const e of ents) {
+    const x0 = e.x_mm - minx, yb = e.y_mm - miny, dp = e.mod.depth_mm;
+    const ft = (e.mod.aperture && e.mod.aperture.height_ft) || (e.mod.id.includes('8.5') ? 8.5 : 8);
+    bounds.minX = Math.min(bounds.minX, x0); bounds.maxX = Math.max(bounds.maxX, x0 + e.mod.width_mm);
+    bounds.minY = Math.min(bounds.minY, -yb - dp); bounds.maxY = Math.max(bounds.maxY, -yb);
+    bounds.maxZ = Math.max(bounds.maxZ, ft * 12 * IN_TO_MM);
+  }
+
   const objs = []; let bi = 0;
   for (let i = 0; i < ents.length; i++) {
     const e = ents[i];
     const tmpl = await libBrep(e.mod.id, e.dir);
+    // Library solids are pre-mirrored to Y in [-extent, 0] (bake_geometry), so a
+    // plain translation by -(y-miny) lands them in the Y-up world. Blocking
+    // boxes are still built canonical at Y in [0, dy], so mirror their corner to
+    // [-ty-dy, -ty] (a box is symmetric, so position is all that's needed).
     objs.push({ name: `Wall${i}`, label: `wall_${String(i).padStart(2, '0')}_${e.id}`,
-                brep: translateBrep(tmpl, e.x_mm - minx, e.y_mm - miny, 0) });
+                brep: translateBrep(tmpl, e.x_mm - minx, -(e.y_mm - miny), 0) });
     for (const conn of (e.connections || [])) {
       for (const [dx, dy, dz, tx, ty, tz] of createBlocking(conn, byId, minx, miny)) {
         objs.push({ name: `Blk${bi}`, label: `blocking_${String(bi).padStart(2, '0')}_${conn.blocking || 'C'}`,
-                    brep: boxBrep(dx, dy, dz, tx, ty, tz) });
+                    brep: boxBrep(dx, dy, dz, tx, -ty - dy, tz) });
         bi++;
       }
     }
@@ -205,7 +275,12 @@ export async function exportFcstd() {
   const { default: JSZip } = await import('https://cdn.jsdelivr.net/npm/jszip@3.10.1/+esm');
   const zip = new JSZip();
   zip.file('Document.xml', documentXml(objs));
+  // FreeCAD is sensitive to member order here: if GuiDocument.xml is restored
+  // before the Part sidecar BREPs, GUI view providers can come up visible but
+  // with no drawable shape in the viewport. FreeCAD-written FCStd files place
+  // the shape payloads before GuiDocument.xml; keep that order.
   for (const o of objs) zip.file(`${o.name}.brp`, o.brep);
+  zip.file('GuiDocument.xml', guiDocumentXml(objs, bounds));
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
