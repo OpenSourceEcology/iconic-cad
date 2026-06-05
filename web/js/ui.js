@@ -13,6 +13,7 @@ import { mmToPx, pxToMm } from './view.js';
 import { findSnap } from './snap.js';
 import { markModelChanged, requestDraw } from './app.js';
 import { setViewport, resize3d, set3dPreviewEnabled } from './render3d.js';
+import { cardHover, cardLeave } from './card_preview3d.js';
 import { exportJSON, saveLayout, loadLayout } from './io.js';
 import { exportFcstd } from './fcstd.js';
 import { exportFabDrawings } from './render_fab.js';
@@ -55,7 +56,9 @@ function buildIsoLibrary(lib) {
       item.innerHTML =
         `<img src="thumbs/${mod.id}.png" alt="${mod.label}" loading="lazy">` +
         `<div class="iso-label">${mod.label}</div>`;
-      item.addEventListener('click', () => pickModule(mod, ui.placeDir));
+      item.addEventListener('click',      () => pickModule(mod, ui.placeDir));
+      item.addEventListener('mouseenter', () => cardHover(item, mod));
+      item.addEventListener('mouseleave', () => cardLeave(item));
       grid.appendChild(item);
     });
     lib.appendChild(grid);
