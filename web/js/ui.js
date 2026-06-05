@@ -446,14 +446,62 @@ export function initUI() {
   document.getElementById('btn-erase').addEventListener('click', toggleErase);
   document.getElementById('btn-rotate').addEventListener('click', rotateCW);
 
-  // Right sidebar
-  document.getElementById('btn-save').addEventListener('click', saveLayout);
-  document.getElementById('btn-export').addEventListener('click', exportJSON);
-  document.getElementById('btn-export-fcstd').addEventListener('click', exportFcstd);
-  document.getElementById('btn-export-fab').addEventListener('click', exportFabDrawings);
-  document.getElementById('btn-load').addEventListener('click',
-    () => document.getElementById('load-input').click());
+  // Load input (hidden file picker)
   document.getElementById('load-input').addEventListener('change', loadLayout);
+
+  // Export modal
+  const exportModal = document.getElementById('export-modal');
+  const filenamePrompt = document.getElementById('filename-prompt');
+  const filenameInput = document.getElementById('filename-prompt-input');
+  const filenameExt = document.getElementById('filename-prompt-ext');
+  let _pendingExport = null;
+  let _pendingExt = '';
+
+  function promptFilename(defaultName, cb) {
+    const dot = defaultName.lastIndexOf('.');
+    const base = dot > 0 ? defaultName.slice(0, dot) : defaultName;
+    _pendingExt = dot > 0 ? defaultName.slice(dot) : '';
+    filenameInput.value = base;
+    filenameExt.textContent = _pendingExt;
+    filenamePrompt.classList.add('open');
+    _pendingExport = cb;
+    requestAnimationFrame(() => { filenameInput.select(); filenameInput.focus(); });
+  }
+
+  function confirmFilename() {
+    const base = filenameInput.value.trim() || 'export';
+    filenamePrompt.classList.remove('open');
+    if (_pendingExport) { _pendingExport(base + _pendingExt); _pendingExport = null; }
+  }
+
+  function cancelFilename() {
+    filenamePrompt.classList.remove('open');
+    _pendingExport = null;
+  }
+
+  document.getElementById('btn-filename-confirm').addEventListener('click', confirmFilename);
+  document.getElementById('btn-filename-cancel').addEventListener('click', cancelFilename);
+  filenameInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') confirmFilename();
+    if (e.key === 'Escape') { e.stopPropagation(); cancelFilename(); }
+  });
+
+  document.getElementById('btn-export-menu').addEventListener('click', () => exportModal.classList.add('open'));
+  document.getElementById('btn-export-modal-close').addEventListener('click', () => exportModal.classList.remove('open'));
+  exportModal.addEventListener('click', (e) => { if (e.target === exportModal) exportModal.classList.remove('open'); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') exportModal.classList.remove('open'); });
+
+  function closeAndExport(fn) { exportModal.classList.remove('open'); fn(); }
+
+  document.getElementById('btn-modal-fcstd').addEventListener('click', () =>
+    promptFilename('house.FCStd', (f) => closeAndExport(() => exportFcstd(f))));
+  document.getElementById('btn-modal-export-json').addEventListener('click', () =>
+    promptFilename('layout.json', (f) => closeAndExport(() => exportJSON(f))));
+  document.getElementById('btn-modal-save').addEventListener('click', () =>
+    promptFilename('layout-save.json', (f) => closeAndExport(() => saveLayout(f))));
+  document.getElementById('btn-modal-fab').addEventListener('click', () =>
+    promptFilename('fab-drawings.html', (f) => closeAndExport(() => exportFabDrawings(f))));
+  document.getElementById('btn-modal-load').addEventListener('click', () => { exportModal.classList.remove('open'); document.getElementById('load-input').click(); });
 
   // Tabs
   document.getElementById('btn-tab-framing').addEventListener('click', () => switchTab('2d'));

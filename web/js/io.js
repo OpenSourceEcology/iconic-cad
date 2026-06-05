@@ -43,8 +43,8 @@ function download(obj, filename) {
   URL.revokeObjectURL(url);
 }
 
-export function exportJSON() { download(serialize(true), 'layout.json'); }
-export function saveLayout() { download(serialize(false), 'layout-save.json'); }
+export function exportJSON(filename = 'layout.json') { download(serialize(true), filename); }
+export function saveLayout(filename = 'layout-save.json') { download(serialize(false), filename); }
 
 export function loadLayout(event) {
   const file = event.target.files[0];

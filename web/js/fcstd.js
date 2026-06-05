@@ -228,7 +228,7 @@ export const _test = {
   setWallSpecs: (s) => { WALL_SPECS = s; },
 };
 
-export async function exportFcstd() {
+export async function exportFcstd(filename = 'house.FCStd') {
   const ents = doc.entities;
   if (ents.length === 0) { alert('Place some modules first.'); return; }
   // cache: 'reload' — always pull the current library assets from the network.
@@ -284,6 +284,6 @@ export async function exportFcstd() {
   const blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'house.FCStd'; a.click();
+  a.href = url; a.download = filename; a.click();
   URL.revokeObjectURL(url);
 }

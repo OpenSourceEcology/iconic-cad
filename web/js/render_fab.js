@@ -200,7 +200,7 @@ function downloadText(content, filename, mime) {
 }
 
 // Zero-arg, reads `doc` itself, so a future export menu can call it directly.
-export function exportFabDrawings() {
+export function exportFabDrawings(filename) {
   // Filter to structural framing kinds; non-framing layers (foundation, etc.)
   // get their own drawing types later and must not appear or crash here.
   const panels = doc.entities.filter(e => e.kind === 'wall' || e.kind === 'iwall');
@@ -211,7 +211,7 @@ export function exportFabDrawings() {
   if (panels.length === 1) {
     downloadText(sheets[0].sections[0].svg, `fab-${sheets[0].label}.svg`, 'image/svg+xml');
   } else {
-    downloadText(buildBookHTML(sheets), 'fab-drawings.html', 'text/html');
+    downloadText(buildBookHTML(sheets), filename || 'fab-drawings.html', 'text/html');
   }
 
   // Also open a print-ready window so the user can print-to-PDF.

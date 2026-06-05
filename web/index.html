@@ -158,6 +158,169 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
   font-weight: bold;
 }
 #right-sidebar .btn-export:hover { background: #388e3c; }
+#btn-export-menu {
+  width: 100%;
+  padding: 6px;
+  background: #2e7d32;
+  border: 1px solid #43a047;
+  border-radius: 4px;
+  color: #eee;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: bold;
+}
+#btn-export-menu:hover { background: #388e3c; }
+
+/* Filename prompt overlay (inside modal) */
+#filename-prompt {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: rgba(10,14,28,0.88);
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+#filename-prompt.open { display: flex; }
+#filename-prompt-inner {
+  background: #1a2844;
+  border: 1px solid #3a5a8a;
+  border-radius: 6px;
+  padding: 20px 24px;
+  min-width: 280px;
+  text-align: center;
+}
+#filename-prompt-inner label {
+  display: block;
+  color: #aac;
+  font-size: 11px;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+#filename-prompt-input {
+  width: 100%;
+  box-sizing: border-box;
+  background: #111828;
+  border: 1px solid #3a5a8a;
+  border-radius: 4px;
+  color: #eee;
+  font-size: 12px;
+  padding: 6px 8px;
+  outline: none;
+}
+#filename-prompt-input:focus { border-color: #4fc3f7; }
+.filename-prompt-actions { display: flex; gap: 8px; justify-content: flex-end; }
+#btn-filename-confirm {
+  padding: 6px 16px;
+  background: #2e7d32;
+  border: 1px solid #43a047;
+  border-radius: 4px;
+  color: #eee;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+}
+#btn-filename-confirm:hover { background: #388e3c; }
+#btn-filename-cancel {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #888;
+  cursor: pointer;
+  font-size: 11px;
+}
+#btn-filename-cancel:hover { border-color: #888; color: #ccc; }
+
+/* Export modal */
+#export-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+#export-modal.open { display: flex; }
+#export-modal-inner {
+  background: #16213e;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 24px;
+  width: 500px;
+  max-width: 92vw;
+  position: relative;
+}
+#export-modal-inner h2 {
+  color: #eee;
+  font-size: 13px;
+  letter-spacing: 1px;
+  margin: 0 0 18px 0;
+}
+.export-modal-close {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: #c62828;
+  border: 1px solid #e53935;
+  color: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 3px 10px;
+  line-height: 1.4;
+}
+.export-modal-close:hover { background: #b71c1c; }
+.export-row {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: #1a2844;
+  border: 1px solid #2a3a5a;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.export-row:last-child { margin-bottom: 0; }
+.export-row-info { flex: 1; }
+.export-row-info strong {
+  display: block;
+  color: #ddeeff;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+.export-row-info span {
+  color: #7a8faa;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.export-row-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex-shrink: 0;
+}
+.btn-modal-export {
+  padding: 6px 14px;
+  background: #2e7d32;
+  border: 1px solid #43a047;
+  border-radius: 4px;
+  color: #eee;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.btn-modal-export:hover { background: #388e3c; }
+.btn-modal-export:disabled {
+  background: #1e3a20;
+  border-color: #2a4a2a;
+  color: #456;
+  cursor: not-allowed;
+}
+.export-coming-soon { opacity: 0.55; }
 #right-sidebar .btn-save, #right-sidebar .btn-load {
   flex: 1;
   padding: 8px;
@@ -266,14 +429,88 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
     <div style="color:#667; font-weight:bold; letter-spacing:1px; margin-bottom:6px;">// BOM //</div>
     <div id="bom-content">Place modules to see estimate</div>
   </div>
-  <div style="display:flex; gap:6px; margin-bottom:6px;">
-    <button id="btn-save" class="btn-save">Save</button>
-    <button id="btn-load" class="btn-load">Load</button>
-  </div>
   <input type="file" id="load-input" accept=".json" style="display:none;">
-  <button id="btn-export-fcstd" class="btn-export" style="background:#6d4c2f; border-color:#a9763f; margin-bottom:6px;">Export FreeCAD</button>
-  <button id="btn-export-fab" class="btn-export" style="margin-bottom:6px;">Generate Fab Drawings</button>
-  <button id="btn-export" class="btn-export">Export JSON</button>
+  <button id="btn-export-menu">Export Menu ▲</button>
+</div>
+
+<div id="export-modal">
+  <div id="export-modal-inner">
+    <div id="filename-prompt">
+      <div id="filename-prompt-inner">
+        <label>FILENAME</label>
+        <div style="display:flex; align-items:center; gap:0; margin-bottom:12px;">
+          <input type="text" id="filename-prompt-input" spellcheck="false" style="margin-bottom:0; border-radius:4px 0 0 4px; flex:1;">
+          <span id="filename-prompt-ext" style="background:#0d1520; border:1px solid #3a5a8a; border-left:none; border-radius:0 4px 4px 0; color:#4fc3f7; font-size:12px; padding:6px 8px; white-space:nowrap; user-select:none;"></span>
+        </div>
+        <div class="filename-prompt-actions">
+          <button id="btn-filename-cancel">Cancel</button>
+          <button id="btn-filename-confirm">Download</button>
+        </div>
+      </div>
+    </div>
+    <button class="export-modal-close" id="btn-export-modal-close">✕</button>
+    <h2>// EXPORT MENU //</h2>
+
+    <div class="export-row">
+      <div class="export-row-info">
+        <strong>Export to FreeCAD</strong>
+        <span>Downloads a .FCStd file openable in FreeCAD. Generates 3D geometry for walls, framing, and apertures directly in the browser — no server required.</span>
+      </div>
+      <div class="export-row-actions">
+        <button class="btn-modal-export" id="btn-modal-fcstd">Export</button>
+      </div>
+    </div>
+
+    <div class="export-row">
+      <div class="export-row-info">
+        <strong>Export to JSON <span style="color:#557; font-size:10px; font-weight:normal;">(Legacy / Developer)</span></strong>
+        <span>Downloads the layout as a v2 JSON file for use with the compiler pipeline. Intended for developers and advanced users feeding into external tooling.</span>
+      </div>
+      <div class="export-row-actions">
+        <button class="btn-modal-export" id="btn-modal-export-json">Export</button>
+      </div>
+    </div>
+
+    <div class="export-row">
+      <div class="export-row-info">
+        <strong>Save Your Work</strong>
+        <span>Downloads your layout as a JSON file you can reload later. Use <b style="color:#ccd">Load</b> in the sidebar to restore a saved file.</span>
+      </div>
+      <div class="export-row-actions">
+        <button class="btn-modal-export" id="btn-modal-save">Save</button>
+      </div>
+    </div>
+
+    <div class="export-row">
+      <div class="export-row-info">
+        <strong>Load Previous Design</strong>
+        <span>Load a previously saved JSON layout file back into the tool.</span>
+      </div>
+      <div class="export-row-actions">
+        <button class="btn-modal-export" id="btn-modal-load">Load</button>
+      </div>
+    </div>
+
+    <div class="export-row export-coming-soon">
+      <div class="export-row-info">
+        <strong>Export to IFC <span style="color:#557; font-size:10px; font-weight:normal;">(Coming Soon)</span></strong>
+        <span>IFC (Industry Foundation Classes) is an open BIM standard supported by Revit, ArchiCAD, and other AEC tools. Export will be available in a future release.</span>
+      </div>
+      <div class="export-row-actions">
+        <button class="btn-modal-export" disabled>Export</button>
+      </div>
+    </div>
+
+    <div class="export-row">
+      <div class="export-row-info">
+        <strong>Export Fab Drawings</strong>
+        <span>Generates per-panel SVG fabrication drawings with cut dimensions and stud layout. Downloads as a build-book ZIP.</span>
+      </div>
+      <div class="export-row-actions">
+        <button class="btn-modal-export" id="btn-modal-fab">Export</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script type="module" src="js/main.js"></script>
