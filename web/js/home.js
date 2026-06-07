@@ -3,7 +3,9 @@
 // Manages the #home-view / #design-view toggle and the
 // cross-fading hero background.
 // =====================================================
-import { openProjectOptions } from './options.js';
+import { openProjectOptions, resetProjectOptions } from './options.js';
+import { resetDoc } from './state.js';
+import { markModelChanged } from './app.js';
 
 // ---------------------------------------------------------------------------
 // HERO MEDIA CONFIG — optional full-bleed media layer behind the home view.
@@ -148,6 +150,13 @@ export function initHome() {
   // the fresh design. LOAD ECO HOME (onLoadClick) does NOT open it — a loaded
   // file already carries its project data (io.js supplies defaults for old files).
   document.getElementById('btn-home-design').addEventListener('click', () => {
+    // Fresh design: wipe any previously-loaded layout/levels/project intent so
+    // they don't bleed in, drop the options write-once latch, then re-render the
+    // now-empty plan and re-prompt setup.
+    resetDoc();
+    resetProjectOptions();
+    markModelChanged();
+    window.dispatchEvent(new Event('iconic:project')); // refresh floor switcher
     showDesign();
     openProjectOptions();
   });

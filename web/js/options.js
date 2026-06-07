@@ -104,6 +104,23 @@ function onGo() {
 }
 
 // ---------------------------------------------------------------------------
+// Reset — called from home.js when a fresh design starts. Drops the write-once
+// latch and the transient form so "Design new home" re-prompts cleanly each
+// time (previously GO latched shut for the whole session, so a 2nd new-design
+// silently skipped the modal and kept stale state).
+// ---------------------------------------------------------------------------
+export function resetProjectOptions() {
+  _confirmed = false;
+  form.name = 'Untitled Eco Home';
+  form.stories = 1;
+  form.zone = 5;
+  const nameInput = document.getElementById('opt-name');
+  if (nameInput) nameInput.value = form.name;
+  const zoneSel = document.getElementById('opt-zone');
+  if (zoneSel) zoneSel.value = String(form.zone);
+}
+
+// ---------------------------------------------------------------------------
 // Open — called from home.js right after showDesign(). No-op once confirmed.
 // ---------------------------------------------------------------------------
 export function openProjectOptions() {

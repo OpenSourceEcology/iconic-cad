@@ -69,6 +69,30 @@ export function ensureLevel2() {
   doc.levels.push({ id: 'L2', name: 'Level 2', z_mm: FLOOR_TO_FLOOR_MM });
 }
 
+// ---- New-design reset ------------------------------------------------------
+// Wipe the document back to a blank single-story plan. Called when the user
+// starts a fresh design (home.js "Design new home") so a previously LOADED
+// layout's geometry/levels/project intent do not bleed into the new project.
+// Resets doc + the transient placement counters + undo/redo. Does NOT touch
+// `view` (camera) or library/tab UI prefs — those are not document data.
+export function resetDoc() {
+  doc.entities.length = 0;
+  doc.levels = [{ id: 'L1', name: 'Level 1', z_mm: 0 }];
+  doc.activeLevel = 'L1';
+  doc.activeLayer = 'structural';
+  doc.project = {
+    name: 'Untitled Eco Home',
+    stories: 1,
+    climate: { iecc_zone: 5, frost_mm: 750, snow_psf: 30, wind_mph: 115, seismic_class: 'B' },
+  };
+  history.length = 0;
+  future.length = 0;
+  ui.nextId = 0;
+  ui.dragState = null;
+  ui.snapTarget = null;
+  ui.eraseMode = false;
+}
+
 // ---- View (camera over the 2D plan) --------------------------------------
 export const view = {
   zoom: ZOOM_DEFAULT, // PX_PER_MM
