@@ -11,6 +11,7 @@
 }}
 </script>
 <link rel="stylesheet" href="css/home.css">
+<link rel="stylesheet" href="css/options.css">
 <!-- Font experiments — CDN, client-side only, no backend required -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -708,6 +709,51 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
         <button class="btn-modal-export" id="btn-modal-summary">Generate</button>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- Project Options modal — write-once setup, opens on DESIGN ECO HOME.
+     No close/backdrop/Esc exit: the only way out is the GO button. -->
+<div id="options-modal">
+  <div id="options-modal-inner">
+    <h2>// PROJECT SETUP //</h2>
+    <p class="opt-sub">Set this build's basics once. These bake into the design file and feed the framing, foundation, and build summary later.</p>
+
+    <div class="opt-field">
+      <label for="opt-name">Project Name</label>
+      <input type="text" id="opt-name" spellcheck="false" placeholder="Untitled Eco Home">
+    </div>
+
+    <div class="opt-field">
+      <label>Stories</label>
+      <div class="opt-stories-row">
+        <div class="opt-pill" id="opt-stories-pill" data-pos="left">
+          <span class="opt-pill-thumb"></span>
+          <button type="button" id="opt-stories-single">SINGLE</button>
+          <button type="button" id="opt-stories-double">DOUBLE</button>
+        </div>
+        <div class="opt-hint">
+          <span class="opt-hint-tag">rough guide</span>
+          <span id="opt-hint-double">A second story ≈ doubles living space for ≈1.5× the cost</span> — <span id="opt-hint-single">the foundation and roof are shared.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="opt-field">
+      <label for="opt-zone">Climate Zone</label>
+      <select id="opt-zone">
+        <option value="1">Zone 1 — Hot</option>
+        <option value="2">Zone 2 — Hot-humid / dry</option>
+        <option value="3">Zone 3 — Warm</option>
+        <option value="4">Zone 4 — Mixed</option>
+        <option value="5">Zone 5 — Cool</option>
+        <option value="6">Zone 6 — Cold</option>
+        <option value="7">Zone 7 — Very cold</option>
+        <option value="8">Zone 8 — Subarctic</option>
+      </select>
+    </div>
+
+    <button type="button" id="opt-go">GO</button>
   </div>
 </div>
 

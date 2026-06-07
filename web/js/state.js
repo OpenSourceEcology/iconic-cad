@@ -36,6 +36,18 @@ export const doc = {
   ],
   activeLayer: 'structural',
 
+  // Project-level intent captured ONCE by the Project Options modal (options.js)
+  // at design-start. Write-once setup data; later features (second-story,
+  // foundation frost-skirt) READ this but it mutates nothing here on its own.
+  // NOTE: `stories` is intent only — it does NOT create doc.levels[1]. Level
+  // construction is the second-story feature's job. `climate` is latent: stored
+  // here, consumed by no enumerator/library/3D code yet. Round-tripped through io.js.
+  project: {
+    name: 'Untitled Eco Home',
+    stories: 1,                       // 1 | 2  (intent only — no doc.levels mutation)
+    climate: { iecc_zone: 5, frost_mm: 750, snow_psf: 30, wind_mph: 115, seismic_class: 'B' },
+  },
+
   entities: [], // was `placed`
 };
 

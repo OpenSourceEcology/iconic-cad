@@ -3,6 +3,7 @@
 // Manages the #home-view / #design-view toggle and the
 // cross-fading hero background.
 // =====================================================
+import { openProjectOptions } from './options.js';
 
 // ---------------------------------------------------------------------------
 // HERO MEDIA CONFIG — optional full-bleed media layer behind the home view.
@@ -143,7 +144,13 @@ function onLoadClick() {
 export function initHome() {
   buildHeroFrames();
 
-  document.getElementById('btn-home-design').addEventListener('click', () => showDesign());
+  // DESIGN ECO HOME → enter design view AND open the write-once setup modal on
+  // the fresh design. LOAD ECO HOME (onLoadClick) does NOT open it — a loaded
+  // file already carries its project data (io.js supplies defaults for old files).
+  document.getElementById('btn-home-design').addEventListener('click', () => {
+    showDesign();
+    openProjectOptions();
+  });
   document.getElementById('btn-home-load').addEventListener('click', onLoadClick);
 
   // Tutorial link is a placeholder — prevent navigation until real URL is set.

@@ -13,6 +13,8 @@ function serialize(includeMeta) {
     units: doc.units,
     levels: doc.levels,
     layers: doc.layers,
+    project: doc.project, // write-once setup intent (options.js); see state.js
+
     entities: doc.entities.map(p => ({
       id: p.id,
       kind: p.kind,
@@ -53,6 +55,22 @@ export function loadLayout(event) {
   const reader = new FileReader();
   reader.onload = (e) => {
     const data = JSON.parse(e.target.result);
+    // Project setup intent. Older files lack `project` entirely; missing
+    // sub-fields fall back individually so partial saves still open clean.
+    // Defaults mirror state.js (single story, Zone 5 / Missouri).
+    const dp = data.project || {};
+    const dc = dp.climate || {};
+    doc.project = {
+      name: dp.name ?? 'Untitled Eco Home',
+      stories: dp.stories ?? 1,
+      climate: {
+        iecc_zone: dc.iecc_zone ?? 5,
+        frost_mm: dc.frost_mm ?? 750,
+        snow_psf: dc.snow_psf ?? 30,
+        wind_mph: dc.wind_mph ?? 115,
+        seismic_class: dc.seismic_class ?? 'B',
+      },
+    };
     // Accept v2 (entities) or legacy flat (modules) format.
     const list = data.entities || data.modules || [];
     doc.entities.length = 0;

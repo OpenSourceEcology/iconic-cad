@@ -1,0 +1,170 @@
+/* =====================================================
+   OPTIONS MODAL — Project Options setup popup.
+   Mirrors the export-modal styling (see index.html #export-modal) so it feels
+   native. Write-once: no close button, no backdrop dismiss.
+   ===================================================== */
+
+#options-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.78);
+  z-index: 2100; /* above export-modal */
+  align-items: center;
+  justify-content: center;
+}
+#options-modal.open { display: flex; }
+
+#options-modal-inner {
+  background: #16213e;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 24px;
+  width: 540px;
+  max-width: 92vw;
+  position: relative;
+  font-family: -apple-system, sans-serif;
+}
+#options-modal-inner h2 {
+  color: #eee;
+  font-size: 13px;
+  letter-spacing: 1px;
+  margin: 0 0 6px 0;
+  font-family: 'Space Mono', 'Courier New', monospace;
+}
+#options-modal-inner .opt-sub {
+  color: #7a8faa;
+  font-size: 11px;
+  margin: 0 0 18px 0;
+  line-height: 1.5;
+}
+
+/* Field block */
+.opt-field { margin-bottom: 16px; }
+.opt-field > label {
+  display: block;
+  color: #aac;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 7px;
+}
+
+/* Name input */
+#opt-name {
+  width: 100%;
+  box-sizing: border-box;
+  background: #111828;
+  border: 1px solid #3a5a8a;
+  border-radius: 4px;
+  color: #eee;
+  font-size: 13px;
+  padding: 8px 10px;
+  outline: none;
+}
+#opt-name:focus { border-color: #4fc3f7; }
+
+/* Stories row: large pill + cost hint side by side */
+.opt-stories-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+/* Large SINGLE/DOUBLE pill — same family as .panel-toggle, scaled up.
+   A sliding thumb highlights the active half; the buttons themselves stay
+   transparent so only the thumb animates. */
+.opt-pill {
+  position: relative;
+  display: inline-flex;
+  background: #0f1830;
+  border: 1px solid #3a5a8a;
+  border-radius: 8px;
+  padding: 3px;
+  flex-shrink: 0;
+}
+.opt-pill-thumb {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  background: #2e7d32;
+  border-radius: 6px;
+  box-shadow: 0 0 8px rgba(76,195,247,0.25);
+  transition: transform 0.18s ease;
+  pointer-events: none;
+}
+.opt-pill[data-pos="right"] .opt-pill-thumb { transform: translateX(100%); }
+.opt-pill button {
+  position: relative;
+  z-index: 1;
+  border: none;
+  background: transparent;
+  color: #8a93a8;
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 10px 22px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Space Mono', 'Courier New', monospace;
+  transition: color 0.18s ease;
+}
+.opt-pill button.active { color: #fff; }
+
+/* Cost-tradeoff hint — directional, canned */
+.opt-hint {
+  flex: 1;
+  font-size: 11px;
+  line-height: 1.5;
+  color: #7a8faa;
+  border-left: 2px solid #2a3a5a;
+  padding-left: 12px;
+}
+.opt-hint .opt-hint-tag {
+  display: block;
+  color: #557;
+  font-size: 9px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+/* Climate dropdown */
+#opt-zone {
+  width: 100%;
+  box-sizing: border-box;
+  background: #111828;
+  border: 1px solid #3a5a8a;
+  border-radius: 4px;
+  color: #eee;
+  font-size: 13px;
+  padding: 8px 10px;
+  outline: none;
+  cursor: pointer;
+}
+#opt-zone:focus { border-color: #4fc3f7; }
+
+/* GO button — green/clickable when valid, gray/disabled otherwise */
+#opt-go {
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  background: #2e7d32;
+  border: 1px solid #43a047;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  cursor: pointer;
+  font-family: 'Space Mono', 'Courier New', monospace;
+}
+#opt-go:hover { background: #388e3c; }
+#opt-go:disabled {
+  background: #2a2f3a;
+  border-color: #3a3f4a;
+  color: #667;
+  cursor: not-allowed;
+  box-shadow: none;
+}
