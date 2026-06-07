@@ -10,6 +10,11 @@
     "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
 }}
 </script>
+<link rel="stylesheet" href="css/home.css">
+<!-- Font experiments — CDN, client-side only, no backend required -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700&family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; background: #1a1a2e; color: #eee; }
@@ -411,6 +416,61 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
 </head>
 <body>
 
+<!-- =====================================================
+     HOME VIEW — landing screen (fixed overlay, z-index 9999).
+     Shown on boot; hidden by JS (display:none) when entering design mode.
+     home.js controls interactivity; home.css controls all styling.
+     ===================================================== -->
+<div id="home-view">
+
+  <!-- Full-bleed media layer — populated by home.js from HERO_MEDIA config -->
+  <div id="hero-media-layer"></div>
+
+  <!-- Top-right: three stacked buttons + AGPL/version below -->
+  <div class="home-topright">
+    <a class="home-tr-btn" href="https://gitlab.com/collindesantis/iconic-cad" target="_blank" rel="noopener">OPEN SOURCE</a>
+    <!-- TODO: Replace href="#" with real OSE about page URL -->
+    <a class="home-tr-btn" href="#" target="_blank" rel="noopener">READ ABOUT OSE</a>
+    <!-- TODO: Replace href="#" with real creator about page URL -->
+    <a class="home-tr-btn" href="#" target="_blank" rel="noopener">READ ABOUT CREATOR</a>
+    <!-- TODO: replace v— with real version when versioning is set up -->
+    <div class="home-agpl">AGPL-3.0 &nbsp; v—</div>
+  </div>
+
+  <!-- Wordmark (raised) -->
+  <div class="home-wordmark-wrap">
+    <h1 class="home-wordmark">
+      <span class="wm-dec">/// </span>ICONIC CAD<span class="wm-dec"> ///</span>
+    </h1>
+    <!-- OPTIONAL TAGLINE — set .home-tagline { display: block } in home.css and add copy -->
+    <p class="home-tagline"><!-- TODO: tagline copy here --></p>
+  </div>
+
+  <!-- Three main action buttons near bottom -->
+  <div class="home-primary-buttons">
+
+    <button class="home-btn" id="btn-home-design">
+      <span class="home-btn-icon">+</span>
+      <span class="home-btn-name">DESIGN ECO HOME</span>
+    </button>
+
+    <button class="home-btn" id="btn-home-load">
+      <span class="home-btn-icon">+</span>
+      <span class="home-btn-name">LOAD ECO HOME</span>
+    </button>
+
+    <!-- TODO: Replace href="#" with real tutorial URL when video is ready -->
+    <a class="home-btn" id="btn-home-tutorial" href="#" target="_blank" rel="noopener">
+      <span class="home-btn-icon">+</span>
+      <span class="home-btn-name">VIEW THE TUTORIAL</span>
+    </a>
+
+  </div>
+
+
+</div>
+<!-- END HOME VIEW -->
+
 <div id="sidebar">
   <div class="sidebar-title">/// LIBRARY ///</div>
   <div id="lib-mode"></div>
@@ -428,6 +488,8 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
 </div>
 
 <div id="main-area">
+  <!-- HOME button — returns to the landing screen with a confirm guard -->
+  <button id="btn-go-home">⌂ HOME</button>
   <div id="canvas-wrap">
     <canvas id="design-canvas"></canvas>
     <div id="toolbar">

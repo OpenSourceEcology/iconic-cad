@@ -6,6 +6,7 @@ import { initUI } from './ui.js';
 import { init3d } from './render3d.js';
 import { loadPricing, updateBOM } from './bom.js';
 import { resizeCanvas } from './render2d.js';
+import { initHome } from './home.js';
 
 try {
   init3d();
@@ -13,6 +14,7 @@ try {
   console.warn('3D preview unavailable (no WebGL?):', e);
 }
 initUI();
+initHome();
 resizeCanvas();
 loadPricing().then(updateBOM);
 

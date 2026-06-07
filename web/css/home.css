@@ -1,0 +1,256 @@
+/* =====================================================
+   HOME VIEW — landing screen styles
+   All tweakable values in ONE :root block below.
+   ===================================================== */
+
+:root {
+  /* Typography */
+  --home-wordmark-font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  --home-wordmark-font-size: clamp(2.5rem, 6.5vw, 5rem);
+  --home-tagline-font-size: clamp(0.7rem, 1.2vw, 0.85rem);
+  --home-btn-label-size: 11px;
+
+  /* Button geometry */
+  --home-btn-width: clamp(180px, 20vw, 230px);
+  --home-btn-height: clamp(160px, 18vw, 210px);
+  --home-btn-gap: clamp(10px, 1.8vw, 18px);
+  --home-btn-radius: 4px;
+
+  /* Grid background — exact canvas colors */
+  --home-grid-bg: #1a1a2e;
+  --home-grid-line: #252540;
+  --home-grid-pitch: 40px;
+
+  /* Color tokens — exact design area values */
+  --home-panel: #16213e;
+  --home-border: #3a5a8a;
+  --home-border-sub: #333;
+  --home-ink: #eee;
+  --home-muted: #888;
+  --home-dim: #667;
+  --home-accent: #4fc3f7;
+  --home-accent-bg: #2a3a5c;
+}
+
+/* =====================================================
+   HOME VIEW CONTAINER
+   ===================================================== */
+#home-view {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  overflow: hidden;
+  font-family: 'Space Mono', 'Courier New', monospace;
+  color: var(--home-ink);
+  background-color: var(--home-grid-bg);
+  background-image:
+    linear-gradient(var(--home-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--home-grid-line) 1px, transparent 1px);
+  background-size: var(--home-grid-pitch) var(--home-grid-pitch);
+}
+
+/* =====================================================
+   TOP-RIGHT: three equal-width buttons in a row
+   ===================================================== */
+.home-topright {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+/* Styled button — equal width, centered text */
+.home-tr-btn {
+  display: inline-block;
+  width: 168px;
+  padding: 5px 10px;
+  background: var(--home-panel);
+  border: 1px solid var(--home-border);
+  border-radius: var(--home-btn-radius);
+  color: var(--home-ink);
+  text-decoration: none;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s;
+  box-sizing: border-box;
+}
+
+.home-tr-btn:hover {
+  border-color: var(--home-accent);
+  color: var(--home-ink);
+}
+
+/* AGPL + version — sits below the stacked top-right buttons */
+.home-agpl {
+  font-size: 11px;
+  color: var(--home-muted);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  user-select: none;
+  text-align: right;
+  padding-right: 2px;
+}
+
+/* =====================================================
+   WORDMARK — raised, centered
+   ===================================================== */
+.home-wordmark-wrap {
+  position: absolute;
+  top: 5%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.home-wordmark {
+  font-family: var(--home-wordmark-font-family);
+  font-size: var(--home-wordmark-font-size);
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  color: var(--home-ink);
+  line-height: 1;
+  user-select: none;
+  margin: 0;
+}
+
+.home-wordmark .wm-dec {
+  color: var(--home-dim);
+  font-size: 0.52em;
+  letter-spacing: 0.15em;
+  vertical-align: middle;
+}
+
+/* OPTIONAL TAGLINE */
+.home-tagline {
+  display: none; /* TODO: set to 'block' and add copy to enable */
+  font-size: var(--home-tagline-font-size);
+  color: var(--home-dim);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin: 10px 0 0;
+}
+
+/* =====================================================
+   PRIMARY BUTTONS — near bottom, label pinned to bottom,
+   very light placeholder icon above center
+   ===================================================== */
+.home-primary-buttons {
+  position: absolute;
+  bottom: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: var(--home-btn-gap);
+  align-items: flex-end;
+  white-space: nowrap;
+}
+
+.home-btn {
+  position: relative;
+  width: var(--home-btn-width);
+  height: var(--home-btn-height);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 14px 0;
+  cursor: pointer;
+  background: var(--home-panel);
+  border: 1px solid var(--home-border);
+  border-radius: var(--home-btn-radius);
+  color: var(--home-ink);
+  text-decoration: none;
+  font-family: var(--home-wordmark-font-family);
+  transition: border-color 0.12s, background 0.12s;
+  overflow: hidden;
+}
+
+.home-btn:hover {
+  border-color: var(--home-accent);
+  background: #1c2d50;
+}
+
+
+/* Placeholder icon — very light, centered in upper portion of button */
+.home-btn-icon {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2.4rem;
+  line-height: 1;
+  color: var(--home-ink);
+  opacity: 0.1;
+  user-select: none;
+  pointer-events: none;
+  font-weight: 300;
+}
+
+/* Label pinned to bottom */
+.home-btn-name {
+  margin-top: auto;
+  font-family: 'Space Mono', 'Courier New', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--home-ink);
+  text-align: center;
+  padding: 0 8px;
+  line-height: 1.3;
+}
+
+/* =====================================================
+   COLOR EXPERIMENTS — left side, vertically centered
+   3 buttons in Space Mono, testing label text colors
+   ===================================================== */
+
+/* =====================================================
+   HOME BUTTON inside design area
+   ===================================================== */
+#btn-go-home {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 20;
+  padding: 6px 12px;
+  background: #16213e;
+  color: #aaa;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: -apple-system, sans-serif;
+}
+
+#btn-go-home:hover { border-color: #4fc3f7; color: #eee; }
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+@media (max-width: 700px) {
+  .home-primary-buttons {
+    flex-direction: column;
+    align-items: center;
+    bottom: 20px;
+    white-space: normal;
+  }
+  .home-btn { width: clamp(240px, 70vw, 320px); height: 80px; flex-direction: row; justify-content: flex-start; padding: 0 16px; gap: 14px; }
+  .home-btn-icon { position: static; transform: none; opacity: 0.2; font-size: 1.4rem; flex-shrink: 0; }
+  .home-btn-name { margin-top: 0; }
+  .home-font-exp { left: 12px; }
+  .home-topright { top: 12px; right: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-btn, .home-tr-btn, .home-fexp { transition: none; }
+}
