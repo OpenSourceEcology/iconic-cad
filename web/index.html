@@ -17,7 +17,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700&family=Share+Tech+Mono&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; background: #1a1a2e; color: #eee; }
+body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; height: 100vh; background: #1a1a2e; color: #eee; font-weight: bold; }
 #main-area { flex: 1; display: flex; flex-direction: column; position: relative; }
 
 /* Sidebar */
@@ -30,18 +30,20 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
   flex-shrink: 0;
 }
 .sidebar-title {
-  font-size: 13px;
-  color: #667;
+  font-size: 20px;
+  color: #eee;
   text-align: center;
   letter-spacing: 3px;
   padding: 8px 0 12px;
   border-bottom: 1px solid #333;
   margin-bottom: 12px;
   font-weight: bold;
+  font-family: 'Space Mono', 'Courier New', monospace;
+  text-transform: uppercase;
 }
-#sidebar h2 { font-size: 14px; margin-bottom: 8px; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+#sidebar h2 { font-size: 14px; margin-bottom: 8px; color: #eee; text-transform: uppercase; letter-spacing: 1px; }
 .module-group { margin-bottom: 16px; }
-.module-group h3 { font-size: 12px; color: #888; margin-bottom: 6px; }
+.module-group h3 { font-size: 12px; color: #eee; margin-bottom: 6px; }
 .module-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .module-item {
   width: 48px; height: 48px;
@@ -55,7 +57,7 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
 .module-item img { width: 44px; height: 44px; pointer-events: none; }
 
 /* Library mode toggle */
-#lib-mode { display: block; }
+#lib-mode { display: block; font-family: -apple-system, sans-serif; font-weight: normal; }
 
 /* Iso-thumbnail library tiles */
 .iso-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -65,7 +67,7 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
 }
 .iso-item:hover { border-color: #4fc3f7; }
 .iso-item img { width: 100%; height: 76px; object-fit: contain; pointer-events: none; }
-.iso-item .iso-label { font-size: 10px; color: #9ab; margin-top: 2px; line-height: 1.2; }
+.iso-item .iso-label { font-size: 10px; color: #9ab; margin-top: 2px; line-height: 1.2; font-family: -apple-system, sans-serif; font-weight: normal; }
 .iso-item.interior { border-style: dashed; border-color: #6a5a7c; }
 
 /* NESW direction selector (top-left of grid) */
@@ -106,10 +108,14 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
   padding: 6px 12px;
   background: #16213e;
   color: #eee;
-  border: 1px solid #444;
+  border: 1px solid #3a5a8a;
   border-radius: 4px;
   cursor: pointer;
   font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  font-family: 'Space Mono', 'Courier New', monospace;
 }
 #toolbar button:hover { border-color: #4fc3f7; }
 #toolbar .btn-clear {
@@ -127,12 +133,9 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
   border-color: #e53935;
 }
 
-/* Panel header row (title + toggle) */
+/* Panel header row — centered full-width title with toggle pinned left */
 .panel-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 2px;
+  position: relative;
 }
 .panel-toggle {
   display: inline-flex;
@@ -141,12 +144,19 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
   width: 26px;
   height: 13px;
   border-radius: 3px;
-  border: 1px solid #2a6a9a;
+  border: 1px solid #3a5a8a;
   background: #0a1020;
   cursor: pointer;
   flex-shrink: 0;
   box-sizing: border-box;
   transition: border-color 0.12s;
+}
+/* Header toggles only — pin to left edge so title can center full-width */
+.panel-header .panel-toggle {
+  position: absolute;
+  left: 0;
+  top: 13px;
+  z-index: 1;
 }
 .panel-toggle:not(.active) { border-color: #6a2a2a; }
 .tgl-off, .tgl-on {
@@ -322,11 +332,14 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
   color: #ddeeff;
   font-size: 12px;
   margin-bottom: 4px;
+  font-family: -apple-system, sans-serif;
 }
 .export-row-info span {
   color: #7a8faa;
   font-size: 11px;
   line-height: 1.5;
+  font-family: -apple-system, sans-serif;
+  font-weight: normal;
 }
 .export-row-actions {
   display: flex;
@@ -357,11 +370,13 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
   flex: 1;
   padding: 8px;
   background: #16213e;
-  border: 1px solid #444;
+  border: 1px solid #3a5a8a;
   border-radius: 4px;
   color: #eee;
   cursor: pointer;
-  font-size: 12px;
+  font-size: 11px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
   margin-bottom: 6px;
 }
 #right-sidebar .btn-save:hover, #right-sidebar .btn-load:hover { border-color: #4fc3f7; }
@@ -371,8 +386,15 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
   position: absolute;
   bottom: 8px; left: 8px;
   font-size: 11px;
-  color: #888;
+  color: #eee;
   z-index: 10;
+}
+
+/* BOM body text — reverted to original body font */
+#bom-content {
+  color: #aaa;
+  font-family: -apple-system, sans-serif;
+  font-weight: normal;
 }
 
 /* Footer bar */
@@ -396,7 +418,8 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
   cursor: pointer;
   font-size: 12px;
   font-weight: bold;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
+  font-family: 'Space Mono', 'Courier New', monospace;
 }
 #footer-bar button:hover { background: #1a3a5c; }
 #footer-bar button.active { background: #4fc3f7; color: #16213e; }
@@ -472,11 +495,11 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
 <!-- END HOME VIEW -->
 
 <div id="sidebar">
-  <div class="sidebar-title">/// LIBRARY ///</div>
+  <div class="sidebar-title">LIBRARY</div>
   <div id="lib-mode"></div>
   <div id="module-library"></div>
   <hr style="border-color:#333; margin: 12px 0;">
-  <div style="font-size:11px; color:#666; line-height:1.4;">
+  <div style="font-size:11px; color:#666; line-height:1.4; font-family:-apple-system, sans-serif; font-weight:normal;">
     Drag a module onto the canvas. It will snap to ports on existing walls.
     <br><br>
     Darkened border = exterior (OSB) side.
@@ -489,14 +512,14 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
 
 <div id="main-area">
   <!-- HOME button — returns to the landing screen with a confirm guard -->
-  <button id="btn-go-home">⌂ HOME</button>
+  <button id="btn-go-home">HOME</button>
   <div id="canvas-wrap">
     <canvas id="design-canvas"></canvas>
     <div id="toolbar">
       <button id="btn-clear" class="btn-clear">Clear</button>
-      <button id="btn-undo">&#x21A9; Undo</button>
-      <button id="btn-redo">Redo &#x21AA;</button>
-      <button id="btn-erase" class="btn-erase">&#x2716; Erase</button>
+      <button id="btn-undo">Undo</button>
+      <button id="btn-redo">Redo</button>
+      <button id="btn-erase" class="btn-erase">Erase</button>
       <button id="btn-rotate" style="display:none;">&#x21BB; Rotate (R)</button>
     </div>
     <div id="dir-selector"></div>
@@ -513,14 +536,14 @@ body { font-family: -apple-system, sans-serif; display: flex; height: 100vh; bac
   <div id="preview-wrap">
     <div class="panel-header">
       <button class="panel-toggle active" id="btn-toggle-3d"><span class="tgl-off"></span><span class="tgl-on"></span></button>
-      <div class="sidebar-title" style="margin:0;">// 3D PREVIEW //</div>
+      <div class="sidebar-title">3D PREVIEW</div>
     </div>
     <div id="preview-container"></div>
   </div>
   <div id="bom-panel" style="margin-top:8px; font-size:11px; color:#aaa; overflow-y:auto; flex:1;">
     <div class="panel-header">
       <button class="panel-toggle active" id="btn-toggle-bom"><span class="tgl-off"></span><span class="tgl-on"></span></button>
-      <div style="color:#667; font-weight:bold; letter-spacing:1px;">// BOM //</div>
+      <div class="sidebar-title" style="font-size:16px;">BOM ESTIMATOR</div>
     </div>
     <div id="bom-content">Place modules to see estimate</div>
   </div>
