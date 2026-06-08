@@ -1,8 +1,10 @@
 // =====================================================
 // OPTIONS — the Project Options modal.
 // A one-time, write-once project-setup popup shown on "DESIGN ECO HOME".
-// Captures project-level intent (name, stories, per-story wall height, climate
-// zone) and bakes it into doc.project. Mirrors the export-modal pattern.
+// Captures project-level intent (name, stories, climate zone) and bakes it into
+// doc.project. Mirrors the export-modal pattern. NOTE: there is no per-story
+// wall-height field — wall height follows from module choice. (Per-story height
+// UI is a deferred feature, see CAD-AUD-003; do not infer one from this modal.)
 //
 // WRITE-ONCE: the only exit is GO. No X, no backdrop, no Esc. Once GO fires the
 // modal closes and is NOT reopenable this session. Editing-after-confirm is a
