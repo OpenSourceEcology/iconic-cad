@@ -1,10 +1,20 @@
 // =====================================================
 // MEMBERS — the framing "member list", the atom of the system.
 //
-// enumerateMembers(mod) is the ONE source of truth for a wall panel's framing.
-// It is consumed by the 3D view (render3d.js), the BOM (bom.js), the FreeCAD
-// export, and the fab drawing (render_fab.js). It is a pure, deterministic,
-// dependency-light function: it imports constants only — no DOM, no three.js.
+// enumerateMembers(mod) is the source of truth for a wall panel's framing in the
+// WEB outputs: the 3D view (render3d.js), the BOM/cut list (bom.js), the fab
+// drawing (render_fab.js), and the build summary (render_summary.js). It is a
+// pure, deterministic, dependency-light function: imports constants only — no
+// DOM, no three.js.
+//
+// NOTE — it is NOT the source of the browser FreeCAD wall solids. fcstd.js does
+// NOT build geometry from this list; it translates PRE-BAKED BREP assets
+// (web/assets/lib/<module>__<dir>.brp), generated offline by
+// generate_wall_library.py via scripts/bake_geometry.py, and imports
+// enumerateMembers() only for panel HEIGHT. The BREP generator and this member
+// list are kept in sync by `build_lib.py --verify --no-thumbs`, enforced in CI
+// (see CAD-AUD-009); a framing change here that skips a BREP regenerate would
+// otherwise diverge silently from FreeCAD export.
 //
 // This is a FAITHFUL PORT of the geometry render3d.js builds today. Same
 // members, same panel-local positions, same sizes. It is a transcription, not a

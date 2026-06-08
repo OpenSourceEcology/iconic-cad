@@ -24,6 +24,21 @@ test:
     - python -c "import sys,json; a=json.load(open('/tmp/specs_orig.json')); b=json.load(open('web/assets/lib/specs.json')); sys.exit('specs.json out of sync -- re-run gen_specs.py' if a!=b else 0)"
     - python -m pytest tests/test_blocking_math.py -v
     - node tests/parity.mjs
+    - node tests/enumerate_parity.mjs
+    - node tests/build_summary.mjs
+    - node tests/foundation_parity.mjs
+    - node tests/cutlist_frac.mjs
+    - node tests/stock_pricing.mjs
+    - node tests/foundation_cost.mjs
+    - node tests/load_reset.mjs
+    - node tests/canvas_resize.mjs
+    - node tests/project_shape.mjs
+    - node tests/fcstd_local_jszip.mjs
+    - node tests/ci_verify_gate.mjs
+    # CAD-AUD-009 gate: committed BREP assets must not drift from the generator
+    # (browser FreeCAD export translates pre-baked BREPs, not enumerateMembers()).
+    - apt-get install -y -qq freecad
+    - python build_lib.py --verify --no-thumbs
     - python scripts/check_links.py
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"

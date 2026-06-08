@@ -25,8 +25,30 @@ jobs:
       - name: Python blocking-math unit tests
         run: python -m pytest tests/test_blocking_math.py -v
 
-      - name: JS parity test
-        run: node tests/parity.mjs
+      - name: JS test suite
+        run: |
+          node tests/parity.mjs
+          node tests/enumerate_parity.mjs
+          node tests/build_summary.mjs
+          node tests/foundation_parity.mjs
+          node tests/cutlist_frac.mjs
+          node tests/stock_pricing.mjs
+          node tests/foundation_cost.mjs
+          node tests/load_reset.mjs
+          node tests/canvas_resize.mjs
+          node tests/project_shape.mjs
+          node tests/fcstd_local_jszip.mjs
+          node tests/ci_verify_gate.mjs
+
+      - name: Install FreeCAD (for BREP geometry verify)
+        run: sudo apt-get update && sudo apt-get install -y freecad
+
+      # CAD-AUD-009 gate: the browser FreeCAD export translates pre-baked BREP
+      # assets, NOT enumerateMembers() at runtime. This step fails CI if those
+      # committed BREP assets drift from the generator, so a framing change can
+      # never silently diverge from FreeCAD export.
+      - name: Verify BREP assets match the generator
+        run: python build_lib.py --verify --no-thumbs
 
       - name: Check Markdown relative links
         run: python scripts/check_links.py
