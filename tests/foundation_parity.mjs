@@ -18,7 +18,7 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 
 import { computeRegion } from '../web/js/region.js';
-import { foundationSolids } from '../web/js/foundation_geom.js';
+import { foundationSolids, computeFoundationRuns, skirtEndExt } from '../web/js/foundation_geom.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixDir = path.join(__dirname, 'fixtures');
@@ -91,6 +91,65 @@ function skirtContinuityErrors(pieces) {
   return errs;
 }
 
+// Per-end extension check: a skirt end may extend MORE than skirtT past its run's
+// aMin/aMax ONLY if a perpendicular run butts that end (submissive). Dominant ends
+// must extend ≤ skirtT. Uses actual wall run geometry (nearCross, depth) so the
+// check mirrors the implementation's own classification, not the beam widths.
+function perEndExtensionErrors(pieces, runs, params) {
+  const skirtT = params.skirt_thickness_mm;
+  const TOL = 1.0; // mm
+  const errs = [];
+
+  for (const s of pieces.filter(p => p.kind === 'skirt')) {
+    const sLetter = letterOf(s);
+    const run = runs.find(r => r.letter === sLetter);
+    if (!run) continue;
+    const sa = aabbOf(s);
+    const horiz = s.dims.dx_mm > s.dims.dy_mm;
+    const sAMin = horiz ? sa.x0 : sa.y0;
+    const sAMax = horiz ? sa.x1 : sa.y1;
+    const extAtMin = run.aMin - sAMin;
+    const extAtMax = sAMax - run.aMax;
+
+    const checkEnd = (ext, endCoord, side) => {
+      if (ext <= skirtT + TOL) return; // dominant (0) or negligible — OK
+      // extension > skirtT: verify a perp run actually butts this end
+      const expected = skirtEndExt(run, endCoord, runs, skirtT);
+      if (expected <= skirtT + TOL) errs.push(
+        `skirt_${sLetter} ${side} extends ${ext.toFixed(1)} mm past run end ` +
+        `but no perp run crosses there (dominant end must not extend)`
+      );
+    };
+
+    checkEnd(extAtMin, run.aMin, 'aMin');
+    checkEnd(extAtMax, run.aMax, 'aMax');
+  }
+  return errs;
+}
+
+// Assert the L fixture has at least one run with one dominant + one submissive end
+// (the mixed case proves per-end classification is actually happening).
+function lMixedEndErrors(pieces, runs, params) {
+  const skirtT = params.skirt_thickness_mm;
+  const TOL = 1.0;
+  const errs = [];
+
+  let mixedFound = false;
+  for (const s of pieces.filter(p => p.kind === 'skirt')) {
+    const run = runs.find(r => r.letter === letterOf(s));
+    if (!run) continue;
+    const sa = aabbOf(s);
+    const horiz = s.dims.dx_mm > s.dims.dy_mm;
+    const extMin = run.aMin - (horiz ? sa.x0 : sa.y0);
+    const extMax = (horiz ? sa.x1 : sa.y1) - run.aMax;
+    const domMin = extMin <= skirtT + TOL;
+    const domMax = extMax <= skirtT + TOL;
+    if (domMin !== domMax) { mixedFound = true; break; }
+  }
+  if (!mixedFound) errs.push('no run has exactly one dominant end and one submissive end (L-shape must have mixed runs)');
+  return errs;
+}
+
 function structuralErrors(name, pieces) {
   const exp = EXPECT[name];
   if (!exp) return [];
@@ -116,10 +175,15 @@ for (const [name, want] of Object.entries(golden)) {
     cell_mm: region.cells ? region.cells.cell_mm : undefined,
   };
   const got = foundationSolids(want.params, silhouette);
+  const runs = computeFoundationRuns(silhouette.walls);
 
   const errs = [];
   // structural contract (exact run counts + gapless skirt loop) on the JS output
   errs.push(...structuralErrors(name, got));
+  // per-end rule: dominant ends must not extend > skirtT past run wall extent
+  errs.push(...perEndExtensionErrors(got, runs, want.params));
+  // L fixture: at least one run must have one dominant + one submissive end
+  if (name === 'foundation_L') errs.push(...lMixedEndErrors(got, runs, want.params));
 
   // OUTSIDE assertion: every skirt must sit on the exterior. A skirt placed on
   // the wrong face (probe bug) has its center inside the building. Probe ±cell in

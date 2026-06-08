@@ -277,6 +277,27 @@ def _compute_runs(walls):
     return runs
 
 
+def _end_ext(r, a_end_val, all_runs, skirt_t):
+    """Extension for one run end. Returns P.depth + skirt_t if SUBMISSIVE (a perpendicular
+    run P butts r at that end — P's wall crosses r's line and P's cross band contains the
+    end coord), or 0 if DOMINANT (r reaches the building corner)."""
+    for p in all_runs:
+        if p["horiz"] == r["horiz"]:
+            continue
+        # (a) r's cross band within p's along-axis extent
+        if p["a_min"] > r["near_cross"] + RUN_TOL:
+            continue
+        if r["near_cross"] + r["depth"] > p["a_max"] + RUN_TOL:
+            continue
+        # (b) p's cross band contains a_end_val
+        if p["near_cross"] - RUN_TOL > a_end_val:
+            continue
+        if a_end_val > p["near_cross"] + p["depth"] + RUN_TOL:
+            continue
+        return p["depth"] + skirt_t
+    return 0
+
+
 def foundation_solids(params, silhouette):
     """Port of foundation_geom.js foundationSolids. Returns ordered list of
     piece dicts {group, kind, label, dims{dx_mm,dy_mm,dz_mm},
@@ -324,29 +345,35 @@ def foundation_solids(params, silhouette):
                        else {"x_mm": line_c, "y_mm": axis_c, "z_mm": -beam_d / 2}),
         })
 
-    # FROST SKIRT — one continuous panel per run on its OUTSIDE face, corner-
-    # extended by a full wall depth past each end so adjacent skirts overlap
-    # with NO gap (see foundation_geom.js for the full corner-extension rule).
+    # FROST SKIRT — one continuous panel per run on its OUTSIDE face.
+    # Per-end extension: SUBMISSIVE ends (a perp run butts there) extend by
+    # P.depth + skirt_t to bridge across P and overlap P's outer skirt;
+    # DOMINANT ends (run reaches the building corner) extend by 0.
+    # Result: gapless FPSF loop, no stub past any convex corner.
     for r in runs:
-        length = r["a_max"] - r["a_min"]
-        axis_c = (r["a_min"] + r["a_max"]) / 2
-        grown = length + 2 * r["depth"]
+        orig_axis_c = (r["a_min"] + r["a_max"]) / 2  # probe along wall midpoint
+        ext_at_min = _end_ext(r, r["a_min"], runs, skirt_t)
+        ext_at_max = _end_ext(r, r["a_max"], runs, skirt_t)
+        new_a_min = r["a_min"] - ext_at_min
+        new_a_max = r["a_max"] + ext_at_max
+        grown = new_a_max - new_a_min
+        skirt_axis_c = (new_a_min + new_a_max) / 2
         far_cross = r["near_cross"] + r["depth"]
         if r["horiz"]:
-            near_out = not contains_point(axis_c, r["near_cross"] - probe)
+            near_out = not contains_point(orig_axis_c, r["near_cross"] - probe)
             fy = (r["near_cross"] - skirt_t / 2) if near_out else (far_cross + skirt_t / 2)
             pieces.append({
                 "group": "foundation", "kind": "skirt", "label": "skirt_%s" % r["letter"],
                 "dims": {"dx_mm": grown, "dy_mm": skirt_t, "dz_mm": skirt_d},
-                "center": {"x_mm": axis_c, "y_mm": fy, "z_mm": -skirt_d / 2},
+                "center": {"x_mm": skirt_axis_c, "y_mm": fy, "z_mm": -skirt_d / 2},
             })
         else:
-            near_out = not contains_point(r["near_cross"] - probe, axis_c)
+            near_out = not contains_point(r["near_cross"] - probe, orig_axis_c)
             fx = (r["near_cross"] - skirt_t / 2) if near_out else (far_cross + skirt_t / 2)
             pieces.append({
                 "group": "foundation", "kind": "skirt", "label": "skirt_%s" % r["letter"],
                 "dims": {"dx_mm": skirt_t, "dy_mm": grown, "dz_mm": skirt_d},
-                "center": {"x_mm": fx, "y_mm": axis_c, "z_mm": -skirt_d / 2},
+                "center": {"x_mm": fx, "y_mm": skirt_axis_c, "z_mm": -skirt_d / 2},
             })
 
     return pieces
