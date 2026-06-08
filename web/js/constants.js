@@ -64,9 +64,9 @@ export const ZOOM_STEP = 1.1;
 export const SNAP_DIST_PX = 25;
 
 // Interior-wall placement keep-outs
-export const MIN_IWALL_SPACING_MM = 48 * IN_TO_MM;          // min between interior walls on same target
-export const CORNER_KEEPOUT_MM = 48 * IN_TO_MM;             // keep interior-wall contacts off corners
-export const MIN_IWALL_TO_EXT_PARALLEL_MM = 48 * IN_TO_MM;  // interior wall parallel-to-exterior keep-out
+export const MIN_IWALL_SPACING_MM = 12 * IN_TO_MM;          // min cross-axis gap between parallel interior walls
+export const CORNER_KEEPOUT_MM = 6 * IN_TO_MM;              // keep interior-wall contacts ~6" off a building corner (framing to bolt to)
+export const MIN_IWALL_TO_EXT_PARALLEL_MM = 12 * IN_TO_MM;  // interior wall parallel-to-exterior keep-out
 
 // Plan-symbol colours
 export const APERTURE_GAP = '#0d1322'; // "floor" shown through an opening

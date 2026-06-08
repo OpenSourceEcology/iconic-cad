@@ -8,9 +8,9 @@ import {
   MODULES, INTERIOR_MODULES, APERTURE_MODULES, INT_APERTURE_MODULES,
   DIRECTIONS, ROTATE_CW, DIR_COLORS, ZOOM_MIN, ZOOM_MAX, ZOOM_STEP,
 } from './constants.js';
-import { getModuleBBox } from './geometry.js';
+import { getModuleBBox, isHorizontal } from './geometry.js';
 import { mmToPx, pxToMm } from './view.js';
-import { findSnap } from './snap.js';
+import { findSnap, wouldOverlap } from './snap.js';
 import { regionForLevel } from './region.js';
 import { markModelChanged, requestDraw } from './app.js';
 import { setViewport, resize3d, set3dPreviewEnabled } from './render3d.js';
@@ -29,6 +29,10 @@ const canvas = document.getElementById('design-canvas');
 // Begin placing a module facing `dir`.
 function pickModule(mod, dir) {
   if (!framingEditable()) return; // framing locked after advancing — no placing
+  // Interior partitions have no inside/outside face, so they need only TWO
+  // orientations: horizontal (north) or vertical (east). Collapse any N/S→north,
+  // E/W→east; R toggles between the two (see rotateCW).
+  if (mod.interior) dir = isHorizontal(dir) ? 'north' : 'east';
   ui.dragState = { mod, dir };
   ui.snapTarget = null;
   ui.eraseMode = false;
@@ -65,6 +69,7 @@ function buildLibTabs() {
     b.addEventListener('click', () => {
       ui.libCategory = t.id;
       buildLibTabs();
+      buildDirSelector();   // collapse to N/S + E/W for interior; full NESW otherwise
       buildSidebar();
     });
     el.appendChild(b);
@@ -208,13 +213,22 @@ function buildLibMode() {
 function buildDirSelector() {
   const el = document.getElementById('dir-selector');
   el.innerHTML = '';
-  for (const dir of ['north', 'east', 'south', 'west']) {
+  // Interior partitions have no inside/outside face → only TWO orientations:
+  // horizontal (N/S) and vertical (E/W). Collapse the selector to two buttons
+  // and normalise placeDir into the {north, east} pair.
+  const opts = ui.libCategory === 'interior'
+    ? [{ dir: 'north', label: 'N/S', title: 'Horizontal run (N/S)' },
+       { dir: 'east',  label: 'E/W', title: 'Vertical run (E/W)' }]
+    : ['north', 'east', 'south', 'west'].map(dir =>
+        ({ dir, label: dir[0].toUpperCase(), title: `Place facing ${dir}` }));
+  if (ui.libCategory === 'interior') ui.placeDir = isHorizontal(ui.placeDir) ? 'north' : 'east';
+  for (const o of opts) {
     const b = document.createElement('button');
-    b.textContent = dir[0].toUpperCase();
-    b.title = `Place facing ${dir}`;
-    b.dataset.dir = dir;
-    b.style.background = DIR_COLORS[dir];
-    b.addEventListener('click', () => setPlaceDir(dir));
+    b.textContent = o.label;
+    b.title = o.title;
+    b.dataset.dir = o.dir;
+    b.style.background = DIR_COLORS[o.dir];
+    b.addEventListener('click', () => setPlaceDir(o.dir));
     el.appendChild(b);
   }
   refreshDirSelector();
@@ -315,7 +329,11 @@ function toggleErase() {
 function rotateCW() {
   if (!framingEditable()) return; // framing locked after advancing
   if (!ui.dragState) return;
-  ui.dragState.dir = ROTATE_CW[ui.dragState.dir];
+  // Interior walls toggle horizontal↔vertical (north↔east) only; exterior walls
+  // cycle the full NESW.
+  ui.dragState.dir = ui.dragState.mod.interior
+    ? (isHorizontal(ui.dragState.dir) ? 'east' : 'north')
+    : ROTATE_CW[ui.dragState.dir];
   ui.placeDir = ui.dragState.dir;   // keep the NESW selector in sync
   ui.snapTarget = null;
   refreshDirSelector();
@@ -505,17 +523,36 @@ function wireCanvas() {
       const my = pxToMm((e.clientY - rect.top) - view.offsetY);
 
       const onL2 = doc.activeLevel === 'L2';
+      const mod = ui.dragState.mod, dir = ui.dragState.dir;
+      const bb = getModuleBBox(mod, dir);
       let pos = ui.snapTarget;
       // Free placement at cursor when nothing snaps: the empty canvas, or on L2
       // (where the only placed walls may be the non-interactive L1 ghosts).
       if (!pos && (doc.entities.length === 0 || onL2)) {
-        const bb = getModuleBBox(ui.dragState.mod, ui.dragState.dir);
         pos = { x_mm: mx - bb.w / 2, y_mm: my - bb.h / 2 };
+      }
+      // INTERIOR free placement on L1: an interior wall that didn't snap may drop
+      // free INSIDE the enclosed shell — but only if the shell is closed, the
+      // footprint lies fully inside the region, and it doesn't bury into / stack
+      // on any wall. No connection → no blocking until it later abuts a wall.
+      if (!pos && mod.interior && !onL2) {
+        const region = regionForLevel(doc.activeLevel);
+        const cand = { x_mm: mx - bb.w / 2, y_mm: my - bb.h / 2 };
+        if (region.isEnclosed &&
+            region.containsFootprint(mod, dir, cand.x_mm, cand.y_mm) &&
+            !wouldOverlap(cand.x_mm, cand.y_mm, bb, mod, dir)) {
+          pos = cand;
+        }
       }
       // L2 GATE: a new L2 module must sit entirely inside the L1 build region.
       // Off-region drops are REJECTED with the red-flag feedback (§5).
       if (pos && onL2 &&
-          !regionForLevel('L1').containsFootprint(ui.dragState.mod, ui.dragState.dir, pos.x_mm, pos.y_mm)) {
+          !regionForLevel('L1').containsFootprint(mod, dir, pos.x_mm, pos.y_mm)) {
+        flashReject(ui.mouseCanvasX, ui.mouseCanvasY);
+        return;
+      }
+      if (!pos && mod.interior) {
+        // No snap AND free-placement guards failed — never a silent no-op.
         flashReject(ui.mouseCanvasX, ui.mouseCanvasY);
         return;
       }

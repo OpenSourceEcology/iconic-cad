@@ -58,7 +58,7 @@ export function findSnap(cursorX_mm, cursorY_mm, mod, dir) {
             // For interior walls, reject port snaps too close to existing interior
             // walls, or running parallel and very close to an exterior wall.
             if (mod.interior &&
-                (iwallTooCloseToExisting(snapOrigin.x_mm, snapOrigin.y_mm, dir) ||
+                (iwallTooCloseToExisting(snapOrigin.x_mm, snapOrigin.y_mm, mod, dir) ||
                  iwallTooCloseToExteriorParallel(snapOrigin.x_mm, snapOrigin.y_mm, mod, dir))) {
               continue;
             }
@@ -119,7 +119,15 @@ export function wouldOverlap(x, y, bb, mod, dir) {
     const overlapH = Math.min(y + bb.h, p.y_mm + pbb.h) - Math.max(y, p.y_mm);
     if (overlapW > 0 && overlapH > 0) {
       const overlapArea = overlapW * overlapH;
-      if (overlapArea > maxAllowed) return true;
+      // An interior wall butts against an exterior FACE — it must never bury into
+      // the exterior band. The generous D×D corner tolerance is for two
+      // perpendicular EXTERIOR walls only; reject any real interior↔exterior
+      // overlap (> a tiny FP-touch epsilon).
+      if (mod.interior && !p.mod.interior) {
+        if (overlapArea > 4) return true; // mm²
+      } else if (overlapArea > maxAllowed) {
+        return true;
+      }
     }
   }
   return false;
@@ -334,15 +342,24 @@ function apertureSwingConflicts(mod, dir, x_mm, y_mm) {
   return false;
 }
 
-// Check if a proposed interior wall position is too close to any existing interior wall
-function iwallTooCloseToExisting(x_mm, y_mm, dir) {
+// Reject a proposed interior wall only when a PARALLEL interior wall is within
+// the spacing on the CROSS axis AND their runs overlap on the ALONG axis. Two
+// colinear end-to-end walls share a line (cross gap ~0) but have ~zero along
+// overlap → allowed. (Mirrors iwallTooCloseToExteriorParallel; the old version
+// measured the along axis, wrongly rejecting end-to-end joins.)
+function iwallTooCloseToExisting(x_mm, y_mm, mod, dir) {
   const isH = isHorizontal(dir);
+  const bb = getModuleBBox(mod, dir);
+  const aStart = isH ? x_mm : y_mm, aEnd = aStart + (isH ? bb.w : bb.h);
   for (const q of placed) {
     if (q.kind === 'foundation') continue; // derived 3D-only object — no module/ports
     if (!q.mod.interior) continue;
     if (isHorizontal(q.dir) !== isH) continue; // only check parallel interior walls
-    const dist = isH ? Math.abs(x_mm - q.x_mm) : Math.abs(y_mm - q.y_mm);
-    if (dist < MIN_IWALL_SPACING_MM) return true;
+    const gap = isH ? Math.abs(y_mm - q.y_mm) : Math.abs(x_mm - q.x_mm); // cross-axis gap
+    if (gap >= MIN_IWALL_SPACING_MM) continue;
+    const qbb = getModuleBBox(q.mod, q.dir);
+    const qStart = isH ? q.x_mm : q.y_mm, qEnd = qStart + (isH ? qbb.w : qbb.h);
+    if (Math.min(aEnd, qEnd) - Math.max(aStart, qStart) > 0) return true; // along-axis spans overlap
   }
   return false;
 }
@@ -407,6 +424,11 @@ function findTJunctionSnap(cursorX_mm, cursorY_mm, mod, dir) {
   if (placed.length === 0) return null;
   const dragIsH = isHorizontal(dir);
   const bb = getModuleBBox(mod, dir);
+  // Selection metric is the EFFECTIVE cursor→contact-point distance (px): an
+  // interior target gets TIE_PX shaved off so that when an interior and an
+  // exterior target are both in reach and within TIE_PX of each other, the
+  // interior wall wins. The raw contact distance still gates the capture range.
+  const TIE_PX = SNAP_DIST_PX;
   let bestDist = Infinity;
   let bestSnap = null;
 
@@ -450,9 +472,12 @@ function findTJunctionSnap(cursorX_mm, cursorY_mm, mod, dir) {
       const snapY = (p.dir === 'north') ? faceY : faceY - bb.h;
       if (apertureSwingConflicts(mod, dir, snapX, snapY)) continue; // door swing would hit a placed door
 
-      const dist = Math.hypot(mmToPx(snapX + bb.w/2 - cursorX_mm), mmToPx(snapY + bb.h/2 - cursorY_mm));
-      if (dist < SNAP_DIST_PX * 4 && dist < bestDist && !wouldOverlap(snapX, snapY, bb, mod, dir)) {
-        bestDist = dist;
+      // Distance from the cursor to the CONTACT POINT on the target's face — so
+      // hovering near a wall snaps to the wall you're hovering near.
+      const contactDist = Math.hypot(mmToPx(contactX - cursorX_mm), mmToPx(faceY - cursorY_mm));
+      const eff = contactDist - (p.mod.interior ? TIE_PX : 0);
+      if (contactDist < SNAP_DIST_PX * 4 && eff < bestDist && !wouldOverlap(snapX, snapY, bb, mod, dir)) {
+        bestDist = eff;
         let blocking;
         if (ui.blockingMode === 'T' && !p.mod.aperture) {
           blocking = 'T';
@@ -492,9 +517,11 @@ function findTJunctionSnap(cursorX_mm, cursorY_mm, mod, dir) {
       const snapX = (p.dir === 'east') ? faceX - bb.w : faceX;
       if (apertureSwingConflicts(mod, dir, snapX, snapY)) continue; // door swing would hit a placed door
 
-      const dist = Math.hypot(mmToPx(snapX + bb.w/2 - cursorX_mm), mmToPx(snapY + bb.h/2 - cursorY_mm));
-      if (dist < SNAP_DIST_PX * 4 && dist < bestDist && !wouldOverlap(snapX, snapY, bb, mod, dir)) {
-        bestDist = dist;
+      // Distance from the cursor to the CONTACT POINT on the target's face.
+      const contactDist = Math.hypot(mmToPx(faceX - cursorX_mm), mmToPx(contactY - cursorY_mm));
+      const eff = contactDist - (p.mod.interior ? TIE_PX : 0);
+      if (contactDist < SNAP_DIST_PX * 4 && eff < bestDist && !wouldOverlap(snapX, snapY, bb, mod, dir)) {
+        bestDist = eff;
         let blocking;
         if (ui.blockingMode === 'T' && !p.mod.aperture) {
           blocking = 'T';
