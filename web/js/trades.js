@@ -35,6 +35,11 @@ const EDIT_LABEL = { framing: 'EDIT', foundation: 'REGENERATE' };
 // ---- Derived done-conditions ---------------------------------------------
 export function framingDone() {
   const levels = [...new Set(doc.entities.filter(e => e.kind === 'wall').map(e => e.level || 'L1'))];
+  // A 2-story project must have a real, ENCLOSED Story 2 — not just an enclosed
+  // Story 1 (which is only what unlocks L2). Force L2 into the required set so
+  // finishing L1 and placing zero L2 walls cannot pass the gate. regionForLevel
+  // with no L2 walls returns isEnclosed=false → blocked.
+  if (doc.project.stories === 2 && !levels.includes('L2')) levels.push('L2');
   if (!levels.length) return false;
   return levels.every(l => regionForLevel(l).isEnclosed);
 }
