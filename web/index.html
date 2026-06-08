@@ -566,7 +566,23 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
   z-index: 50;
   display: flex; flex-direction: column; align-items: center; gap: 8px;
   pointer-events: none;
+  transition: bottom 0.18s ease;
 }
+/* Foundation / 3D Preview hide the library tray — let the gate drop lower into
+   the freed space. */
+#next-trade-wrap.lowered { bottom: 30px; }
+#trade-actions { display: flex; align-items: center; gap: 10px; }
+/* EDIT / REGENERATE — red, sits left of NEXT TRADE on a locked trade */
+#btn-edit-trade {
+  pointer-events: auto;
+  padding: 16px 28px;
+  font-size: 15px; font-weight: bold; letter-spacing: 1.5px;
+  border-radius: 8px; cursor: pointer;
+  font-family: 'Space Mono', 'Courier New', monospace;
+  background: #c62828; border: 1px solid #e53935; color: #fff;
+  box-shadow: 0 4px 16px rgba(198,40,40,0.45);
+}
+#btn-edit-trade:hover { background: #d32f2f; }
 #btn-next-trade {
   pointer-events: auto;
   padding: 16px 48px;
@@ -602,6 +618,16 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
   font-family: 'Space Mono', 'Courier New', monospace;
 }
 #trade-toast.show { opacity: 1; }
+
+/* Framing locked (after advancing past framing) — dim + disable its controls.
+   The build grid stays visible for review; only editing affordances go inert. */
+#main-area.editing-locked #toolbar,
+#main-area.editing-locked #dir-selector,
+#main-area.editing-locked #footer-bar {
+  opacity: 0.4;
+  pointer-events: none;
+  filter: grayscale(0.4);
+}
 
 /* Snap indicator */
 .snap-highlight {
@@ -725,7 +751,12 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
        Gray/disabled until the current trade's derived done-condition is met;
        hidden on the terminal 3D PREVIEW trade. (trades.js) -->
   <div id="next-trade-wrap">
-    <button id="btn-next-trade">NEXT TRADE &#x2192;</button>
+    <div id="trade-actions">
+      <!-- EDIT (framing) / REGENERATE (foundation) — shown only when reviewing a
+           locked trade; un-generates everything ahead after a warning. -->
+      <button id="btn-edit-trade" style="display:none;">EDIT</button>
+      <button id="btn-next-trade">NEXT TRADE &#x2192;</button>
+    </div>
     <div id="next-trade-hint"></div>
   </div>
   <!-- Transient notice (e.g. foundation cleared after a framing edit). -->

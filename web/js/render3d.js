@@ -54,7 +54,9 @@ const matIWallLumberT = new THREE.MeshLambertMaterial({ color: 0xc4a882, ...TMAT
 
 // Foundation materials — concrete gray slab/beam, EPS-foam pink skirt.
 const matConcrete = new THREE.MeshLambertMaterial({ color: 0x9a9a9a });
-const matEPS      = new THREE.MeshLambertMaterial({ color: 0xd98cb3 });
+// EPS skirt — always a touch transparent in every view (sidebar preview,
+// foundation review, 3d preview) so it reads as foam, not concrete.
+const matEPS      = new THREE.MeshLambertMaterial({ color: 0xd98cb3, transparent: true, opacity: 0.6 });
 
 // Render mode: 'solid' (default — framing + foundation solid, the 3D PREVIEW
 // trade) vs 'foundation-review' (framing transparent, foundation solid). Set by

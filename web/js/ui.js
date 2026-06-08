@@ -19,7 +19,7 @@ import { exportJSON, saveLayout, loadLayout } from './io.js';
 import { exportFcstd } from './fcstd.js';
 import { exportFabDrawings } from './render_fab.js';
 import { generateBuildSummary } from './render_summary.js';
-import { notifyFramingEdited } from './trades.js';
+import { framingEditable } from './trades.js';
 
 const canvas = document.getElementById('design-canvas');
 
@@ -28,6 +28,7 @@ const canvas = document.getElementById('design-canvas');
 // =====================================================
 // Begin placing a module facing `dir`.
 function pickModule(mod, dir) {
+  if (!framingEditable()) return; // framing locked after advancing — no placing
   ui.dragState = { mod, dir };
   ui.snapTarget = null;
   ui.eraseMode = false;
@@ -235,7 +236,7 @@ function setPlaceDir(dir) {
 // TOOLBAR ACTIONS
 // =====================================================
 function clearAll() {
-  notifyFramingEdited(); // clears any downstream foundation + drops to framing
+  if (!framingEditable()) return; // framing locked after advancing
   doc.entities.length = 0;
   history.length = 0;
   future.length = 0;
@@ -258,6 +259,7 @@ export function clearLevel2() {
 }
 
 function undoLast() {
+  if (!framingEditable()) return; // framing locked after advancing
   if (history.length === 0) return;
   // GUARD: undoing a Story-1 EXTERIOR wall while Story-2 walls exist would change
   // the floor silhouette they sit on. Confirm; on yes, clear Story 2 and drop back
@@ -278,11 +280,11 @@ function undoLast() {
     doc.entities.splice(action.index, 0, action.module);
   }
   future.push(action);
-  notifyFramingEdited();
   markModelChanged();
 }
 
 function redoLast() {
+  if (!framingEditable()) return; // framing locked after advancing
   if (future.length === 0) return;
   const action = future.pop();
   if (action.type === 'place') {
@@ -292,11 +294,11 @@ function redoLast() {
     if (idx >= 0) doc.entities.splice(idx, 1);
   }
   history.push(action);
-  notifyFramingEdited();
   markModelChanged();
 }
 
 function toggleErase() {
+  if (!framingEditable()) return; // framing locked after advancing
   ui.eraseMode = !ui.eraseMode;
   const btn = document.getElementById('btn-erase');
   btn.classList.toggle('active', ui.eraseMode);
@@ -311,6 +313,7 @@ function toggleErase() {
 }
 
 function rotateCW() {
+  if (!framingEditable()) return; // framing locked after advancing
   if (!ui.dragState) return;
   ui.dragState.dir = ROTATE_CW[ui.dragState.dir];
   ui.placeDir = ui.dragState.dir;   // keep the NESW selector in sync
@@ -484,6 +487,7 @@ function wireCanvas() {
   });
 
   canvas.addEventListener('click', (e) => {
+    if (!framingEditable()) return; // framing locked after advancing — read-only
     if (ui.eraseMode) {
       const rect = canvas.getBoundingClientRect();
       const idx = findModuleAt(e.clientX - rect.left, e.clientY - rect.top);
@@ -491,7 +495,6 @@ function wireCanvas() {
         const mod = doc.entities.splice(idx, 1)[0];
         history.push({ type: 'erase', module: mod, index: idx });
         future.length = 0;
-        notifyFramingEdited();
         markModelChanged();
       }
       return;
@@ -533,7 +536,6 @@ function wireCanvas() {
         history.push({ type: 'place', module: entity });
         future.length = 0;
         ui.snapTarget = null;
-        notifyFramingEdited();
         markModelChanged();
       }
     }

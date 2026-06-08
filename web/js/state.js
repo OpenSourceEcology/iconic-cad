@@ -92,6 +92,7 @@ export function resetDoc() {
   ui.snapTarget = null;
   ui.eraseMode = false;
   ui.activeTrade = 'framing';
+  ui.reachedTrade = 0;
 }
 
 // ---- View (camera over the 2D plan) --------------------------------------
@@ -120,9 +121,13 @@ export const ui = {
   libCategory: 'walls', // library tab: 'walls' | 'windows' | 'doors' | 'interior'
 
   // Trade flow (see trades.js). The fixed order is FRAMING → FOUNDATION → 3D
-  // PREVIEW; this only records WHERE the user is. Per-trade "done"-ness is
-  // DERIVED from the model (region enclosure / foundation entity), never stored.
+  // PREVIEW. `activeTrade` records WHERE the user is looking; `reachedTrade` is
+  // the index of the FURTHEST trade committed via NEXT TRADE. A trade behind the
+  // frontier (index < reachedTrade) is LOCKED: read-only, with an EDIT/REGENERATE
+  // button that un-generates everything ahead before unlocking it. Per-trade
+  // done-ness is still DERIVED from the model (region enclosure / foundation).
   activeTrade: 'framing', // 'framing' | 'foundation' | '3d'
+  reachedTrade: 0,        // index into TRADES of the frontier (0 = framing)
 };
 
 // ---- Undo / redo ----------------------------------------------------------
