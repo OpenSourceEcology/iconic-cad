@@ -14,6 +14,7 @@ import { enumerateMembers } from './members.js';
 import { IN_TO_MM } from './constants.js';
 import { regionForLevel } from './region.js';
 import { getModuleBBox } from './geometry.js';
+import { inFrac } from './designs.js';
 
 let pricingData = null;
 
@@ -116,7 +117,10 @@ export function cutListGrouped(entities) {
       const part = PART_LABEL[m.role] || m.role;
       let lengthLabel, sortLen;
       if (m.role === 'sheathing') { lengthLabel = `${inRound(m.w_mm)}×${inRound(m.h_mm)}″`; sortLen = 1e9; }
-      else { const L = inRound(m.length_mm); lengthLabel = `${L}″`; sortLen = L; }
+      // Cut length via the shared fractional formatter (nearest 1/8") — never
+      // whole-inch rounding (an 81.5" jack must print 81½", not 82). Group by the
+      // normalized fractional label so equal cut lengths stack into one row.
+      else { const Lin = m.length_mm / IN_TO_MM; lengthLabel = `${inFrac(Lin)}″`; sortLen = Lin; }
       const key = `${part}|${m.nominal}|${lengthLabel}`;
       const cur = map.get(key) || { part, nominal: m.nominal, lengthLabel, qty: 0, sortLen };
       cur.qty += (m.plies || 1);
