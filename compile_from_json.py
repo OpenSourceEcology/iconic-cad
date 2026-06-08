@@ -424,6 +424,17 @@ def main():
     min_x = min(m["x_mm"] for m in modules)
     min_y = min(m["y_mm"] for m in modules)
 
+    # L2 base Z = tallest L1 wall top (matches fcstd.js / render3d.js — no joist gap).
+    # Do NOT read levels[].z_mm; that would diverge from the browser exporter.
+    l2_base_z = 0.0
+    for m in modules:
+        if m.get("level", "L1") == "L1":
+            s = prepare_shape(m["module"], DIRECTION_TO_ROT[m["direction"]])
+            l2_base_z = max(l2_base_z, s.BoundBox.ZMax)
+
+    def z_for(mod):
+        return l2_base_z if mod.get("level", "L1") == "L2" else 0.0
+
     doc = App.newDocument("HouseAssembly")
 
     blocking_idx = 0
@@ -434,7 +445,7 @@ def main():
 
         x = m["x_mm"] - min_x
         y = m["y_mm"] - min_y
-        shape.translate(App.Vector(x, y, 0))
+        shape.translate(App.Vector(x, y, z_for(m)))
         shape = mirror_y(shape)  # screen-down -> Y-up world (match preview/export)
 
         name = f"wall_{i:02d}_{m['id']}"
@@ -446,10 +457,13 @@ def main():
         print(f"Placed {name} ({m['direction']}) at ({x:.1f}, {y:.1f})")
 
         # Process blocking connections
+        z_off = z_for(m)
         for conn in m.get("connections", []):
             blocking_shapes = create_blocking(conn, m, modules_by_id,
                                               yaml_specs, min_x, min_y)
             for bs in blocking_shapes:
+                if z_off:
+                    bs.translate(App.Vector(0, 0, z_off))
                 bs = mirror_y(bs)  # same global flip as the walls
                 bname = f"blocking_{blocking_idx:02d}_{conn.get('blocking', 'C')}"
                 bobj = doc.addObject("Part::Feature", bname)
