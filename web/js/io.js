@@ -3,9 +3,9 @@
 // The exported JSON is the contract shared with the compiler and any future
 // backend, so it carries the orthogonal attributes (level, layer) per entity.
 // =====================================================
-import { doc, ui, ensureLevel2 } from './state.js';
-import { ALL_MODULES } from './constants.js';
+import { doc } from './state.js';
 import { markModelChanged } from './app.js';
+import { applyLoadedData } from './load.js';
 
 function serialize(includeMeta) {
   const out = {
@@ -58,65 +58,7 @@ export function loadLayout(event) {
   const reader = new FileReader();
   reader.onload = (e) => {
     const data = JSON.parse(e.target.result);
-    // Project setup intent. Older files lack `project` entirely; missing
-    // sub-fields fall back individually so partial saves still open clean.
-    // Defaults mirror state.js (single story, Zone 5 / Missouri).
-    const dp = data.project || {};
-    const dc = dp.climate || {};
-    doc.project = {
-      name: dp.name ?? 'Untitled Eco Home',
-      stories: dp.stories ?? 1,
-      climate: {
-        iecc_zone: dc.iecc_zone ?? 5,
-        frost_mm: dc.frost_mm ?? 750,
-        snow_psf: dc.snow_psf ?? 30,
-        wind_mph: dc.wind_mph ?? 115,
-        seismic_class: dc.seismic_class ?? 'B',
-      },
-    };
-    // Levels round-trip: restore the saved stack (so L2 + its z_mm reload), then
-    // ensureLevel2() so an older 2-story file without an explicit L2 still gains
-    // one (§9). Falls back to the single default level for legacy files.
-    if (Array.isArray(data.levels) && data.levels.length) {
-      doc.levels = data.levels;
-    }
-    ensureLevel2();
-
-    // Accept v2 (entities) or legacy flat (modules) format.
-    const list = data.entities || data.modules || [];
-    doc.entities.length = 0;
-    ui.nextId = 0;
-    for (const m of list) {
-      if (m.kind === 'foundation') {
-        // Derived entity — params only, no module. Geometry rebuilds from the
-        // L1 silhouette at render/BOM time.
-        doc.entities.push({
-          id: m.id || `foundation_${ui.nextId++}`,
-          kind: 'foundation',
-          layer: m.layer || 'foundation',
-          level: m.level || 'L1',
-          params: m.params || {},
-        });
-        ui.nextId++;
-        continue;
-      }
-      const mod = ALL_MODULES.find(x => x.id === m.module);
-      if (!mod) { console.warn(`Unknown module: ${m.module}`); continue; }
-      doc.entities.push({
-        kind: m.kind || (mod.interior ? 'iwall' : 'wall'),
-        mod,
-        dir: m.direction,
-        x_mm: m.x_mm,
-        y_mm: m.y_mm,
-        level: m.level || doc.activeLevel,
-        layer: m.layer || 'structural',
-        id: m.id || `wall_${ui.nextId}`,
-        owner: m.owner || null, // claim: initials/name, set in the design file; null = unclaimed
-        connections: m.connections || [],
-        props: m.props || {},
-      });
-      ui.nextId++;
-    }
+    applyLoadedData(data);
     markModelChanged();
     // Refresh the floor switcher (it appears for 2-story loads).
     window.dispatchEvent(new Event('iconic:project'));
