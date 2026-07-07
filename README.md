@@ -2,6 +2,13 @@
 
 By Collin DeSantis. Developed in collaboration with [Open Source Ecology](http://opensourceecology.org).
 
+> **This is Open Source Ecology's fork** of Collin DeSantis's Iconic CAD, continued
+> under [OpenSourceEcology/iconic-cad](https://github.com/OpenSourceEcology/iconic-cad)
+> with agent-assisted development. All of the design and original implementation are
+> Collin's — see [AUTHORS.md](AUTHORS.md). Upstream original:
+> [gitlab.com/collindesantis/iconic-cad](https://gitlab.com/collindesantis/iconic-cad).
+> Changes here flow back upstream where useful.
+
 Usage video: https://youtu.be/L8IsKB0XknQ
 
 Browser-based drag-and-snap wall layout tool that compiles directly to 3D FreeCAD models.
@@ -17,8 +24,8 @@ Browser-based drag-and-snap wall layout tool that compiles directly to 3D FreeCA
 ### 1. Clone the repo
 
 ```bash
-git clone https://github.com/collindesantis/iconic-cad.git
-# or: git clone https://gitlab.com/collindesantis/iconic-cad.git
+git clone https://github.com/OpenSourceEcology/iconic-cad.git
+# upstream original: https://gitlab.com/collindesantis/iconic-cad.git
 cd iconic-cad
 ```
 
@@ -266,7 +273,7 @@ docs/                    # Module-authoring guide, aperture framing reference, d
 
 ## Legacy workflows
 
-Previous compiler approaches are archived on the [`legacy`](https://github.com/collindesantis/iconic-cad/tree/legacy) branch:
+Previous compiler approaches are archived on the [`legacy`](https://github.com/OpenSourceEcology/iconic-cad/tree/legacy) branch:
 
 | Compiler | Approach | Limitation |
 |----------|----------|------------|
