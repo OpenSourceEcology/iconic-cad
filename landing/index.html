@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iconic CAD — a house you can read</title>
+<meta name="description" content="Iconic CAD compiles a readable text file into framing drawings, priced cut lists, and a build book for the Seed Eco-Home.">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#fbfaf7; --ink:#21201c; --graphite:#8a8578;
+  --lumber:#e9d8a6; --lumber-edge:#a08c53; --rev:#b3391f;
+  --hair:#d8d4c8;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);
+  font:16px/1.65 "IBM Plex Sans",-apple-system,sans-serif}
+a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+a:hover{color:var(--rev)}
+a:focus-visible{outline:2px solid var(--rev);outline-offset:2px}
+.wrap{max-width:960px;margin:0 auto;padding:0 24px}
+.hdr{border-bottom:1.5px solid var(--ink)}
+.hdr .wrap{display:flex;gap:1rem;align-items:baseline;padding:14px 24px;
+  font:500 13px/1 "IBM Plex Mono",monospace;letter-spacing:.08em}
+.hdr .org{color:var(--graphite);margin-left:auto}
+h1{font:700 clamp(2.1rem,5.5vw,3.4rem)/1.12 "IBM Plex Sans",sans-serif;
+  letter-spacing:-.01em;margin:3rem 0 1rem;max-width:14ch}
+.lede{font-size:1.13rem;max-width:58ch;color:#3c3a33}
+h2{font:600 13px/1 "IBM Plex Mono",monospace;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--graphite);margin:3.4rem 0 1.1rem;
+  padding-top:1rem;border-top:1px solid var(--hair)}
+/* ---------- hero: yaml -> panel ---------- */
+.compile{display:grid;grid-template-columns:minmax(260px,5fr) auto minmax(300px,6fr);
+  gap:1.2rem;align-items:center;margin:2.6rem 0 .6rem}
+.yaml{background:#fff;border:1px solid var(--hair);padding:1rem 1.2rem;
+  font:12.5px/1.62 "IBM Plex Mono",monospace;overflow-x:auto;white-space:pre;
+  box-shadow:3px 3px 0 var(--hair)}
+.yaml .k{color:#6b5f3e}.yaml .v{color:var(--ink);font-weight:500}
+.arrow{font:500 13px "IBM Plex Mono",monospace;color:var(--graphite);
+  text-align:center;white-space:nowrap}
+.panel svg{width:100%;height:auto;display:block}
+.cap{font:12.5px/1.6 "IBM Plex Mono",monospace;color:var(--graphite);
+  max-width:70ch;margin-bottom:1rem}
+/* ---------- outputs ---------- */
+.outs{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.2rem}
+.out{border:1px solid var(--hair);background:#fff;padding:1.1rem 1.2rem}
+.out b{display:block;font-weight:600;margin-bottom:.3rem}
+.out span{font-size:.93rem;color:#4a473e}
+.out .ext{font:500 11px "IBM Plex Mono",monospace;color:var(--graphite);
+  letter-spacing:.1em;display:block;margin-bottom:.6rem}
+p.body{max-width:64ch;margin-bottom:1rem}
+p.body b{font-weight:600}
+.revnote{border-left:3px solid var(--rev);padding:.2rem 0 .2rem 1rem;max-width:60ch}
+.revnote .tag{font:500 11px "IBM Plex Mono",monospace;color:var(--rev);letter-spacing:.1em}
+/* ---------- title block footer ---------- */
+.tblock{margin-top:4rem;border:1.5px solid var(--ink)}
+.tblock table{width:100%;border-collapse:collapse;
+  font:12px/1.5 "IBM Plex Mono",monospace}
+.tblock td{border:1px solid var(--ink);padding:.5rem .8rem;vertical-align:top}
+.tblock .lbl{display:block;font-size:9.5px;letter-spacing:.12em;color:var(--graphite)}
+.tblock .rev{color:var(--rev);font-weight:500}
+footer{padding:0 0 3rem}
+@media (max-width:760px){ .compile{grid-template-columns:1fr}
+  .arrow{transform:rotate(90deg);margin:-0.4rem 0} }
+@media (prefers-reduced-motion:no-preference){
+  .panel rect.m{opacity:0;animation:place .01s linear forwards}
+  @keyframes place{to{opacity:1}}
+  /* members appear in build order, like a framing crew works */
+  .panel rect.m:nth-of-type(1){animation-delay:.15s}
+  .panel rect.m:nth-of-type(2){animation-delay:.3s}
+  .panel rect.m:nth-of-type(3){animation-delay:.4s}
+  .panel rect.m:nth-of-type(4){animation-delay:.5s}
+  .panel rect.m:nth-of-type(5){animation-delay:.6s}
+  .panel rect.m:nth-of-type(6){animation-delay:.7s}
+  .panel rect.m:nth-of-type(7){animation-delay:.8s}
+  .panel rect.m:nth-of-type(8){animation-delay:.9s}
+  .panel rect.m:nth-of-type(9){animation-delay:1s}
+  .panel rect.m:nth-of-type(10){animation-delay:1.1s}
+  .panel rect.m:nth-of-type(11){animation-delay:1.2s}
+  .panel rect.m:nth-of-type(12){animation-delay:1.3s}
+  .panel rect.m:nth-of-type(13){animation-delay:1.4s}
+  .panel rect.m:nth-of-type(14){animation-delay:1.5s}
+  .panel rect.m:nth-of-type(15){animation-delay:1.55s}
+  .panel rect.m:nth-of-type(16){animation-delay:1.6s}
+  .panel rect.m:nth-of-type(17){animation-delay:1.65s}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr"><div class="wrap">
+  <span>ICONIC CAD</span>
+  <span class="org">OPEN SOURCE ECOLOGY</span>
+</div></div>
+
+<main class="wrap">
+
+<h1>A house you can read.</h1>
+<p class="lede">Iconic CAD compiles a plain text file into framing drawings,
+a priced cut list, and a printable build book for the
+<a href="https://wiki.opensourceecology.org/wiki/Seed_Eco-Home_4">Seed&nbsp;Eco-Home</a>.
+Change the file, and every drawing, price, and instruction changes with it.</p>
+
+<div class="compile">
+<div class="yaml"><span class="k">- id:</span> <span class="v">ext_window_8ft</span>
+<span class="k">  family:</span> <span class="v">aperture_wall_panel</span>
+<span class="k">  parameters:</span>
+<span class="k">    nominal_width_ft:</span> <span class="v">8</span>
+<span class="k">    stud_nominal:</span> <span class="v">2x6</span>
+<span class="k">    stud_spacing_in:</span> <span class="v">16</span>
+<span class="k">    aperture:</span>
+<span class="k">      type:</span> <span class="v">window</span>
+<span class="k">      rough_opening_in:</span> <span class="v">[36, 48]</span>
+<span class="k">      sill_height_in:</span> <span class="v">32</span>
+<span class="k">      header:</span> <span class="v">{nominal: 2x10, plies: 2}</span></div>
+
+<div class="arrow">──compiles──▶</div>
+
+<div class="panel">
+<svg viewBox="0 0 452 436" role="img" aria-label="Framing elevation of an eight-foot wall panel with a window opening: double top plate, king and jack studs, two-ply header, sill, and cripples, with dimension lines">
+<!-- members: fill lumber, build order bottom-up -->
+<g stroke="#21201c" stroke-width="1" fill="#e9d8a6">
+  <rect class="m" x="16" y="398" width="384" height="6"/>                <!-- bottom plate -->
+  <rect class="m" x="16"  y="28" width="6" height="370"/>               <!-- end stud L -->
+  <rect class="m" x="394" y="28" width="6" height="370"/>               <!-- end stud R -->
+  <rect class="m" x="80"  y="28" width="6" height="370"/>               <!-- stud @16 -->
+  <rect class="m" x="336" y="28" width="6" height="370"/>               <!-- stud @80 -->
+  <rect class="m" x="124" y="28" width="6" height="370"/>               <!-- king L -->
+  <rect class="m" x="286" y="28" width="6" height="370"/>               <!-- king R -->
+  <rect class="m" x="130" y="84" width="6" height="314"/>               <!-- jack L -->
+  <rect class="m" x="280" y="84" width="6" height="314"/>               <!-- jack R -->
+  <rect class="m" x="176" y="282" width="6" height="116"/>              <!-- cripple bl -->
+  <rect class="m" x="240" y="282" width="6" height="116"/>              <!-- cripple br -->
+  <rect class="m" x="136" y="276" width="144" height="6"/>              <!-- sill -->
+  <rect class="m" x="130" y="47" width="156" height="37"/>              <!-- header 2x10 x2 -->
+  <rect class="m" x="176" y="28" width="6" height="19"/>                <!-- cripple tl -->
+  <rect class="m" x="240" y="28" width="6" height="19"/>                <!-- cripple tr -->
+  <rect class="m" x="16" y="22" width="384" height="6"/>                <!-- top plate 1 -->
+  <rect class="m" x="16" y="16" width="384" height="6"/>                <!-- top plate 2 -->
+</g>
+<!-- header ply line -->
+<line x1="130" y1="65.5" x2="286" y2="65.5" stroke="#a08c53" stroke-width="1"/>
+<!-- rough opening -->
+<rect x="136" y="84" width="144" height="192" fill="none" stroke="#8a8578" stroke-width="1" stroke-dasharray="5 4"/>
+<text x="208" y="176" font-family="IBM Plex Mono,monospace" font-size="11" fill="#8a8578" text-anchor="middle">R.O.</text>
+<text x="208" y="192" font-family="IBM Plex Mono,monospace" font-size="11" fill="#8a8578" text-anchor="middle">36 × 48</text>
+<!-- dimension: overall width -->
+<g stroke="#21201c" stroke-width="0.75">
+  <line x1="16" y1="414" x2="400" y2="414"/>
+  <line x1="16" y1="409" x2="16" y2="419"/>
+  <line x1="400" y1="409" x2="400" y2="419"/>
+</g>
+<text x="208" y="430" font-family="IBM Plex Mono,monospace" font-size="11" fill="#21201c" text-anchor="middle">96</text>
+<!-- dimension: height -->
+<g stroke="#21201c" stroke-width="0.75">
+  <line x1="416" y1="16" x2="416" y2="404"/>
+  <line x1="411" y1="16" x2="421" y2="16"/>
+  <line x1="411" y1="404" x2="421" y2="404"/>
+</g>
+<text x="432" y="214" font-family="IBM Plex Mono,monospace" font-size="11" fill="#21201c" text-anchor="middle" transform="rotate(90 432 214)">97</text>
+<!-- labels -->
+<text x="8" y="12" font-family="IBM Plex Mono,monospace" font-size="10" fill="#8a8578">DOUBLE TOP PLATE</text>
+<text x="296" y="70" font-family="IBM Plex Mono,monospace" font-size="10" fill="#8a8578">HEADER 2×10 ×2</text>
+</svg>
+</div>
+</div>
+<p class="cap">One entry in wall_instances.yaml and the panel it compiles to.
+Dimensions in inches. Every member here — plates, kings, jacks, cripples,
+sill, header — is enumerated by the same function that prices the cut list.</p>
+
+<h2>One file, three outputs</h2>
+<div class="outs">
+  <div class="out"><span class="ext">.FCSTD</span><b>Drawings</b>
+    <span>Real FreeCAD assemblies, compiled offline or exported straight from
+    the browser. No CAD install needed to lay out a floor plan.</span></div>
+  <div class="out"><span class="ext">.CSV / $</span><b>Priced cut list</b>
+    <span>Lumber, sheathing, and fasteners counted from the framing itself,
+    priced from a catalog. Change a wall, the bill changes.</span></div>
+  <div class="out"><span class="ext">.PDF</span><b>Build book</b>
+    <span>Fabrication cards with elevations, cut lengths, procedure, and QC
+    checks — a packet a build crew can hold.</span></div>
+</div>
+
+<h2>Where it stands</h2>
+<p class="body"><b>This is working software, honestly incomplete.</b>
+Collin DeSantis built the foundation in spring 2026: fifteen wall and window
+modules, a drag-and-snap layout editor, two independent CAD compilers held
+equal by automated parity tests, and the beginnings of the build book. The
+test suite passes. The framing math has known spec violations we are fixing
+first, before anything else is built on top of it.</p>
+<div class="revnote">
+  <span class="tag">REV — IN PROGRESS</span>
+  <p class="body" style="margin:0">Milestone M0, “Geometry Trust”: close the open
+  framing findings and give every module dimensional tests traceable to source
+  CAD. Follow along in the
+  <a href="https://github.com/OpenSourceEcology/iconic-cad/issues">issue tracker</a>.</p>
+</div>
+
+<h2>Where it goes</h2>
+<p class="body">The Seed Eco-Home needs hundreds of module types — walls today;
+roofs, floors, stairs, wiring, and plumbing to come. The plan is not to draw
+them all by hand. Because a module is a few lines of text judged by automated
+tests, drafting new ones is work AI agents can do and people can verify.
+The OSE wiki holds the specifications; this compiler turns them into things
+a crew can build. That is the bet: <b>documentation that regenerates itself
+is how a village-scale construction set stays buildable by strangers.</b></p>
+
+<footer>
+<div class="tblock"><table>
+<tr>
+  <td style="width:34%"><span class="lbl">PROJECT</span>ICONIC CAD — SEED ECO-HOME</td>
+  <td style="width:22%"><span class="lbl">ORG</span>OPEN SOURCE ECOLOGY</td>
+  <td style="width:22%"><span class="lbl">ORIGINAL AUTHOR</span>COLLIN DESANTIS</td>
+  <td style="width:22%"><span class="lbl">REV</span><span class="rev">M0 — GEOMETRY TRUST</span></td>
+</tr>
+<tr>
+  <td><span class="lbl">SOURCE</span><a href="https://github.com/OpenSourceEcology/iconic-cad">github.com/OpenSourceEcology/iconic-cad</a></td>
+  <td><span class="lbl">WIKI</span><a href="https://wiki.opensourceecology.org">wiki.opensourceecology.org</a></td>
+  <td><span class="lbl">SUPPORTED BY</span>GOOD ANCESTOR FOUNDATION</td>
+  <td><span class="lbl">SHEET</span>1 OF 1</td>
+</tr>
+</table></div>
+</footer>
+
+</main>
+</body>
+</html>
