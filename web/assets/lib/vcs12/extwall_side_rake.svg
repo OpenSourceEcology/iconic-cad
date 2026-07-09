@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 90">
+  <rect width="120" height="90" fill="#111828"/>
+  <rect x="18" y="18" width="84" height="44" rx="2" fill="#2a3a5c" stroke="#4fc3f7" stroke-width="2"/>
+  <rect x="18" y="18" width="84" height="8" fill="#4fc3f7" opacity="0.28"/>
+  <text x="60" y="74" text-anchor="middle" fill="#ddeeff" font-size="8" font-family="monospace">extwall side rake</text>
+  <text x="60" y="84" text-anchor="middle" fill="#8a93a8" font-size="7" font-family="monospace">48 x 60 in</text>
+</svg>
