@@ -187,10 +187,15 @@ sill, header — is enumerated by the same function that prices the cut list.</p
 <p class="body"><b>This is working software, incomplete.</b>
 Collin DeSantis built the foundation in spring 2026: fifteen wall and window
 modules, a drag-and-snap layout editor, two independent CAD compilers held
-equal by automated parity tests, and the beginnings of the build book. The
-framing math has known spec violations we are fixing first, before anything
-else is built on top of it. To keep the specifications this compiler reads —
-they live on the OSE wiki — accurate and current, we built
+equal by automated parity tests, and the beginnings of the build book. Those
+fifteen modules are now expressed as validated library entries themselves,
+and every drawing, cut list, and browser asset is baked from entries that
+pass validation — a failing entry stops the bake. The validators promptly
+earned their keep: they surfaced framing defects the parity tests could not
+see, because both compilers shared the same mistake. Known spec violations
+are tracked and being fixed before anything else is built on top. To keep
+the specifications this compiler reads — they live on the OSE wiki —
+accurate and current, we built
 <a href="https://wikibot.goodancestor.com">wikibot</a>, an editor that drafts
 wiki improvements for people to review.</p>
 <div class="revnote">
@@ -214,7 +219,13 @@ and two validators that judge it. <b>Code validation</b> checks the parameters
 — units, ranges, required fields — in seconds, on every change.
 <b>Output validation</b> compiles the entry under FreeCAD and inspects the
 result: are all the members there, do any occupy the same space, does the
-whole thing fit its declared envelope.</p>
+whole thing fit its declared envelope. From the same pipeline, every entry
+also gets a generated bill of materials and fabrication drawing — documents
+that regenerate whenever the design changes, so they cannot drift from it.
+For library authors who work in FreeCAD, the
+<a href="https://github.com/OpenSourceEcology/ose-library-workbench">library
+workbench</a> brings the whole loop — browse, compile, edit parameters,
+validate — into FreeCAD itself.</p>
 <div class="revnote">
   <span class="tag">REV — LIBRARY</span>
   <p class="body" style="margin:0">Twelve entries seeded across three layers —
@@ -248,7 +259,7 @@ carries the tools to build the house and the operating system to run on it.</p>
   <td style="width:34%"><span class="lbl">PROJECT</span>ICONIC CAD — SEED ECO-HOME</td>
   <td style="width:22%"><span class="lbl">ORG</span>OPEN SOURCE ECOLOGY</td>
   <td style="width:22%"><span class="lbl">ORIGINAL AUTHOR</span>COLLIN DESANTIS</td>
-  <td style="width:22%"><span class="lbl">REV</span><span class="rev">M0 — GEOMETRY TRUST</span></td>
+  <td style="width:22%"><span class="lbl">REV</span><span class="rev">M0 + LIBRARY INTEGRATION</span></td>
 </tr>
 <tr>
   <td><span class="lbl">SOURCE</span><a href="https://github.com/OpenSourceEcology/iconic-cad">github.com/OpenSourceEcology/iconic-cad</a></td>
