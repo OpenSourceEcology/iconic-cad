@@ -27,6 +27,7 @@
     },
     {
       "id": "extwall_single_door",
+      "type": "door",
       "label": "Exterior wall single door module",
       "thumb": "assets/lib/vcs12/extwall_single_door.svg",
       "brep_base": "assets/lib/vcs12/extwall_single_door",
@@ -37,6 +38,7 @@
     },
     {
       "id": "extwall_standard",
+      "type": "standard",
       "label": "Standard exterior wall module",
       "thumb": "assets/lib/vcs12/extwall_standard.svg",
       "brep_base": "assets/lib/vcs12/extwall_standard",
@@ -47,6 +49,7 @@
     },
     {
       "id": "extwall_window",
+      "type": "window",
       "label": "Exterior wall window module",
       "thumb": "assets/lib/vcs12/extwall_window.svg",
       "brep_base": "assets/lib/vcs12/extwall_window",

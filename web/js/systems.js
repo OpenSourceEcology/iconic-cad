@@ -22,9 +22,9 @@ const VCS12 = {
   palette: [
     { id: 'extwall_front_rake', label: 'Exterior wall front rake module', thumb: 'assets/lib/vcs12/extwall_front_rake.svg', brep_base: 'assets/lib/vcs12/extwall_front_rake', width_in: 48, height_in: 60, depth_in: 6, exterior_face: '-y' },
     { id: 'extwall_side_rake', label: 'Exterior wall side rake module', thumb: 'assets/lib/vcs12/extwall_side_rake.svg', brep_base: 'assets/lib/vcs12/extwall_side_rake', width_in: 48, height_in: 60, depth_in: 6, exterior_face: '-y' },
-    { id: 'extwall_single_door', label: 'Exterior wall single door module', thumb: 'assets/lib/vcs12/extwall_single_door.svg', brep_base: 'assets/lib/vcs12/extwall_single_door', width_in: 48, height_in: 96, depth_in: 6, exterior_face: '-y' },
-    { id: 'extwall_standard', label: 'Standard exterior wall module', thumb: 'assets/lib/vcs12/extwall_standard.svg', brep_base: 'assets/lib/vcs12/extwall_standard', width_in: 48, height_in: 96, depth_in: 6, exterior_face: '-y' },
-    { id: 'extwall_window', label: 'Exterior wall window module', thumb: 'assets/lib/vcs12/extwall_window.svg', brep_base: 'assets/lib/vcs12/extwall_window', width_in: 48, height_in: 96, depth_in: 6, exterior_face: '-y' },
+    { id: 'extwall_single_door', type: 'door', label: 'Exterior wall single door module', thumb: 'assets/lib/vcs12/extwall_single_door.svg', brep_base: 'assets/lib/vcs12/extwall_single_door', width_in: 48, height_in: 96, depth_in: 6, exterior_face: '-y' },
+    { id: 'extwall_standard', type: 'standard', label: 'Standard exterior wall module', thumb: 'assets/lib/vcs12/extwall_standard.svg', brep_base: 'assets/lib/vcs12/extwall_standard', width_in: 48, height_in: 96, depth_in: 6, exterior_face: '-y' },
+    { id: 'extwall_window', type: 'window', label: 'Exterior wall window module', thumb: 'assets/lib/vcs12/extwall_window.svg', brep_base: 'assets/lib/vcs12/extwall_window', width_in: 48, height_in: 96, depth_in: 6, exterior_face: '-y' },
   ],
 };
 
@@ -74,6 +74,7 @@ export function manifestPaletteModules(id = activeSystemId) {
     depth_mm: p.depth_in * IN_TO_MM,
     exterior_face: p.exterior_face,
     system: manifest.id,
+    ...(p.type ? { type: p.type } : {}),
   }));
 }
 

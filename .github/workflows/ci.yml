@@ -26,7 +26,7 @@ jobs:
         run: python scripts/gen_specs.py && git diff --exit-code web/assets/lib/specs.json
 
       - name: Python blocking-math unit tests
-        run: python -m pytest tests/test_blocking_math.py tests/test_library_drift.py -v
+        run: python -m pytest tests/test_blocking_math.py tests/test_library_drift.py tests/test_generated_entry.py -v
 
       - name: Validate library entry code
         run: python -m libtools validate-code --root . --all
@@ -46,6 +46,8 @@ jobs:
           node tests/fcstd_local_jszip.mjs
           node tests/ci_verify_gate.mjs
           node tests/export_gate.mjs
+          node tests/assembly_translate.mjs
+          node tests/entry_files.mjs
 
       - name: Check Markdown relative links
         run: python scripts/check_links.py
