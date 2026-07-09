@@ -1,0 +1,57 @@
+envelope:
+  bbox_in:
+    x:
+    - 0.0
+    - 108.0
+    y:
+    - -0.4375
+    - 5.5
+    z:
+    - 0.0
+    - 96.0
+  tolerance_in: 0.05
+solids:
+  min_count: 11
+  roles:
+  - pattern: bottom_plate*
+    count: 2
+  - pattern: top_plate
+    count: 1
+  - pattern: king_stud_*
+    count: 2
+  - pattern: jack_stud_*
+    count: 2
+  - pattern: header
+    count: 1
+  - pattern: osb_panel
+    count: 1
+  - pattern: port_*
+    count: 2
+overlap:
+  tolerance_in3: 0.01
+  allowed_contact: []
+params:
+- key: module_width_in
+  min: 108.0
+  max: 108.0
+- key: module_height_in
+  min: 96.0
+  max: 96.0
+- key: stud_spacing_in
+  min: 16
+  max: 16
+- key: osb_thickness_in
+  min: 0.4375
+  max: 0.4375
+- key: rough_opening_width_in
+  min: 96
+  max: 96
+- key: rough_opening_height_in
+  min: 84
+  max: 84
+- key: sill_height_in
+  min: 0
+  max: 0
+- key: header_plies
+  min: 2
+  max: 2

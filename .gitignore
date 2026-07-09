@@ -4,12 +4,12 @@ cad_library/
 *.FCBak
 
 # Python
+.venv/
 __pycache__/
 *.pyc
-
-# Claude Code
-CLAUDE.md
-.claude/
+reports/
+out/
+exported/
 
 # Local stash
 icons/stash/

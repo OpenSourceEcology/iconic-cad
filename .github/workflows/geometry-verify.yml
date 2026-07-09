@@ -13,8 +13,11 @@ on:
   push:
     paths: &geom_paths
       - 'generate_wall_library.py'
+      - 'seh_lib/**'
+      - 'library/**'
       - 'build_lib.py'
       - 'scripts/bake_geometry.py'
+      - 'scripts/gen_library_entries.py'
       - 'scripts/gen_specs.py'
       - 'wall_instances.yaml'
       - 'web/assets/lib/**'
@@ -28,12 +31,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
       - name: Install Python deps
-        run: pip install -r requirements.txt -r requirements-dev.txt
+        run: python3 -m pip install --break-system-packages -r requirements.txt -r requirements-dev.txt
 
       # ubuntu-latest has no `freecad` apt candidate, so pull it from the
       # FreeCAD stable PPA, which ships freecadcmd on PATH. (cache-apt-pkgs-action
@@ -46,5 +45,11 @@ jobs:
           sudo apt-get install -y -qq freecad
           command -v freecadcmd
 
+      - name: Install libtools
+        run: python3 -m pip install --break-system-packages 'libtools @ git+https://github.com/OpenSourceEcology/vcs-library'
+
       - name: Verify BREP assets match the generator
-        run: python build_lib.py --verify --no-thumbs
+        run: python3 build_lib.py --verify --no-thumbs
+
+      - name: Validate library output
+        run: python3 -m libtools validate-output --root . --all

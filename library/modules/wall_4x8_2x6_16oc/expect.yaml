@@ -1,0 +1,41 @@
+envelope:
+  bbox_in:
+    x:
+    - 0.0
+    - 48.0
+    y:
+    - -0.4375
+    - 5.5
+    z:
+    - 0.0
+    - 96.0
+  tolerance_in: 0.05
+solids:
+  min_count: 9
+  roles:
+  - pattern: bottom_plate
+    count: 1
+  - pattern: top_plate
+    count: 1
+  - pattern: stud_*
+    count: 4
+  - pattern: osb_panel
+    count: 1
+  - pattern: port_*
+    count: 2
+overlap:
+  tolerance_in3: 0.01
+  allowed_contact: []
+params:
+- key: module_width_in
+  min: 48.0
+  max: 48.0
+- key: module_height_in
+  min: 96.0
+  max: 96.0
+- key: stud_spacing_in
+  min: 16
+  max: 16
+- key: osb_thickness_in
+  min: 0.4375
+  max: 0.4375

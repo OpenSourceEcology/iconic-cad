@@ -1,0 +1,19 @@
+id: iwall_4x8_2x4_16oc
+layer: module
+title: Iwall 4X8 2X4 16Oc
+owner: Collin DeSantis
+license: OSE
+version: 0.1.0
+status: active
+provenance:
+  author: Collin DeSantis
+  source_file: wall_instances.yaml
+  source: https://wiki.opensourceecology.org/wiki/Wall_instances.yaml
+slots:
+  icon: null
+  fab_drawing: null
+  bom: null
+  cheatsheet: null
+known_issues:
+- 'CAD-AUD-001: current geometry emits a single top plate; expect.yaml records current
+  behavior.'

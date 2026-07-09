@@ -1,0 +1,21 @@
+id: idoor_4x8_2x4_38x83
+layer: module
+title: Idoor 4X8 2X4 38X83
+owner: Collin DeSantis
+license: OSE
+version: 0.1.0
+status: active
+provenance:
+  author: Collin DeSantis
+  source_file: wall_instances.yaml
+  source: https://wiki.opensourceecology.org/wiki/Wall_instances.yaml
+slots:
+  icon: null
+  fab_drawing: null
+  bom: null
+  cheatsheet: null
+known_issues:
+- 'CAD-AUD-001: current geometry emits a single top plate; expect.yaml records current
+  behavior.'
+- 'CAD-AUD-010: current interior door uses shared jack/header aperture framing; expect.yaml
+  records current behavior.'

@@ -1,7 +1,7 @@
 # Adding a module to Iconic CAD
 
 This is the worked template for adding new modules, using the **window + door
-apertures** as the example. Follow the same five touch-points for any future
+apertures** as the example. Follow the same six touch-points for any future
 module (sliding door, double door, garage header, etc.).
 
 ## The pipeline (what you're plugging into)
@@ -52,7 +52,7 @@ block — not two code paths. They are 48"-wide wall panels and snap exactly lik
 a plain wall. Exact framing dims were measured from OSE source CAD; see
 [aperture_framing_reference.md](aperture_framing_reference.md).
 
-## The five touch-points
+## The six touch-points
 
 ### 1. Schema — `wall_instances.yaml`
 
@@ -159,6 +159,25 @@ Add a `module_specs.<id>` entry (`studs`, `plates`, `osb_sheets`,
 equivalent estimates (kings + jacks + cripples + header stock); note this in
 the entry's `notes`.
 
+### 6. Library validation entry — `library/modules/<id>/`
+
+In L1, `wall_instances.yaml` remains the source of truth and the library entries
+are its generated validation projection. Run:
+
+```bash
+python scripts/gen_library_entries.py
+```
+
+This writes `schema.py`, `compiler.py`, `meta.yaml`, and `expect.yaml` for each
+module. The fast CI lane runs:
+
+```bash
+python scripts/gen_library_entries.py --verify
+```
+
+`--verify` regenerates entries to a temp directory and diffs them against
+`library/modules/`, exiting nonzero on drift.
+
 ## Checklist for a new module
 
 - [ ] `wall_instances.yaml` instance added (id has **no** orientation/material
@@ -168,11 +187,14 @@ the entry's `notes`.
 - [ ] `web/js/render2d.js`: plan silhouette in `drawAperturePlan()`
 - [ ] `web/js/render3d.js`: 3D framing in `buildAperture3D()`
 - [ ] `web/pricing.json`: BOM spec
+- [ ] `python scripts/gen_library_entries.py` — regenerates `library/modules/<id>/`
+      entries from `wall_instances.yaml`
 - [ ] **`python build_lib.py`** — regenerates `specs.json`, the 4 `.brp`,
       `volumes.json`, `cad_library/*.FCStd`, and the thumbnail. **Don't skip
       this** — it's what keeps the browser export from going stale. Commit all of
       it with the YAML change.
 - [ ] `compile_from_json.py` reassembles it (run `./compile.sh test_layout.json`)
 - [ ] `python build_lib.py --verify` clean, and `node tests/parity.mjs` passes
+- [ ] `python scripts/gen_library_entries.py --verify` clean
 - [ ] dims sourced from real CAD / code, not guessed — record them in
       [aperture_framing_reference.md](aperture_framing_reference.md)

@@ -17,13 +17,19 @@ jobs:
           node-version: '20'
 
       - name: Install Python deps
-        run: pip install -r requirements.txt -r requirements-dev.txt
+        run: pip install -r requirements.txt -r requirements-dev.txt 'libtools @ git+https://github.com/OpenSourceEcology/vcs-library'
 
       - name: Assert specs.json is in sync with wall_instances.yaml
         run: python scripts/gen_specs.py && git diff --exit-code web/assets/lib/specs.json
 
       - name: Python blocking-math unit tests
-        run: python -m pytest tests/test_blocking_math.py -v
+        run: python -m pytest tests/test_blocking_math.py tests/test_library_drift.py -v
+
+      - name: Assert library entries are in sync with wall_instances.yaml
+        run: python scripts/gen_library_entries.py --verify
+
+      - name: Validate library entry code
+        run: python -m libtools validate-code --root . --all
 
       - name: JS test suite
         run: |
