@@ -200,6 +200,30 @@ wiki improvements for people to review.</p>
   <a href="https://github.com/OpenSourceEcology/iconic-cad/issues">issue tracker</a>.</p>
 </div>
 
+<h2>The part library</h2>
+<p class="body">As of July 2026 a second lane is open:
+<a href="https://github.com/OpenSourceEcology/vcs-library">vcs-library</a>,
+a part library for the
+<a href="https://wiki.opensourceecology.org/wiki/Village_Construction_Set">Village Construction Set</a>
+12-foot modules, seeded with Catarina’s rafters, wall modules, ceiling, and
+cabin assemblies. Every entry has the same anatomy, following the wiki’s
+<a href="https://wiki.opensourceecology.org/wiki/Schema_Canon">Schema Canon</a>:
+a <b>schema</b> (the parameters, plain data), a <b>compiler</b> (the geometry),
+and two validators that judge it. <b>Code validation</b> checks the parameters
+— units, ranges, required fields — in seconds, on every change.
+<b>Output validation</b> compiles the entry under FreeCAD and inspects the
+result: are all the members there, do any occupy the same space, does the
+whole thing fit its declared envelope. An entry that passes both is not just
+a drawing; it is a claim that has been checked.</p>
+<div class="revnote">
+  <span class="tag">REV — LIBRARY LANE</span>
+  <p class="body" style="margin:0">Twelve entries seeded across three layers —
+  parts, modules, assemblies — with both validators running on every change.
+  Next layers up: whole structures, then further libraries. The library
+  ontology exists so many people can each own, fork, and validate their own
+  libraries without stepping on each other.</p>
+</div>
+
 <h2>Where it goes</h2>
 <p class="body">The Seed Eco-Home needs hundreds of module types — walls today;
 roofs, floors, stairs, wiring, and plumbing to come. The plan is not to draw
@@ -225,8 +249,8 @@ carries the tools to build the house and the operating system to run on it.</p>
 <tr>
   <td><span class="lbl">SOURCE</span><a href="https://github.com/OpenSourceEcology/iconic-cad">github.com/OpenSourceEcology/iconic-cad</a></td>
   <td><span class="lbl">WIKI</span><a href="https://wiki.opensourceecology.org">wiki.opensourceecology.org</a></td>
+  <td><span class="lbl">LIBRARY</span><a href="https://github.com/OpenSourceEcology/vcs-library">github.com/OpenSourceEcology/vcs-library</a></td>
   <td><span class="lbl">SUPPORTED BY</span>GOOD ANCESTOR FOUNDATION</td>
-  <td><span class="lbl">SHEET</span>1 OF 1</td>
 </tr>
 </table></div>
 </footer>
