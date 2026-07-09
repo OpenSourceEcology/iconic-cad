@@ -184,18 +184,17 @@ sill, header — is enumerated by the same function that prices the cut list.</p
 </div>
 
 <h2>Where it stands</h2>
-<p class="body"><b>This is working software, incomplete.</b>
-Collin DeSantis built the foundation in spring 2026: fifteen wall and window
-modules, a drag-and-snap layout editor, two independent CAD compilers held
-equal by automated parity tests, and the beginnings of the build book. Those
-fifteen modules are now expressed as validated library entries themselves,
-and every drawing, cut list, and browser asset is baked from entries that
-pass validation — a failing entry stops the bake. The validators immediately
-caught framing defects the parity tests could not see — both compilers
-shared the same mistake. Known spec violations
-are tracked and being fixed before anything else is built on top. To keep
-the specifications this compiler reads — they live on the OSE wiki —
-accurate and current, we built
+<p class="body"><b>We shipped v2 in July 2026.</b>
+Collin DeSantis built v1 in spring 2026: fifteen wall and window modules, the
+drag-and-snap layout editor, and two independent CAD compilers held equal by
+parity tests. v2 puts a validated library underneath all of it. Each of the
+fifteen modules is now a library entry with its own parameters, compiler, and
+geometric expectations, checked on every change — and every drawing, cut
+list, and browser asset is baked only from entries that pass. The editor now
+runs <a href="https://opensourceecology.github.io/iconic-cad/">in the
+browser</a>, no install. The validators also caught framing defects
+in our designs; those findings are tracked openly. To keep the specifications this compiler
+reads — they live on the OSE wiki — accurate and current, we built
 <a href="https://wikibot.goodancestor.com">wikibot</a>, an editor that drafts
 wiki improvements for people to review.</p>
 <div class="revnote">
@@ -259,7 +258,7 @@ carries the tools to build the house and the operating system to run on it.</p>
   <td style="width:34%"><span class="lbl">PROJECT</span>ICONIC CAD — SEED ECO-HOME</td>
   <td style="width:22%"><span class="lbl">ORG</span>OPEN SOURCE ECOLOGY</td>
   <td style="width:22%"><span class="lbl">ORIGINAL AUTHOR</span>COLLIN DESANTIS</td>
-  <td style="width:22%"><span class="lbl">REV</span><span class="rev">M0 + LIBRARY INTEGRATION</span></td>
+  <td style="width:22%"><span class="lbl">REV</span><span class="rev">V2.0.0</span></td>
 </tr>
 <tr>
   <td><span class="lbl">SOURCE</span><a href="https://github.com/OpenSourceEcology/iconic-cad">github.com/OpenSourceEcology/iconic-cad</a></td>
