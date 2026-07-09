@@ -19,3 +19,5 @@ known_issues:
   behavior.'
 - 'CAD-AUD-005: current exterior aperture geometry cuts the OSB opening in CAD; expect.yaml
   records current behavior.'
+- 'Issue #12: lower cripples intersect the subheader (12.375 in3 each); allowed_contact
+  records current behavior.'

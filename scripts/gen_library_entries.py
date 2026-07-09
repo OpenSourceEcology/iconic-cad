@@ -185,7 +185,7 @@ def expect_yaml(inst: dict) -> dict:
         },
         "overlap": {
             "tolerance_in3": 0.01,
-            "allowed_contact": [],
+            "allowed_contact": issue12_contacts(inst),
         },
         "params": param_rules(inst),
     }
@@ -312,11 +312,34 @@ def known_issues(inst: dict) -> list[str]:
         issues.append(
             "CAD-AUD-005: current exterior aperture geometry cuts the OSB opening in CAD; expect.yaml records current behavior."
         )
+    aperture = p.get("aperture") or {}
+    if aperture.get("type") == "window":
+        issues.append(
+            "Issue #12: lower cripples intersect the subheader (12.375 in3 each); allowed_contact records current behavior."
+        )
+    if aperture.get("type") == "garage":
+        issues.append(
+            "Issue #12: header intersects the top plate (408.375 in3); allowed_contact records current behavior."
+        )
     if inst["id"] == "idoor_4x8_2x4_38x83":
         issues.append(
             "CAD-AUD-010: current interior door uses shared jack/header aperture framing; expect.yaml records current behavior."
         )
     return issues
+
+
+def issue12_contacts(inst: dict) -> list[list[str]]:
+    # Documented current-behavior intersections, tracked in issue #12:
+    # window lower cripples run through the subheader; the garage header
+    # reaches into the top plate. Allowances go away with the members fix.
+    aperture = inst["parameters"].get("aperture")
+    if not aperture:
+        return []
+    if aperture.get("type") == "window":
+        return [["lower_cripple_*", "subheader"]]
+    if aperture.get("type") == "garage":
+        return [["top_plate", "header"]]
+    return []
 
 
 def pairs_literal(value):

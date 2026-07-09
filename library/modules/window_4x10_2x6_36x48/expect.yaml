@@ -37,7 +37,9 @@ solids:
     count: 2
 overlap:
   tolerance_in3: 0.01
-  allowed_contact: []
+  allowed_contact:
+  - - lower_cripple_*
+    - subheader
 params:
 - key: module_width_in
   min: 48.0

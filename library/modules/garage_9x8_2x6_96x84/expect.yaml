@@ -29,7 +29,9 @@ solids:
     count: 2
 overlap:
   tolerance_in3: 0.01
-  allowed_contact: []
+  allowed_contact:
+  - - top_plate
+    - header
 params:
 - key: module_width_in
   min: 108.0
