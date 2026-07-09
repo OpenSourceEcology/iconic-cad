@@ -1,0 +1,28 @@
+# Publishes the layout editor (web/) to GitHub Pages. The app is fully
+# static; the committed BREP/spec assets are the same ones CI verifies.
+name: publish-app
+on:
+  push:
+    branches: [main]
+    paths: ['web/**', '.github/workflows/publish-app.yml']
+  workflow_dispatch:
+permissions:
+  pages: write
+  id-token: write
+  contents: read
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+      - id: deployment
+        uses: actions/deploy-pages@v4
