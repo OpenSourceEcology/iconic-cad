@@ -140,3 +140,57 @@ starts after L2 lands. If L3 uncovers geometry problems in VCS entries
 from placement in a shared coordinate frame), findings go to vcs-library
 `known_issues` for the entry owner, and the demonstrator ships with whatever
 subset passes.
+
+## L4 — Custom assemblies: save to files, load into the browser
+
+Users compose validated modules into their own assemblies and carry them as
+plain files — no server, no accounts. Ownership follows the file. Tracking
+issue: L4.
+
+What can be authored in the browser is an ARRANGEMENT of validated modules
+(layer: assembly). New module geometry still requires the FreeCAD bake and
+validators (the workbench's job). UI copy may say "custom module"; files say
+`layer: assembly` and default to `status: wip`.
+
+Foundation — the assembly translator (pure data, heavily tested):
+
+- `web/js/assembly_translate.js`: two inverse functions.
+  `explodeAssembly(assemblySchema, systemManifest) -> entities[]` maps the
+  walls/modules data dict (Catarina's cabin format: named walls with typed
+  module lists, offsets, rotations) to editor entities placed relative to a
+  drop origin. `composeAssembly(entities, meta) -> assemblySchema` is its
+  inverse; round-trip must be lossless for supported content. Unsupported
+  content (foundation, interior walls in VCS mode) is rejected with a
+  message naming the entity.
+- Placement of a library assembly = explode at drop position: the user gets
+  individually editable modules, not a monolith.
+
+Save ("Save as custom module"):
+
+- Select placed modules → name + author prompt → the editor builds a zip
+  that IS a library entry directory: `schema.py` (the assembly data dict,
+  data-only discipline, generated as text), `compiler.py` (a copy of a
+  template interpreter compiler shipped with the app — structurally the
+  cabin-assembly compiler: reads SCHEMA walls/modules, delegates to family
+  builders), `meta.yaml` (owner from prompt, `status: wip`, provenance
+  naming the editor and system), `expect.yaml` (envelope from the selection
+  bbox + tolerance; solids min_count from per-module counts; params empty),
+  `<id>.json` (the canonical export-json view — this is what the browser
+  reads back), `README.txt` (two lines: what this is; how to validate with
+  libtools). Zip filename = entry id.
+
+Load ("My Library"):
+
+- Zip upload (baseline, all browsers) and directory picker where available.
+  The browser parses `<id>.json` only — never executes Python. Entries whose
+  modules reference unknown ids (not in the active system manifest) are
+  refused with the missing ids listed. Loaded entries appear in a My Library
+  palette tab with generated 2D thumbnails; placing one explodes it.
+- Loaded libraries persist for the session only (no storage backend); a
+  layout that used an exploded custom assembly saves/loads as ordinary
+  entities, so nothing breaks when the library zip is absent.
+
+Done when: place modules → save as custom entry → clear canvas → load the
+zip → place it → identical entities return (round-trip test); the exported
+zip passes `libtools validate-code` untouched on a machine with Python; SEH
+and VCS parity CI stay green.
