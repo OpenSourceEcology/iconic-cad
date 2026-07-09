@@ -2,6 +2,7 @@ import { explodeAssembly } from './assembly_translate.js';
 import { parseEntryJson } from './entry_files.js';
 import { activeSystem } from './systems.js';
 import { showNotice } from './notices.js';
+import { entityPlanRect, planBounds } from './plan_rects.js';
 
 const registry = new Map();
 const BUILTIN_LIBRARY_GROUP = 'VILLAGE CONSTRUCTION SET';
@@ -107,30 +108,17 @@ export async function loadLibraryDirectory(manifest = activeSystem()) {
 
 export function renderCustomLibrary(container, { onPick, manifest = activeSystem() } = {}) {
   container.innerHTML = '';
-  if (manifest.id === 'vcs12' && !builtinLibraryLoaded) {
+  const includeBuiltins = manifest.id === 'vcs12';
+  if (includeBuiltins && !builtinLibraryLoaded) {
     ensureBuiltinLibrary(manifest).then(() => {
       renderCustomLibrary(container, { onPick, manifest });
     }).catch(err => console.warn(`Built-in library unavailable: ${err.message}`));
   }
-  const controls = document.createElement('div');
-  controls.className = 'custom-library-controls';
-  const loadButton = document.createElement('button');
-  loadButton.id = 'btn-load-library';
-  loadButton.type = 'button';
-  loadButton.textContent = 'LOAD LIBRARY';
-  controls.appendChild(loadButton);
-
-  const dirButton = document.createElement('button');
-  dirButton.id = 'btn-load-library-dir';
-  dirButton.type = 'button';
-  dirButton.textContent = 'LOAD FOLDER';
-  dirButton.hidden = typeof showDirectoryPicker !== 'function';
-  controls.appendChild(dirButton);
-  container.appendChild(controls);
+  const controls = libraryControls();
 
   const fileInput = document.getElementById('custom-library-input');
-  loadButton.addEventListener('click', () => fileInput?.click());
-  dirButton.addEventListener('click', async () => {
+  controls.querySelector('#btn-load-library')?.addEventListener('click', () => fileInput?.click());
+  controls.querySelector('#btn-load-library-dir')?.addEventListener('click', async () => {
     try {
       await loadLibraryDirectory(manifest);
       renderCustomLibrary(container, { onPick, manifest });
@@ -139,34 +127,29 @@ export function renderCustomLibrary(container, { onPick, manifest = activeSystem
     }
   });
 
-  const builtins = loadedBuiltinEntries(manifest.id);
+  const builtins = includeBuiltins ? loadedBuiltinEntries(manifest.id) : [];
   const userEntries = loadedUserEntries(manifest.id);
-  if (manifest.id === 'vcs12' && !builtinLibraryLoaded && !userEntries.length) return;
+  if (includeBuiltins && !builtinLibraryLoaded && !userEntries.length) {
+    container.appendChild(controls);
+    return;
+  }
   if (!builtins.length && !userEntries.length) {
     const empty = document.createElement('div');
     empty.className = 'custom-library-empty';
-    empty.textContent = 'Load a library zip exported from this editor, or an entry folder with a canonical <id>.json view.';
+    empty.textContent = includeBuiltins
+      ? 'Assemblies load from library zips.'
+      : 'Assemblies load from library zips; built-ins are VCS-12.';
     container.appendChild(empty);
-    return;
+  } else {
+    if (builtins.length) appendEntryGroup(container, BUILTIN_LIBRARY_GROUP, builtins, manifest, onPick);
+    for (const entry of userEntries) container.appendChild(customEntryCard(entry, manifest, onPick));
   }
-  if (builtins.length) appendEntryGroup(container, BUILTIN_LIBRARY_GROUP, builtins, manifest, onPick);
-  for (const entry of userEntries) container.appendChild(customEntryCard(entry, manifest, onPick));
+  container.appendChild(controls);
 }
 
 export function customAssemblyBounds(entry, manifest = activeSystem()) {
   const { entities } = explodeAssembly(entry.schema, manifest);
-  if (!entities.length) return { width_mm: 0, depth_mm: 0, entities };
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const e of entities) {
-    const horizontal = e.dir === 'north' || e.dir === 'south';
-    const w = horizontal ? e.mod.width_mm : e.mod.depth_mm;
-    const h = horizontal ? e.mod.depth_mm : e.mod.width_mm;
-    minX = Math.min(minX, e.x_mm);
-    minY = Math.min(minY, e.y_mm);
-    maxX = Math.max(maxX, e.x_mm + w);
-    maxY = Math.max(maxY, e.y_mm + h);
-  }
-  return { width_mm: maxX - minX, depth_mm: maxY - minY, minX, minY, entities };
+  return { ...planBounds(entities), entities };
 }
 
 function customEntryCard(entry, manifest, onPick) {
@@ -207,6 +190,24 @@ function appendEntryGroup(container, label, entries, manifest, onPick) {
   group.appendChild(heading);
   for (const entry of entries) group.appendChild(customEntryCard(entry, manifest, onPick));
   container.appendChild(group);
+}
+
+function libraryControls() {
+  const controls = document.createElement('div');
+  controls.className = 'custom-library-controls';
+  const loadButton = document.createElement('button');
+  loadButton.id = 'btn-load-library';
+  loadButton.type = 'button';
+  loadButton.textContent = 'LOAD LIBRARY';
+  controls.appendChild(loadButton);
+
+  const dirButton = document.createElement('button');
+  dirButton.id = 'btn-load-library-dir';
+  dirButton.type = 'button';
+  dirButton.textContent = 'LOAD FOLDER';
+  dirButton.hidden = typeof showDirectoryPicker !== 'function';
+  controls.appendChild(dirButton);
+  return controls;
 }
 
 async function loadBuiltinLibrary(manifest) {
@@ -258,18 +259,19 @@ function drawEntryThumbnail(canvas, entry, manifest) {
   try {
     const bounds = customAssemblyBounds(entry, manifest);
     if (!bounds.entities.length) return;
+    const margin = 2;
     const scale = Math.min(
-      (canvas.width - 12) / Math.max(bounds.width_mm, 1),
-      (canvas.height - 12) / Math.max(bounds.depth_mm, 1),
+      (canvas.width - margin * 2) / Math.max(bounds.width_mm, 1),
+      (canvas.height - margin * 2) / Math.max(bounds.depth_mm, 1),
     );
     const ox = (canvas.width - bounds.width_mm * scale) / 2;
     const oy = (canvas.height - bounds.depth_mm * scale) / 2;
     for (const e of bounds.entities) {
-      const horizontal = e.dir === 'north' || e.dir === 'south';
-      const w = (horizontal ? e.mod.width_mm : e.mod.depth_mm) * scale;
-      const h = (horizontal ? e.mod.depth_mm : e.mod.width_mm) * scale;
-      const x = ox + (e.x_mm - bounds.minX) * scale;
-      const y = oy + (e.y_mm - bounds.minY) * scale;
+      const r = entityPlanRect(e);
+      const w = r.w_mm * scale;
+      const h = r.h_mm * scale;
+      const x = ox + (r.x0 - bounds.minX) * scale;
+      const y = oy + (r.y0 - bounds.minY) * scale;
       ctx.fillStyle = e.mod.type === 'window' ? '#285f77' : (e.mod.type === 'door' ? '#6a5430' : '#25436d');
       ctx.strokeStyle = '#4fc3f7';
       ctx.lineWidth = 1;

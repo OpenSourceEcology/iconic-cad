@@ -3,6 +3,7 @@ import { activeSystem } from './systems.js';
 import { composeAssembly } from './assembly_translate.js';
 import { buildEntryFiles, parseEntryJson } from './entry_files.js';
 import { showNotice } from './notices.js';
+import { entityPlanRect } from './plan_rects.js';
 
 const IN_TO_MM = 25.4;
 
@@ -70,13 +71,11 @@ function expectInputsForEntities(entities) {
   if (!entities.length) return {};
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity, maxZ = 0;
   for (const e of entities) {
-    const horizontal = e.dir === 'north' || e.dir === 'south';
-    const w = horizontal ? e.mod.width_mm : e.mod.depth_mm;
-    const h = horizontal ? e.mod.depth_mm : e.mod.width_mm;
-    minX = Math.min(minX, e.x_mm);
-    minY = Math.min(minY, e.y_mm);
-    maxX = Math.max(maxX, e.x_mm + w);
-    maxY = Math.max(maxY, e.y_mm + h);
+    const r = entityPlanRect(e);
+    minX = Math.min(minX, r.x0);
+    minY = Math.min(minY, r.y0);
+    maxX = Math.max(maxX, r.x1);
+    maxY = Math.max(maxY, r.y1);
     maxZ = Math.max(maxZ, e.mod.height_mm || 0);
   }
   return {

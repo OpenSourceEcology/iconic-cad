@@ -9,6 +9,7 @@ import { isHorizontal, getModuleBBox, getPortPositions } from './geometry.js';
 import { IN_TO_MM, APERTURE_GAP } from './constants.js';
 import { regionForLevel } from './region.js';
 import { moduleGridMM } from './systems.js';
+import { entityPlanRect } from './plan_rects.js';
 
 const canvas = document.getElementById('design-canvas');
 const ctx = canvas.getContext('2d');
@@ -132,10 +133,10 @@ function leafSweepCCW(a0, a1) {
 // Faint, non-interactive footprint of an L1 wall, shown under the L2 plan as a
 // ghost (not selectable / not eraseable while on L2 — §4).
 function drawGhost(p) {
-  const bb = getModuleBBox(p.mod, p.dir);
-  const px = view.offsetX + mmToPx(p.x_mm);
-  const py = view.offsetY + mmToPx(p.y_mm);
-  const pw = mmToPx(bb.w), ph = mmToPx(bb.h);
+  const r = entityPlanRect(p);
+  const px = view.offsetX + mmToPx(r.x0);
+  const py = view.offsetY + mmToPx(r.y0);
+  const pw = mmToPx(r.w_mm), ph = mmToPx(r.h_mm);
   ctx.save();
   ctx.fillStyle = 'rgba(120,140,170,0.10)';
   ctx.strokeStyle = 'rgba(120,150,190,0.35)';
@@ -179,11 +180,11 @@ export function draw2d() {
 
   // Draw active-level modules
   activeEnts.forEach((p) => {
-    const bb = getModuleBBox(p.mod, p.dir);
-    const px = view.offsetX + mmToPx(p.x_mm);
-    const py = view.offsetY + mmToPx(p.y_mm);
-    const pw = mmToPx(bb.w);
-    const ph = mmToPx(bb.h);
+    const r = entityPlanRect(p);
+    const px = view.offsetX + mmToPx(r.x0);
+    const py = view.offsetY + mmToPx(r.y0);
+    const pw = mmToPx(r.w_mm);
+    const ph = mmToPx(r.h_mm);
 
     const isInt = p.mod.interior;
     ctx.fillStyle = isInt ? '#3a2a4c' : '#2a3a5c';

@@ -122,7 +122,7 @@ export const ui = {
   rejectFlash: null,   // { x, y } canvas px — transient red flag for a rejected L2 drop
   placeDir: 'north',   // direction applied to a module picked in iso-library mode
   libMode: 'iso',      // 'iso' (one thumbnail + NESW selector) | 'icons' (4 per module)
-  libCategory: 'walls', // library tab: 'walls' | 'windows' | 'doors' | 'interior'
+  libCategory: 'walls', // library tab: 'walls' | 'windows' | 'doors' | 'interior' | 'assemblies'
 
   // Trade flow (see trades.js). The fixed order is FRAMING → FOUNDATION → 3D
   // PREVIEW. `activeTrade` records WHERE the user is looking; `reachedTrade` is

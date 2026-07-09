@@ -1,6 +1,8 @@
 import { strict as assert } from 'node:assert';
 import { explodeAssembly, composeAssembly } from '../web/js/assembly_translate.js';
 import { getSystemManifest } from '../web/js/systems.js';
+import { placedWallEntity } from '../web/js/placement.js';
+import { entityPlanRect, planBounds } from '../web/js/plan_rects.js';
 
 const manifest = getSystemManifest('vcs12');
 
@@ -110,6 +112,58 @@ test('explode places a two-wall assembly at exact mm coordinates', () => {
   );
 });
 
+test('explode one-module assemblies match the editor placement entity convention', () => {
+  const mod = manifest.palette.find(item => item.type === 'standard');
+  const paletteMod = {
+    id: mod.id,
+    label: mod.label,
+    thumb: mod.thumb,
+    brep_base: mod.brep_base,
+    width_mm: mod.width_in * 25.4,
+    height_mm: mod.height_in * 25.4,
+    depth_mm: mod.depth_in * 25.4,
+    exterior_face: mod.exterior_face,
+    system: manifest.id,
+    type: mod.type,
+  };
+  const origin = { x_mm: 240, y_mm: 360 };
+  const cases = [
+    { side: 'front', dir: 'north', floor: { width_in: 96, depth_in: 96 }, x_mm: origin.x_mm, y_mm: origin.y_mm },
+    { side: 'back', dir: 'south', floor: { width_in: 96, depth_in: 96 }, x_mm: origin.x_mm, y_mm: origin.y_mm + (96 - 6) * 25.4 },
+    { side: 'left', dir: 'west', floor: { width_in: 96, depth_in: 96 }, x_mm: origin.x_mm, y_mm: origin.y_mm },
+    { side: 'right', dir: 'east', floor: { width_in: 96, depth_in: 96 }, x_mm: origin.x_mm + (96 - 6) * 25.4, y_mm: origin.y_mm },
+  ];
+
+  for (const item of cases) {
+    const schema = {
+      units: 'in',
+      floor: item.floor,
+      common_wall: { module_width_in: 48 },
+      walls: [{ name: `${item.side}_wall`, side: item.side, modules: [{ type: 'standard' }] }],
+    };
+    const actual = stripGeneratedId(explodeAssembly(schema, manifest, origin).entities[0]);
+    const expected = stripGeneratedId(placedWallEntity({
+      id: 'manual_0',
+      mod: paletteMod,
+      system: manifest.id,
+      dir: item.dir,
+      x_mm: item.x_mm,
+      y_mm: item.y_mm,
+      level: 'L1',
+      layer: 'structural',
+      connections: [],
+      props: {
+        assembly: {
+          wall: `${item.side}_wall`,
+          side: item.side,
+          module: { type: 'standard' },
+        },
+      },
+    }));
+    assert.deepEqual(actual, expected, item.dir);
+  }
+});
+
 test('unknown module types throw with wall/module name', () => {
   assert.throws(
     () => explodeAssembly({ walls: [{ name: 'Front_Wall', side: 'front', modules: [{ type: 'mystery' }] }] }, manifest),
@@ -133,6 +187,31 @@ test('compose after explode preserves cabin wall/module structure', () => {
   assert.equal(composed.floor.depth_in, 144);
 });
 
+test('exploded cabin render-derived rects form the expected closed perimeter', () => {
+  const { entities } = explodeAssembly(cabinSchema, manifest);
+  const rects = entities.map(e => ({ ...entityPlanRect(e), dir: e.dir }));
+  const bounds = planBounds(entities);
+  assert.equal(roundIn(bounds.width_mm), 155);
+  assert.equal(roundIn(bounds.depth_mm), 144);
+
+  const north = rects.filter(r => r.dir === 'north');
+  const south = rects.filter(r => r.dir === 'south');
+  const west = rects.filter(r => r.dir === 'west');
+  const east = rects.filter(r => r.dir === 'east');
+  assert.equal(north.length, 3);
+  assert.equal(south.length, 3);
+  assert.equal(west.length, 3);
+  assert.equal(east.length, 3);
+  assert.ok(north.every(r => r.w_mm > r.h_mm && roundIn(r.y0) === 0 && roundIn(r.y1) === 6));
+  assert.ok(south.every(r => r.w_mm > r.h_mm && roundIn(r.y0) === 138 && roundIn(r.y1) === 144));
+  assert.ok(west.every(r => r.h_mm > r.w_mm && roundIn(r.x0) === 0 && roundIn(r.x1) === 6));
+  assert.ok(east.every(r => r.h_mm > r.w_mm && roundIn(r.x0) === 149 && roundIn(r.x1) === 155));
+  assert.deepEqual(runSpansIn(north, 'x'), [[5.5, 53.5], [53.5, 101.5], [101.5, 149.5]]);
+  assert.deepEqual(runSpansIn(south, 'x'), [[5.5, 53.5], [53.5, 101.5], [101.5, 149.5]]);
+  assert.deepEqual(runSpansIn(west, 'y'), [[0, 48], [48, 96], [96, 144]]);
+  assert.deepEqual(runSpansIn(east, 'y'), [[0, 48], [48, 96], [96, 144]]);
+});
+
 test('composeAssembly rejects foreign entities with entity id', () => {
   assert.throws(
     () => composeAssembly([{ id: 'foreign_1', kind: 'iwall', mod: { id: 'x', system: 'seh', width_mm: 1 }, dir: 'north', x_mm: 0, y_mm: 0 }], { manifest }),
@@ -146,6 +225,22 @@ function normalizeWalls(walls) {
     start_offset_in: wall.start_offset_in || 0,
     modules: wall.modules,
   }));
+}
+
+function stripGeneratedId(entity) {
+  const out = JSON.parse(JSON.stringify(entity));
+  delete out.id;
+  return out;
+}
+
+function runSpansIn(rects, axis) {
+  return rects
+    .map(r => axis === 'x' ? [roundIn(r.x0), roundIn(r.x1)] : [roundIn(r.y0), roundIn(r.y1)])
+    .sort((a, b) => a[0] - b[0]);
+}
+
+function roundIn(mm) {
+  return Math.round((mm / 25.4) * 1000) / 1000;
 }
 
 console.log(`\n${passed} passed, ${failed} failed`);

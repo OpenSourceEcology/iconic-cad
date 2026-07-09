@@ -27,6 +27,7 @@ import { showVcsDisabled } from './notices.js';
 import { saveCustomModuleFromDocument } from './custom_save.js';
 import { customAssemblyBounds, ensureBuiltinLibrary, loadLibraryZipFiles, renderCustomLibrary } from './custom_library.js';
 import { explodeAssembly } from './assembly_translate.js';
+import { placedWallEntity } from './placement.js';
 
 const canvas = document.getElementById('design-canvas');
 
@@ -80,7 +81,7 @@ const LIB_TABS = [
   { id: 'windows',  label: 'Windows' },
   { id: 'doors',    label: 'Doors' },
   { id: 'interior', label: 'Interior' },
-  { id: 'custom',   label: 'My Library' },
+  { id: 'assemblies', label: 'Assemblies' },
 ];
 
 function categoryMods(cat) {
@@ -104,9 +105,9 @@ function buildLibTabs() {
     const b = document.createElement('button');
     b.className = 'lib-tab' + (ui.libCategory === t.id ? ' active' : '');
     b.textContent = t.label;
-    b.disabled = isVcs12Active() && !['walls', 'custom'].includes(t.id);
+    b.disabled = isVcs12Active() && !['walls', 'assemblies'].includes(t.id);
     b.addEventListener('click', () => {
-      if (isVcs12Active() && !['walls', 'custom'].includes(t.id)) {
+      if (isVcs12Active() && !['walls', 'assemblies'].includes(t.id)) {
         showVcsDisabled(t.id === 'interior' ? 'Interior wall placement' : 'Aperture placement');
         return;
       }
@@ -122,9 +123,9 @@ function buildLibTabs() {
 function buildSidebar() {
   const lib = document.getElementById('module-library');
   lib.innerHTML = '';
-  if (isVcs12Active() && !['walls', 'custom'].includes(ui.libCategory)) ui.libCategory = 'walls';
-  if (isVcs12Active() && ui.libCategory !== 'custom') ensureBuiltinLibrary(activeSystem());
-  if (ui.libCategory === 'custom') {
+  if (isVcs12Active() && !['walls', 'assemblies'].includes(ui.libCategory)) ui.libCategory = 'walls';
+  if (isVcs12Active() && ui.libCategory !== 'assemblies') ensureBuiltinLibrary(activeSystem());
+  if (ui.libCategory === 'assemblies') {
     renderCustomLibrary(lib, { onPick: pickCustomAssembly, manifest: activeSystem() });
     return;
   }
@@ -605,8 +606,7 @@ function wireCanvas() {
           flashReject(ui.mouseCanvasX, ui.mouseCanvasY);
           return;
         }
-        const placed = exploded.map(entity => ({
-          kind: 'wall',
+        const placed = exploded.map(entity => placedWallEntity({
           mod: entity.mod,
           system: manifest.id,
           dir: entity.dir,
@@ -669,8 +669,7 @@ function wireCanvas() {
         return;
       }
       if (pos) {
-        const entity = {
-          kind: ui.dragState.mod.interior ? 'iwall' : 'wall',
+        const entity = placedWallEntity({
           mod: ui.dragState.mod,
           system: doc.project.system || activeSystem().id,
           dir: ui.dragState.dir,
@@ -681,7 +680,7 @@ function wireCanvas() {
           id: `${ui.dragState.mod.interior ? 'iwall' : 'wall'}_${ui.nextId++}`,
           connections: pos.connection ? [pos.connection] : [],
           props: {},
-        };
+        });
         doc.entities.push(entity);
         history.push({ type: 'place', module: entity });
         future.length = 0;
@@ -764,7 +763,7 @@ export function initUI() {
     if (!files.length) return;
     try {
       await loadLibraryZipFiles(files, activeSystem());
-      if (ui.libCategory === 'custom') buildSidebar();
+      if (ui.libCategory === 'assemblies') buildSidebar();
     } catch (err) {
       alert(`Could not load library: ${err.message}`);
     }
@@ -887,7 +886,7 @@ export function initUI() {
   // Keep the big 3D viewport sized to its container.
   window.addEventListener('resize', () => { if (ui.activeTab === '3d') resize3d(); });
   window.addEventListener('iconic:project', () => {
-    if (isVcs12Active() && ui.libCategory !== 'custom') ui.libCategory = 'walls';
+    if (isVcs12Active() && ui.libCategory !== 'assemblies') ui.libCategory = 'walls';
     buildLibTabs();
     buildDirSelector();
     buildSidebar();

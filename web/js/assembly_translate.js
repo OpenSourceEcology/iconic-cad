@@ -1,3 +1,6 @@
+import { placedWallEntity } from './placement.js';
+import { entityPlanRect, planBounds } from './plan_rects.js';
+
 const IN_TO_MM = 25.4;
 const ROUND_MM = 1e-6;
 
@@ -73,9 +76,8 @@ export function explodeAssembly(schema, manifest, originMM = { x_mm: 0, y_mm: 0 
         y += index * widthMM;
       }
 
-      entities.push({
+      entities.push(placedWallEntity({
         id: `${schema.name || schema.schema_name || 'assembly'}_${wall.name || wall.side}_${index + 1}`,
-        kind: 'wall',
         mod: paletteModule,
         system: manifest.id,
         dir,
@@ -91,7 +93,7 @@ export function explodeAssembly(schema, manifest, originMM = { x_mm: 0, y_mm: 0 
             module: clone(module),
           },
         },
-      });
+      }));
     });
   }
 
@@ -103,10 +105,9 @@ export function composeAssembly(entities, meta = {}) {
   const manifest = meta.manifest || meta.systemManifest;
   if (!manifest || !manifest.id) throw new Error('composeAssembly requires meta.manifest');
   const moduleToType = moduleIdTypeMap(manifest);
-  const wallDepth = wallDepthIn(meta.schema || {}, manifest) * IN_TO_MM;
   const moduleWidthIn = commonModuleWidthIn(meta.schema || {}, manifest);
   const wallEntities = entities.map(entity => normalizeEntity(entity, manifest, moduleToType));
-  const bbox = entityBBox(wallEntities, wallDepth);
+  const bbox = entityBBox(wallEntities);
   const floorWidthIn = roundIn((bbox.maxX - bbox.minX) / IN_TO_MM);
   const floorDepthIn = roundIn((bbox.maxY - bbox.minY) / IN_TO_MM);
 
@@ -202,23 +203,13 @@ function normalizeEntity(entity, manifest, moduleToType) {
   };
 }
 
-function entityBBox(entities, wallDepth) {
-  if (!entities.length) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const e of entities) {
-    const horizontal = e.dir === 'north' || e.dir === 'south';
-    const w = horizontal ? e.mod.width_mm : wallDepth;
-    const h = horizontal ? wallDepth : e.mod.width_mm;
-    minX = Math.min(minX, e.x_mm);
-    minY = Math.min(minY, e.y_mm);
-    maxX = Math.max(maxX, e.x_mm + w);
-    maxY = Math.max(maxY, e.y_mm + h);
-  }
-  return { minX, minY, maxX, maxY };
+function entityBBox(entities) {
+  return planBounds(entities);
 }
 
 function runPositionMM(entity) {
-  return entity.dir === 'north' || entity.dir === 'south' ? entity.x_mm : entity.y_mm;
+  const r = entityPlanRect(entity);
+  return entity.dir === 'north' || entity.dir === 'south' ? r.x0 : r.y0;
 }
 
 function validateWall(wall) {
