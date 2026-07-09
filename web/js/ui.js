@@ -22,6 +22,8 @@ import { exportFcstd } from './fcstd.js';
 import { exportFabDrawings } from './render_fab.js';
 import { generateBuildSummary } from './render_summary.js';
 import { framingEditable } from './trades.js';
+import { activeSystem, isVcs12Active, manifestPaletteModules } from './systems.js';
+import { showVcsDisabled } from './notices.js';
 
 const canvas = document.getElementById('design-canvas');
 
@@ -31,6 +33,10 @@ const canvas = document.getElementById('design-canvas');
 // Begin placing a module facing `dir`.
 function pickModule(mod, dir) {
   if (!framingEditable()) return; // framing locked after advancing — no placing
+  if (isVcs12Active() && mod.interior) {
+    showVcsDisabled('Interior wall placement');
+    return;
+  }
   // Interior partitions have no inside/outside face, so they need only TWO
   // orientations: horizontal (north) or vertical (east). Collapse any N/S→north,
   // E/W→east; R toggles between the two (see rotateCW).
@@ -52,6 +58,10 @@ const LIB_TABS = [
 ];
 
 function categoryMods(cat) {
+  if (isVcs12Active()) {
+    if (cat !== 'walls') return [];
+    return manifestPaletteModules('vcs12');
+  }
   switch (cat) {
     case 'windows':  return APERTURE_MODULES.filter(m => m.aperture.type === 'window');
     case 'doors':    return APERTURE_MODULES.filter(m => m.aperture.type !== 'window');
@@ -68,7 +78,12 @@ function buildLibTabs() {
     const b = document.createElement('button');
     b.className = 'lib-tab' + (ui.libCategory === t.id ? ' active' : '');
     b.textContent = t.label;
+    b.disabled = isVcs12Active() && t.id !== 'walls';
     b.addEventListener('click', () => {
+      if (isVcs12Active() && t.id !== 'walls') {
+        showVcsDisabled(t.id === 'interior' ? 'Interior wall placement' : 'Aperture placement');
+        return;
+      }
       ui.libCategory = t.id;
       buildLibTabs();
       buildDirSelector();   // collapse to N/S + E/W for interior; full NESW otherwise
@@ -81,7 +96,15 @@ function buildLibTabs() {
 function buildSidebar() {
   const lib = document.getElementById('module-library');
   lib.innerHTML = '';
+  if (isVcs12Active() && ui.libCategory !== 'walls') ui.libCategory = 'walls';
   const mods = categoryMods(ui.libCategory);
+  if (isVcs12Active() && mods.length === 0) {
+    const note = document.createElement('div');
+    note.className = 'system-disabled-note';
+    note.textContent = 'Only exterior wall modules are enabled for VCS-12.';
+    lib.appendChild(note);
+    return;
+  }
   const make = ui.libMode === 'iso' ? isoCard : iconCard;
   mods.forEach(mod => lib.appendChild(make(mod)));
 }
@@ -107,7 +130,7 @@ function isoCard(mod) {
   item.className = 'iso-item' + (mod.interior ? ' interior' : '');
   item.title = `${mod.label} — places facing ${ui.placeDir}; press R to rotate`;
   item.innerHTML =
-    `<img src="thumbs/${mod.id}.png" alt="${mod.label}" loading="lazy">` +
+    `<img src="${mod.thumb || `thumbs/${mod.id}.png`}" alt="${mod.label}" loading="lazy">` +
     `<div class="iso-text">` +
       `<div class="iso-label">${mod.label}</div>` +
       `<div class="iso-hint">${moduleHint(mod)}</div>` +
@@ -174,7 +197,7 @@ function iconCard(mod) {
       item.title = `${mod.label} — ${dir}`;
       if (mod.interior) item.style.borderColor = '#665';
       const img = document.createElement('img');
-      img.src = `../icons/${mod.id}_${dir}.svg`;
+      img.src = mod.thumb || `../icons/${mod.id}_${dir}.svg`;
       item.appendChild(img);
       item.addEventListener('click', () => pickModule(mod, dir));
       grid.appendChild(item);
@@ -566,6 +589,7 @@ function wireCanvas() {
         const entity = {
           kind: ui.dragState.mod.interior ? 'iwall' : 'wall',
           mod: ui.dragState.mod,
+          system: doc.project.system || activeSystem().id,
           dir: ui.dragState.dir,
           x_mm: pos.x_mm,
           y_mm: pos.y_mm,
@@ -709,6 +733,7 @@ export function initUI() {
   function closeAndExport(fn) { exportModal.classList.remove('open'); fn(); }
 
   document.getElementById('btn-modal-fcstd').addEventListener('click', () => {
+    if (isVcs12Active()) { showVcsDisabled('FreeCAD export'); return; }
     // A house.FCStd is only a real house once the foundation trade is done.
     // Otherwise warn it will be framing-only before emitting (CAD-AUD-008).
     if (!houseExportReady() && !window.confirm(
@@ -717,10 +742,13 @@ export function initUI() {
     promptFilename('house.FCStd', (f) => closeAndExport(() => exportFcstd(f)));
   });
   document.getElementById('btn-modal-export-json').addEventListener('click', () =>
+    isVcs12Active() ? showVcsDisabled('Export menu paths') :
     promptFilename('layout.json', (f) => closeAndExport(() => exportJSON(f))));
   document.getElementById('btn-modal-fab').addEventListener('click', () =>
+    isVcs12Active() ? showVcsDisabled('Fab drawings') :
     promptFilename('fab-drawings.html', (f) => closeAndExport(() => exportFabDrawings(f))));
   document.getElementById('btn-modal-summary').addEventListener('click', () =>
+    isVcs12Active() ? showVcsDisabled('Build summary and fab cards') :
     promptFilename('build-summary.html', (f) => closeAndExport(() => generateBuildSummary(f))));
 
   // Trade rail buttons (FRAMING / FOUNDATION / 3D PREVIEW) are wired by
@@ -728,6 +756,12 @@ export function initUI() {
 
   // Keep the big 3D viewport sized to its container.
   window.addEventListener('resize', () => { if (ui.activeTab === '3d') resize3d(); });
+  window.addEventListener('iconic:project', () => {
+    if (isVcs12Active()) ui.libCategory = 'walls';
+    buildLibTabs();
+    buildDirSelector();
+    buildSidebar();
+  });
 
   switchTab('2d');
 }

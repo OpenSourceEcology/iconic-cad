@@ -130,7 +130,8 @@
   text-transform: uppercase;
   margin-bottom: 3px;
 }
-/* Climate dropdown */
+/* System and climate dropdowns */
+#opt-system,
 #opt-zone {
   width: 100%;
   box-sizing: border-box;
@@ -143,7 +144,10 @@
   outline: none;
   cursor: pointer;
 }
+#opt-system:disabled { color: #667; border-color: #2a3a5a; cursor: not-allowed; }
+#opt-system:focus,
 #opt-zone:focus { border-color: #4fc3f7; }
+.opt-system-note { color: #557; font-size: 10px; margin-top: 5px; line-height: 1.4; }
 
 /* GO button — green/clickable when valid, gray/disabled otherwise */
 #opt-go {

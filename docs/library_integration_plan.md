@@ -124,6 +124,13 @@ Done when: a user can pick VCS-12, place Catarina's wall modules with corner
 snapping, see them in 3D, save/load the layout; SEH behavior is bit-identical
 to before when SEH is active (parity CI green).
 
+L3 implementation note: in this checkout `freecadcmd` was unavailable during
+the local bake, so `scripts/bake_external_library.py` validated the vcs-library
+interface entries and refreshed `vcs12.json`, but the VCS BREP and thumbnail
+assets remain listed in `web/assets/lib/vcs12/ASSETS_PENDING.txt`. Until those
+assets are baked, the editor preview uses manifest dimensions for VCS wall
+boxes rather than parsed BREP geometry.
+
 ## Sequencing and risk
 
 L1 → L2 strictly ordered (L2 bakes from L1's entries). The vcs-library

@@ -1,16 +1,14 @@
 // =====================================================
 // CONSTANTS + MODULE DEFINITIONS
-// Shared, dependency-free. Imported by every other module.
+// Shared constants and SEH module definitions. Imported by every other module.
 // =====================================================
+import { getSystemManifest, manifestPaletteModules } from './systems.js';
+
 export const IN_TO_MM = 25.4;
-export const WALL_DEPTH = (5.5 + 0.4375) * IN_TO_MM; // 150.8125mm (2x6 + OSB)
+export const WALL_DEPTH = getSystemManifest('seh').wall_depth_in * IN_TO_MM; // 150.8125mm (2x6 + OSB)
 export const IWALL_DEPTH = 3.5 * IN_TO_MM;            // 88.9mm — 2x4 stud, no OSB
 
-export const MODULES = [
-  { id: 'wall_4x8_2x6_16oc', label: '4x8 16OC', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH },
-  { id: 'wall_4x8_2x6_24oc', label: '4x8 24OC', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH },
-  { id: 'wall_3x8.5_2x6_16oc', label: '3x8.5 16OC', width_mm: 3 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH },
-];
+export const MODULES = manifestPaletteModules('seh');
 
 export const INTERIOR_MODULES = [
   { id: 'iwall_4x8_2x4_16oc', label: '4x8 16OC', width_mm: 4 * 12 * IN_TO_MM, depth_mm: IWALL_DEPTH, interior: true },

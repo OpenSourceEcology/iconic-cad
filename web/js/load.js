@@ -5,6 +5,7 @@
 // =====================================================
 import { doc, ui, ensureLevel2, resetDoc } from './state.js';
 import { ALL_MODULES } from './constants.js';
+import { findSystemModule, setActiveSystem, systemIds } from './systems.js';
 
 // Reset stale session state, then apply the file's project/levels/entities.
 // The reset-before-apply order is the one and only place loads enter the model:
@@ -19,8 +20,14 @@ export function applyLoadedData(data) {
   // Defaults mirror state.js (single story, Zone 5 / Missouri).
   const dp = data.project || {};
   const dc = dp.climate || {};
+  const system = dp.system || 'seh';
+  if (!systemIds().includes(system)) {
+    throw new Error(`Unknown construction system: ${system}`);
+  }
+  setActiveSystem(system);
   doc.project = {
     name: dp.name ?? 'Untitled Eco Home',
+    system,
     stories: dp.stories ?? 1,
     climate: {
       iecc_zone: dc.iecc_zone ?? 5,
@@ -54,11 +61,18 @@ export function applyLoadedData(data) {
       ui.nextId++;
       continue;
     }
-    const mod = ALL_MODULES.find(x => x.id === m.module);
+    const entitySystem = m.system || system;
+    if (entitySystem !== system) {
+      throw new Error(`Mixed construction systems are not supported: project ${system}, entity ${entitySystem}`);
+    }
+    const mod = system === 'seh'
+      ? ALL_MODULES.find(x => x.id === m.module)
+      : findSystemModule(m.module, system);
     if (!mod) { console.warn(`Unknown module: ${m.module}`); continue; }
     doc.entities.push({
       kind: m.kind || (mod.interior ? 'iwall' : 'wall'),
       mod,
+      system,
       dir: m.direction,
       x_mm: m.x_mm,
       y_mm: m.y_mm,

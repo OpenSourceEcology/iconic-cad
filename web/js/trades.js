@@ -22,6 +22,8 @@ import { setRenderMode, resize3d, setFoundationLayerVisible } from './render3d.j
 import { openFoundationModal } from './foundation.js';
 import { markModelChanged } from './app.js';
 import { shellEnclosed } from './export_gate.js';
+import { isVcs12Active } from './systems.js';
+import { showVcsDisabled } from './notices.js';
 
 export const TRADES = ['framing', 'foundation', '3d'];
 
@@ -132,7 +134,9 @@ export function refreshTradeUI() {
 
   const terminal = ui.activeTrade === '3d';
   wrap.classList.toggle('terminal', terminal);
-  hint.textContent = NEXT_HINT[ui.activeTrade];
+  hint.textContent = isVcs12Active() && ui.activeTrade === 'framing'
+    ? 'Foundation is disabled for VCS-12; continue directly to 3D preview.'
+    : NEXT_HINT[ui.activeTrade];
 
   if (terminal) {
     next.style.display = 'none';
@@ -163,6 +167,10 @@ function flashLocked() {
 
 // ---- Wiring ---------------------------------------------------------------
 function onRailClick(trade) {
+  if (isVcs12Active() && trade === 'foundation') {
+    showVcsDisabled('Foundation trade');
+    return;
+  }
   const ti = TRADES.indexOf(trade);
   if (ti > ui.reachedTrade) { flashLocked(); return; } // ahead of frontier — gated
   setActiveTrade(trade);                                // reached/current → view it
@@ -172,6 +180,11 @@ function onNext() {
   const ai = TRADES.indexOf(ui.activeTrade);
   if (ai >= TRADES.length - 1) return;
   if (!tradeDone(ui.activeTrade)) return; // gray/disabled anyway
+  if (isVcs12Active() && ui.activeTrade === 'framing') {
+    ui.reachedTrade = 2;
+    setActiveTrade('3d');
+    return;
+  }
   ui.reachedTrade = Math.max(ui.reachedTrade, ai + 1); // commit + lock the trade we leave
   setActiveTrade(TRADES[ai + 1]);
 }

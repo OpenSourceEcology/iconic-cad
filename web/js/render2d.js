@@ -8,6 +8,7 @@ import { mmToPx } from './view.js';
 import { isHorizontal, getModuleBBox, getPortPositions } from './geometry.js';
 import { IN_TO_MM, APERTURE_GAP } from './constants.js';
 import { regionForLevel } from './region.js';
+import { moduleGridMM } from './systems.js';
 
 const canvas = document.getElementById('design-canvas');
 const ctx = canvas.getContext('2d');
@@ -157,7 +158,7 @@ export function draw2d() {
   // Background grid
   ctx.strokeStyle = '#252540';
   ctx.lineWidth = 1;
-  const gridPx = mmToPx(12 * IN_TO_MM); // 1ft grid
+  const gridPx = mmToPx(moduleGridMM());
   for (let x = view.offsetX % gridPx; x < canvas.width; x += gridPx) {
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
   }

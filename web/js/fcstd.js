@@ -16,6 +16,7 @@ import { enumerateMembers } from './members.js';
 import { panelHeightMM } from './designs.js';
 import { regionForLevel } from './region.js';
 import { foundationSolids } from './foundation_geom.js';
+import { isVcs12Active } from './systems.js';
 
 // Foundation ViewProvider colors (packed FreeCAD RGBA uint): concrete-gray
 // slab/beam, distinct EPS pink for the frost skirt — matches the 3D preview.
@@ -293,6 +294,7 @@ const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 const levelLabel = lvl => `Level_${String(lvl).replace(/^L/, '')}`;
 
 export async function exportFcstd(filename = 'house.FCStd') {
+  if (isVcs12Active()) { alert('FreeCAD export is disabled for the VCS-12 demonstrator.'); return; }
   // Framing entities; the foundation is the derived entity (params only).
   const ents = doc.entities.filter(e => e.kind === 'wall' || e.kind === 'iwall');
   if (ents.length === 0) { alert('Place some modules first.'); return; }

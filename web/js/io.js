@@ -22,6 +22,7 @@ function serialize(includeMeta) {
       id: p.id,
       kind: p.kind,
       module: p.mod.id,
+      system: p.system || doc.project.system || 'seh',
       direction: p.dir,
       x_mm: Math.round(p.x_mm * 100) / 100,
       y_mm: Math.round(p.y_mm * 100) / 100,
@@ -57,16 +58,20 @@ export function loadLayout(event) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = (e) => {
-    const data = JSON.parse(e.target.result);
-    applyLoadedData(data);
-    markModelChanged();
-    // Refresh the floor switcher (it appears for 2-story loads).
-    window.dispatchEvent(new Event('iconic:project'));
-    // Signal a SUCCESSFUL load (fires only here, after parse + apply). home.js
-    // uses this to switch the home view → design view deterministically, with no
-    // focus/change-timing race. A bad/unparseable file throws above and never
-    // reaches here, so a failed load correctly does NOT navigate.
-    window.dispatchEvent(new Event('iconic:loaded'));
+    try {
+      const data = JSON.parse(e.target.result);
+      applyLoadedData(data);
+      markModelChanged();
+      // Refresh the floor switcher (it appears for 2-story loads).
+      window.dispatchEvent(new Event('iconic:project'));
+      // Signal a SUCCESSFUL load (fires only here, after parse + apply). home.js
+      // uses this to switch the home view → design view deterministically, with no
+      // focus/change-timing race. A bad/unparseable file never reaches here, so a
+      // failed load correctly does NOT navigate.
+      window.dispatchEvent(new Event('iconic:loaded'));
+    } catch (err) {
+      alert(`Could not load layout: ${err.message}`);
+    }
   };
   reader.readAsText(file);
   event.target.value = '';

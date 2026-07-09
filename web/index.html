@@ -545,6 +545,20 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
 }
 .lib-tab:hover { border-color: #4fc3f7; }
 .lib-tab.active { background: #2a3a5c; color: #4fc3f7; border-color: #4fc3f7; }
+.lib-tab:disabled {
+  color: #4a4f5e;
+  border-color: #2a2f3e;
+  cursor: not-allowed;
+}
+.system-disabled-note {
+  color: #8a93a8;
+  border: 1px solid #3a5a8a;
+  border-radius: 4px;
+  padding: 10px 12px;
+  font-size: 11px;
+  line-height: 1.5;
+  width: 260px;
+}
 
 /* Module tray: cards stack 2 high, flow left→right, scroll horizontally.
    Needs an explicit height — flex column-wrap won't wrap on a flex-grow height. */
@@ -874,6 +888,15 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
     <div class="opt-field">
       <label for="opt-name">Project Name</label>
       <input type="text" id="opt-name" spellcheck="false" placeholder="Untitled Eco Home">
+    </div>
+
+    <div class="opt-field">
+      <label for="opt-system">Construction System</label>
+      <select id="opt-system">
+        <option value="seh">SEH Panelized</option>
+        <option value="vcs12">VCS 12-ft Demonstrator</option>
+      </select>
+      <div class="opt-system-note">VCS-12 enables exterior wall placement only; downstream trade and export tools remain disabled.</div>
     </div>
 
     <div class="opt-field">

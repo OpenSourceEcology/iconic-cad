@@ -15,6 +15,7 @@ import { IN_TO_MM } from './constants.js';
 import { regionForLevel } from './region.js';
 import { getModuleBBox } from './geometry.js';
 import { inFrac } from './designs.js';
+import { isVcs12Active } from './systems.js';
 
 let pricingData = null;
 
@@ -202,6 +203,10 @@ export function computeTotalCost(entities, catalog) {
 export function updateBOM() {
   const el = document.getElementById('bom-content');
   if (!el) return;
+  if (isVcs12Active()) {
+    el.innerHTML = 'BOM pricing is disabled for the VCS-12 demonstrator.';
+    return;
+  }
   const placed = doc.entities;
   if (!pricingData || placed.length === 0) {
     el.innerHTML = 'Place modules to see estimate';

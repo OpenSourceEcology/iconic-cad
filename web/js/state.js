@@ -3,6 +3,7 @@
 // Data only; no behaviour, no DOM, no imports of other app modules.
 // =====================================================
 import { ZOOM_DEFAULT } from './constants.js';
+import { setActiveSystem } from './systems.js';
 
 // ---- The document ---------------------------------------------------------
 // `doc` is the single source of truth and the thing we serialise. Entities
@@ -44,6 +45,7 @@ export const doc = {
   // here, consumed by no enumerator/library/3D code yet. Round-tripped through io.js.
   project: {
     name: 'Untitled Eco Home',
+    system: 'seh',
     stories: 1,                       // 1 | 2  (intent only — no doc.levels mutation)
     climate: { iecc_zone: 5, frost_mm: 750, snow_psf: 30, wind_mph: 115, seismic_class: 'B' },
   },
@@ -82,9 +84,11 @@ export function resetDoc() {
   doc.activeLayer = 'structural';
   doc.project = {
     name: 'Untitled Eco Home',
+    system: 'seh',
     stories: 1,
     climate: { iecc_zone: 5, frost_mm: 750, snow_psf: 30, wind_mph: 115, seismic_class: 'B' },
   };
+  setActiveSystem('seh');
   history.length = 0;
   future.length = 0;
   ui.nextId = 0;

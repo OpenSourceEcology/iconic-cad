@@ -8,9 +8,10 @@ import { doc, ui } from './state.js';
 import { mmToPx } from './view.js';
 import { isHorizontal, getModuleBBox, getPortPositions } from './geometry.js';
 import {
-  IN_TO_MM, WALL_DEPTH, SNAP_DIST_PX,
+  IN_TO_MM, SNAP_DIST_PX,
   MIN_IWALL_SPACING_MM, CORNER_KEEPOUT_MM, MIN_IWALL_TO_EXT_PARALLEL_MM,
 } from './constants.js';
+import { exteriorWallDepthMM } from './systems.js';
 
 const placed = doc.entities; // live alias — doc.entities is mutated in place, never reassigned
 
@@ -110,7 +111,8 @@ export function findSnap(cursorX_mm, cursorY_mm, mod, dir) {
 export function wouldOverlap(x, y, bb, mod, dir) {
   // Allow small corner-zone overlaps (perpendicular walls share a D×D zone)
   // but reject large overlaps (module stacking on top of each other)
-  const maxAllowed = WALL_DEPTH * WALL_DEPTH * 1.5; // ~D² with some tolerance
+  const wallDepth = exteriorWallDepthMM();
+  const maxAllowed = wallDepth * wallDepth * 1.5; // ~D² with some tolerance
   for (const p of placed) {
     if (p.kind === 'foundation') continue; // derived 3D-only object — no module/ports
     if (p.level !== doc.activeLevel) continue; // L2 stacks over L1 — only same-level overlap counts
@@ -244,10 +246,10 @@ function interiorContactTooClose(contactX, contactY, faceAxis) {
     if (!q.mod.interior || !q.connections) continue;
     for (const c of q.connections) {
       if (faceAxis === 'x') {                                  // horizontal run: same Y line, space along X
-        if (Math.abs(c.contact_y_mm - contactY) < WALL_DEPTH &&
+        if (Math.abs(c.contact_y_mm - contactY) < exteriorWallDepthMM() &&
             Math.abs(c.contact_x_mm - contactX) < MIN_IWALL_SPACING_MM) return true;
       } else {                                                 // vertical run: same X line, space along Y
-        if (Math.abs(c.contact_x_mm - contactX) < WALL_DEPTH &&
+        if (Math.abs(c.contact_x_mm - contactX) < exteriorWallDepthMM() &&
             Math.abs(c.contact_y_mm - contactY) < MIN_IWALL_SPACING_MM) return true;
       }
     }

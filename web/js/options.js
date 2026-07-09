@@ -15,6 +15,7 @@
 // stored for later features to read. See the seam comment below.
 // =====================================================
 import { doc } from './state.js';
+import { setActiveSystem } from './systems.js';
 
 // ---------------------------------------------------------------------------
 // resolveClimate(zone) — PURE. The reference implementation of the
@@ -58,6 +59,7 @@ export function resolveClimate(zone) {
 // ---------------------------------------------------------------------------
 const form = {
   name: 'Untitled Eco Home',
+  system: 'seh',
   stories: 1,
   zone: 5,
 };
@@ -95,9 +97,11 @@ function onGo() {
 
   doc.project = {
     name: (form.name || '').trim() || 'Untitled Eco Home',
+    system: form.system,
     stories: form.stories,
     climate: resolveClimate(form.zone), // latent bundle; no consumer yet (seam above)
   };
+  setActiveSystem(form.system);
 
   _confirmed = true;
   document.getElementById('options-modal').classList.remove('open');
@@ -114,12 +118,18 @@ function onGo() {
 export function resetProjectOptions() {
   _confirmed = false;
   form.name = 'Untitled Eco Home';
+  form.system = 'seh';
   form.stories = 1;
   form.zone = 5;
   const nameInput = document.getElementById('opt-name');
   if (nameInput) nameInput.value = form.name;
   const zoneSel = document.getElementById('opt-zone');
   if (zoneSel) zoneSel.value = String(form.zone);
+  const systemSel = document.getElementById('opt-system');
+  if (systemSel) {
+    systemSel.value = form.system;
+    systemSel.disabled = doc.entities.length > 0;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -140,6 +150,20 @@ export function initProjectOptions() {
   if (nameInput) {
     nameInput.value = form.name;
     nameInput.addEventListener('input', () => { form.name = nameInput.value; validate(); });
+  }
+
+  const systemSel = document.getElementById('opt-system');
+  if (systemSel) {
+    systemSel.value = form.system;
+    systemSel.addEventListener('change', () => {
+      if (doc.entities.length > 0) {
+        systemSel.value = form.system;
+        return;
+      }
+      form.system = systemSel.value;
+      setActiveSystem(form.system);
+      validate();
+    });
   }
 
   document.getElementById('opt-stories-single')

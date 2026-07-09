@@ -15,6 +15,8 @@ Browser-based drag-and-snap wall layout tool that compiles directly to 3D FreeCA
 
 **Status:** Exterior walls, interior walls with blocking (continuous/transverse), window and door aperture modules, live 3D preview, BOM estimator, save/load, in-browser FreeCAD (`.FCStd`) export, and the JSON-to-FreeCAD compiler are all working. An IFC4 export (one box `IfcWall` per module, no framing) is **experimental and in testing — not a fully supported feature**.
 
+**Construction systems:** New layouts default to the SEH panelized system. The project setup modal also includes a VCS-12 demonstrator system backed by `web/data/systems/vcs12.json`; it enables exterior wall placement only and deliberately disables interior walls, BOM pricing, foundation trade flow, fab cards, and CAD export paths.
+
 ## Quick start
 
 > **Just want the layout tool + FreeCAD export?** Do steps 1, 4, 5, 6 only. The

@@ -1,5 +1,5 @@
 /**
- * CAD-AUD-011 guard: the project-setup modal captures only name/stories/climate.
+ * CAD-AUD-011 guard: the project-setup modal captures only name/system/stories/climate.
  * doc.project must NOT carry a phantom per-story wall-height field (the old code
  * comment falsely advertised one).
  *
@@ -12,7 +12,7 @@ const fail = m => { console.error(`  FAIL ${m}`); failed++; };
 const ok = m => { passed++; if (process.env.VERBOSE) console.log(`  ok ${m}`); };
 
 const keys = Object.keys(doc.project).sort();
-const want = ['climate', 'name', 'stories'];
+const want = ['climate', 'name', 'stories', 'system'];
 if (JSON.stringify(keys) === JSON.stringify(want)) ok(`project keys = ${want.join(',')}`);
 else fail(`project keys = ${keys.join(',')}, want ${want.join(',')}`);
 

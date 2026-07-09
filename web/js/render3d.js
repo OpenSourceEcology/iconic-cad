@@ -186,6 +186,7 @@ function addBoxTo(group, sx, sy, sz, px, py, pz, mat) {
 // this maps them into the scene by `dir`, choosing the OSB face side, exactly as
 // the old hand-written loops did. 3D output is identical by construction.
 export function buildWall3D(mod, dir, xPos, yPos, zPos = 0) {
+  if (mod.system === 'vcs12') return buildManifestWall3D(mod, dir, xPos, yPos, zPos);
   const group = new THREE.Group();
   const isInt = mod.interior;
   const D = isInt ? (3.5 * IN_TO_MM) : STUD_DEPTH;
@@ -215,6 +216,31 @@ export function buildWall3D(mod, dir, xPos, yPos, zPos = 0) {
   else group.position.y = -yPos;
   group.position.z = zPos; // level base z (L1 = 0, L2 = FLOOR_TO_FLOOR_MM)
 
+  return group;
+}
+
+function buildManifestWall3D(mod, dir, xPos, yPos, zPos = 0) {
+  const group = new THREE.Group();
+  const W = mod.width_mm;
+  const D = mod.depth_mm;
+  const H = mod.height_mm || 96 * IN_TO_MM;
+  const matFrame = _framingTransparent ? matLumberT : matLumber;
+  const matFace = _framingTransparent ? matOSBT : matOSB;
+  const horiz = (dir === 'north' || dir === 'south');
+  if (horiz) {
+    addBoxTo(group, W, D, H, W / 2, D / 2, H / 2, matFrame);
+    const faceY = (dir === 'north') ? 1 : D - 1;
+    addBoxTo(group, W, 2, H, W / 2, faceY, H / 2, matFace);
+  } else {
+    addBoxTo(group, D, W, H, D / 2, -W / 2, H / 2, matFrame);
+    const faceX = (dir === 'west') ? 1 : D - 1;
+    addBoxTo(group, 2, W, H, faceX, -W / 2, H / 2, matFace);
+  }
+  group.position.x = xPos;
+  if (dir === 'north') group.position.y = -(yPos + D);
+  else if (dir === 'south') group.position.y = -yPos;
+  else group.position.y = -yPos;
+  group.position.z = zPos;
   return group;
 }
 
@@ -272,7 +298,9 @@ export function rebuildModel3D() {
   // the L1 top plate. (Refined when the flooring/height features add the gap.)
   const l1Walls = placed.filter(p => (p.level || 'L1') === 'L1');
   const l2BaseZ = l1Walls.length
-    ? Math.max(...l1Walls.map(p => panelHeightMM(enumerateMembers(p.mod)))) : 0;
+    ? Math.max(...l1Walls.map(p => p.mod.system === 'vcs12'
+      ? (p.mod.height_mm || 96 * IN_TO_MM)
+      : panelHeightMM(enumerateMembers(p.mod)))) : 0;
   const zForLevel = id => (id === 'L2' ? l2BaseZ : 0);
   // Every level at its real Z: L1 walls at z=0, L2 walls flush on the L1 top (§6).
   for (const p of placed) {

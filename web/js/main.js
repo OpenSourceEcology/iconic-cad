@@ -10,6 +10,9 @@ import { initHome } from './home.js';
 import { initProjectOptions } from './options.js';
 import { initFoundationModal } from './foundation.js';
 import { initTrades } from './trades.js';
+import { loadSystemManifests } from './systems.js';
+
+loadSystemManifests().catch(e => console.warn('Construction system manifests unavailable:', e));
 
 try {
   init3d();
