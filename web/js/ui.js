@@ -24,6 +24,9 @@ import { generateBuildSummary } from './render_summary.js';
 import { framingEditable } from './trades.js';
 import { activeSystem, isVcs12Active, manifestPaletteModules } from './systems.js';
 import { showVcsDisabled } from './notices.js';
+import { saveCustomModuleFromDocument } from './custom_save.js';
+import { customAssemblyBounds, loadLibraryZipFiles, renderCustomLibrary } from './custom_library.js';
+import { explodeAssembly } from './assembly_translate.js';
 
 const canvas = document.getElementById('design-canvas');
 
@@ -49,12 +52,35 @@ function pickModule(mod, dir) {
   requestDraw();
 }
 
+function pickCustomAssembly(entry) {
+  if (!framingEditable()) return;
+  const bounds = customAssemblyBounds(entry, activeSystem());
+  ui.dragState = {
+    assembly: entry,
+    mod: {
+      id: entry.id,
+      label: entry.title,
+      width_mm: bounds.width_mm,
+      height_mm: 0,
+      depth_mm: bounds.depth_mm,
+      system: entry.interface.system,
+    },
+    dir: 'north',
+  };
+  ui.snapTarget = null;
+  ui.eraseMode = false;
+  document.getElementById('btn-erase').classList.remove('active');
+  canvas.style.cursor = 'copy';
+  requestDraw();
+}
+
 // ---- Library category tabs (Walls / Windows / Doors / Interior) -------------
 const LIB_TABS = [
   { id: 'walls',    label: 'Walls' },
   { id: 'windows',  label: 'Windows' },
   { id: 'doors',    label: 'Doors' },
   { id: 'interior', label: 'Interior' },
+  { id: 'custom',   label: 'My Library' },
 ];
 
 function categoryMods(cat) {
@@ -78,9 +104,9 @@ function buildLibTabs() {
     const b = document.createElement('button');
     b.className = 'lib-tab' + (ui.libCategory === t.id ? ' active' : '');
     b.textContent = t.label;
-    b.disabled = isVcs12Active() && t.id !== 'walls';
+    b.disabled = isVcs12Active() && !['walls', 'custom'].includes(t.id);
     b.addEventListener('click', () => {
-      if (isVcs12Active() && t.id !== 'walls') {
+      if (isVcs12Active() && !['walls', 'custom'].includes(t.id)) {
         showVcsDisabled(t.id === 'interior' ? 'Interior wall placement' : 'Aperture placement');
         return;
       }
@@ -96,7 +122,11 @@ function buildLibTabs() {
 function buildSidebar() {
   const lib = document.getElementById('module-library');
   lib.innerHTML = '';
-  if (isVcs12Active() && ui.libCategory !== 'walls') ui.libCategory = 'walls';
+  if (isVcs12Active() && !['walls', 'custom'].includes(ui.libCategory)) ui.libCategory = 'walls';
+  if (ui.libCategory === 'custom') {
+    renderCustomLibrary(lib, { onPick: pickCustomAssembly, manifest: activeSystem() });
+    return;
+  }
   const mods = categoryMods(ui.libCategory);
   if (isVcs12Active() && mods.length === 0) {
     const note = document.createElement('div');
@@ -305,7 +335,8 @@ function undoLast() {
   // to Story 1 so the undo lands where the user can see it. Interior (iwall) and
   // L2 actions don't affect the silhouette, so they undo freely.
   const top = history[history.length - 1];
-  const topIsL1Exterior = top.module && top.module.kind === 'wall' && (top.module.level || 'L1') === 'L1';
+  const topModules = top.modules || (top.module ? [top.module] : []);
+  const topIsL1Exterior = topModules.some(module => module.kind === 'wall' && (module.level || 'L1') === 'L1');
   if (topIsL1Exterior && doc.entities.some(e => e.level === 'L2')) {
     if (!confirm('Undoing Story 1 will clear ALL Story 2 walls. Continue?')) return;
     clearLevel2();
@@ -315,6 +346,11 @@ function undoLast() {
   if (action.type === 'place') {
     const idx = doc.entities.indexOf(action.module);
     if (idx >= 0) doc.entities.splice(idx, 1);
+  } else if (action.type === 'placeMany') {
+    for (const module of action.modules) {
+      const idx = doc.entities.indexOf(module);
+      if (idx >= 0) doc.entities.splice(idx, 1);
+    }
   } else if (action.type === 'erase') {
     doc.entities.splice(action.index, 0, action.module);
   }
@@ -328,6 +364,8 @@ function redoLast() {
   const action = future.pop();
   if (action.type === 'place') {
     doc.entities.push(action.module);
+  } else if (action.type === 'placeMany') {
+    doc.entities.push(...action.modules);
   } else if (action.type === 'erase') {
     const idx = doc.entities.indexOf(action.module);
     if (idx >= 0) doc.entities.splice(idx, 1);
@@ -354,6 +392,7 @@ function toggleErase() {
 function rotateCW() {
   if (!framingEditable()) return; // framing locked after advancing
   if (!ui.dragState) return;
+  if (ui.dragState.assembly) return;
   // Interior walls toggle horizontal↔vertical (north↔east) only; exterior walls
   // cycle the full NESW.
   ui.dragState.dir = ui.dragState.mod.interior
@@ -551,6 +590,49 @@ function wireCanvas() {
       const mx = pxToMm((e.clientX - rect.left) - view.offsetX);
       const my = pxToMm((e.clientY - rect.top) - view.offsetY);
 
+      if (ui.dragState.assembly) {
+        const manifest = activeSystem();
+        const bounds = customAssemblyBounds(ui.dragState.assembly, manifest);
+        const origin = {
+          x_mm: mx - bounds.width_mm / 2 - (bounds.minX || 0),
+          y_mm: my - bounds.depth_mm / 2 - (bounds.minY || 0),
+        };
+        let exploded;
+        try {
+          exploded = explodeAssembly(ui.dragState.assembly.schema, manifest, origin).entities;
+        } catch (err) {
+          flashReject(ui.mouseCanvasX, ui.mouseCanvasY);
+          return;
+        }
+        const placed = exploded.map(entity => ({
+          kind: 'wall',
+          mod: entity.mod,
+          system: manifest.id,
+          dir: entity.dir,
+          x_mm: entity.x_mm,
+          y_mm: entity.y_mm,
+          level: doc.activeLevel,
+          layer: doc.activeLayer,
+          id: `wall_${ui.nextId++}`,
+          connections: [],
+          props: {},
+        }));
+        if (doc.activeLevel === 'L2' && placed.some(p => {
+          const bb = getModuleBBox(p.mod, p.dir);
+          return !regionForLevel('L1').containsFootprint(p.mod, p.dir, p.x_mm, p.y_mm) ||
+            wouldOverlap(p.x_mm, p.y_mm, bb, p.mod, p.dir);
+        })) {
+          flashReject(ui.mouseCanvasX, ui.mouseCanvasY);
+          return;
+        }
+        doc.entities.push(...placed);
+        history.push({ type: 'placeMany', modules: placed });
+        future.length = 0;
+        ui.snapTarget = null;
+        markModelChanged();
+        return;
+      }
+
       const onL2 = doc.activeLevel === 'L2';
       const mod = ui.dragState.mod, dir = ui.dragState.dir;
       const bb = getModuleBBox(mod, dir);
@@ -675,6 +757,53 @@ export function initUI() {
 
   // Load input (hidden file picker)
   document.getElementById('load-input').addEventListener('change', loadLayout);
+  document.getElementById('custom-library-input').addEventListener('change', async (event) => {
+    const files = [...event.target.files];
+    event.target.value = '';
+    if (!files.length) return;
+    try {
+      await loadLibraryZipFiles(files, activeSystem());
+      if (ui.libCategory === 'custom') buildSidebar();
+    } catch (err) {
+      alert(`Could not load library: ${err.message}`);
+    }
+  });
+
+  const customSaveModal = document.getElementById('custom-save-modal');
+  const customSaveTitle = document.getElementById('custom-save-title');
+  const customSaveAuthor = document.getElementById('custom-save-author');
+  function openCustomSaveModal() {
+    customSaveTitle.value = doc.project.name && doc.project.name !== 'Untitled Eco Home'
+      ? `${doc.project.name} Assembly`
+      : 'Custom Wall Assembly';
+    customSaveAuthor.value = '';
+    customSaveModal.classList.add('open');
+    requestAnimationFrame(() => { customSaveTitle.select(); customSaveTitle.focus(); });
+  }
+  function closeCustomSaveModal() {
+    customSaveModal.classList.remove('open');
+  }
+  async function confirmCustomSave() {
+    const title = customSaveTitle.value.trim();
+    const author = customSaveAuthor.value.trim();
+    if (!title || !author) return;
+    closeCustomSaveModal();
+    try {
+      await saveCustomModuleFromDocument({ title, author });
+    } catch (err) {
+      // saveCustomModuleFromDocument already toasts failures.
+    }
+  }
+  document.getElementById('btn-save-module').addEventListener('click', openCustomSaveModal);
+  document.getElementById('btn-custom-save-cancel').addEventListener('click', closeCustomSaveModal);
+  document.getElementById('btn-custom-save-confirm').addEventListener('click', confirmCustomSave);
+  customSaveModal.addEventListener('click', (e) => { if (e.target === customSaveModal) closeCustomSaveModal(); });
+  for (const input of [customSaveTitle, customSaveAuthor]) {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') confirmCustomSave();
+      if (e.key === 'Escape') { e.stopPropagation(); closeCustomSaveModal(); }
+    });
+  }
 
   // Sidebar panel toggles (independent on/off)
   document.getElementById('btn-toggle-3d').addEventListener('click', () => {
@@ -757,7 +886,7 @@ export function initUI() {
   // Keep the big 3D viewport sized to its container.
   window.addEventListener('resize', () => { if (ui.activeTab === '3d') resize3d(); });
   window.addEventListener('iconic:project', () => {
-    if (isVcs12Active()) ui.libCategory = 'walls';
+    if (isVcs12Active() && ui.libCategory !== 'custom') ui.libCategory = 'walls';
     buildLibTabs();
     buildDirSelector();
     buildSidebar();

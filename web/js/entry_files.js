@@ -103,6 +103,7 @@ def compile(schema, doc):
 
 export function buildEntryFiles(schema, meta = {}, expectInputs = {}) {
   if (!schema || typeof schema !== 'object') throw new Error('schema must be an object');
+  schema = jsonCompatible(schema);
   const id = entryId(meta.id || schema.name || schema.schema_name || 'custom_assembly');
   const title = meta.title || schema.name || id;
   const owner = meta.owner || meta.author || 'Unknown';
@@ -253,4 +254,16 @@ function requireObject(value, field) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
     throw new Error(`${field} must be an object`);
   }
+}
+
+function jsonCompatible(value) {
+  if (Array.isArray(value)) return value.map(jsonCompatible);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [key, item] of Object.entries(value)) {
+      if (item !== undefined) out[key] = jsonCompatible(item);
+    }
+    return out;
+  }
+  return value;
 }

@@ -48,6 +48,7 @@ jobs:
           node tests/export_gate.mjs
           node tests/assembly_translate.mjs
           node tests/entry_files.mjs
+          node tests/custom_roundtrip.mjs
 
       - name: Check Markdown relative links
         run: python scripts/check_links.py

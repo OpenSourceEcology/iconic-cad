@@ -148,6 +148,25 @@ poses each wall (rotate about Z, drop the bounding box to the origin), so
 this step a new module works in the CLI compiler and the 2D/3D preview but is
 **missing or wrong in the browser `.FCStd` export.**
 
+### Custom assemblies from the editor
+
+The editor can save a placed arrangement of existing validated wall modules as a
+custom assembly zip. The zip contains one library entry folder named by the
+entry id, with `schema.py`, `compiler.py`, `meta.yaml`, `expect.yaml`,
+`<id>.json`, and `README.txt`. The browser loads only the canonical
+`<id>.json` view; it never executes the Python files.
+
+Custom assemblies are `layer: assembly` entries and default to `status: wip`.
+Validate a saved zip by unpacking it into a library root and running:
+
+```bash
+python -m libtools validate-code --root <library-root> <id>
+```
+
+This path saves arrangements only. New module geometry, new framing families, or
+new baked browser-export solids still go through the normal library entry plus
+`python build_lib.py` bake path described above.
+
 Useful flags:
 
 ```bash

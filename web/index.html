@@ -140,6 +140,34 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
 .iso-item .iso-label { font-size: 13px; color: #ddeeff; line-height: 1.15; font-family: -apple-system, sans-serif; font-weight: 600; }
 .iso-item .iso-hint { font-size: 10px; color: #8a93a8; line-height: 1.2; font-family: -apple-system, sans-serif; font-weight: normal; }
 .iso-item.interior { border-style: dashed; border-color: #6a5a7c; }
+.custom-library-controls {
+  width: 220px; height: 64px; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 6px; flex-shrink: 0;
+}
+.custom-library-controls button {
+  flex: 1; background: #2e7d32; border: 1px solid #43a047;
+  border-radius: 4px; color: #eee; cursor: pointer;
+  font-size: 11px; font-weight: bold; letter-spacing: 0.8px;
+  font-family: 'Space Mono', 'Courier New', monospace;
+}
+.custom-library-controls button:hover { background: #388e3c; }
+.custom-library-empty {
+  color: #8a93a8; border: 1px solid #3a5a8a; border-radius: 4px;
+  padding: 10px 12px; font-size: 11px; line-height: 1.5;
+  width: 320px; height: 64px; box-sizing: border-box; flex-shrink: 0;
+}
+.custom-entry-card canvas {
+  width: 72px; height: 48px; border: 1px solid #22344d; border-radius: 3px;
+  background: #0a1020; flex-shrink: 0;
+}
+.custom-entry-card .custom-entry-meta {
+  color: #7a8faa; font-size: 10px; line-height: 1.2;
+}
+.custom-entry-badge {
+  display: inline-block; margin-left: 6px; padding: 1px 4px;
+  border: 1px solid #6c7f2a; border-radius: 3px; color: #d7e36d;
+  font-size: 9px; text-transform: uppercase;
+}
 
 /* NESW direction selector (top-left of grid) */
 #dir-selector {
@@ -236,6 +264,11 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
   background: #c62828;
   border-color: #e53935;
 }
+#toolbar .btn-save-module {
+  background: #2e7d32;
+  border-color: #43a047;
+}
+#toolbar .btn-save-module:hover { background: #388e3c; }
 
 /* Panel header row — centered full-width title with toggle pinned left */
 .panel-header {
@@ -357,6 +390,30 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
 }
 #filename-prompt-input:focus { border-color: #4fc3f7; }
 .filename-prompt-actions { display: flex; gap: 8px; justify-content: flex-end; }
+#custom-save-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.72);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+}
+#custom-save-modal.open { display: flex; }
+#custom-save-modal-inner {
+  background: #16213e;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 24px;
+  width: 390px;
+  box-shadow: 0 16px 50px rgba(0,0,0,0.55);
+}
+#custom-save-modal h2 {
+  margin: 0 0 8px 0;
+  color: #4fc3f7;
+  font-size: 18px;
+  letter-spacing: 1px;
+}
 #btn-filename-confirm {
   padding: 6px 16px;
   background: #2e7d32;
@@ -368,6 +425,17 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
   font-weight: bold;
 }
 #btn-filename-confirm:hover { background: #388e3c; }
+#btn-custom-save-confirm {
+  padding: 6px 16px;
+  background: #2e7d32;
+  border: 1px solid #43a047;
+  border-radius: 4px;
+  color: #eee;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: bold;
+}
+#btn-custom-save-confirm:hover { background: #388e3c; }
 #btn-filename-cancel {
   padding: 6px 14px;
   background: transparent;
@@ -378,6 +446,16 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
   font-size: 11px;
 }
 #btn-filename-cancel:hover { border-color: #888; color: #ccc; }
+#btn-custom-save-cancel {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #888;
+  cursor: pointer;
+  font-size: 11px;
+}
+#btn-custom-save-cancel:hover { border-color: #888; color: #ccc; }
 
 /* Export modal */
 #export-modal {
@@ -728,6 +806,7 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
     <div id="trade-locked-hint">Finish prior trades!</div>
   </div>
   <input type="file" id="load-input" accept=".json" style="display:none;">
+  <input type="file" id="custom-library-input" accept=".zip" multiple style="display:none;">
   <button id="btn-export-menu" style="margin-top:auto;">Export Menu ▲</button>
 </div>
 
@@ -739,6 +818,7 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
       <button id="btn-undo">Undo</button>
       <button id="btn-redo">Redo</button>
       <button id="btn-erase" class="btn-erase">Erase</button>
+      <button id="btn-save-module" class="btn-save-module">Save as Module</button>
       <button id="btn-rotate" style="display:none;">&#x21BB; Rotate (R)</button>
     </div>
     <div id="dir-selector"></div>
@@ -802,6 +882,25 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
       <div class="sidebar-title" style="font-size:16px;">BOM ESTIMATOR</div>
     </div>
     <div id="bom-content">Place modules to see estimate</div>
+  </div>
+</div>
+
+<div id="custom-save-modal">
+  <div id="custom-save-modal-inner">
+    <h2>// SAVE AS MODULE //</h2>
+    <p class="opt-sub">Save the active level's same-system exterior wall modules as a wip assembly entry.</p>
+    <div class="opt-field">
+      <label for="custom-save-title">Title</label>
+      <input type="text" id="custom-save-title" spellcheck="false" placeholder="Custom Wall Assembly">
+    </div>
+    <div class="opt-field">
+      <label for="custom-save-author">Author</label>
+      <input type="text" id="custom-save-author" spellcheck="false" placeholder="Owner name">
+    </div>
+    <div class="filename-prompt-actions">
+      <button id="btn-custom-save-cancel">Cancel</button>
+      <button id="btn-custom-save-confirm">Download</button>
+    </div>
   </div>
 </div>
 
