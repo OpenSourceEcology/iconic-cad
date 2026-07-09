@@ -19,14 +19,14 @@ jobs:
       - name: Install Python deps
         run: pip install -r requirements.txt -r requirements-dev.txt 'libtools @ git+https://github.com/OpenSourceEcology/vcs-library'
 
-      - name: Assert specs.json is in sync with wall_instances.yaml
+      - name: Assert wall_instances.yaml is generated from library entries
+        run: python scripts/gen_wall_instances.py --verify
+
+      - name: Assert specs.json is in sync with library entries
         run: python scripts/gen_specs.py && git diff --exit-code web/assets/lib/specs.json
 
       - name: Python blocking-math unit tests
         run: python -m pytest tests/test_blocking_math.py tests/test_library_drift.py -v
-
-      - name: Assert library entries are in sync with wall_instances.yaml
-        run: python scripts/gen_library_entries.py --verify
 
       - name: Validate library entry code
         run: python -m libtools validate-code --root . --all

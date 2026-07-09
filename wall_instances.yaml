@@ -1,6 +1,6 @@
 # Wall Instances
-# 3 concrete wall module specifications.
-# Each maps to a FreeCAD .FCStd file in cad_library/
+# Generated from library/modules/*/schema.py by scripts/gen_wall_instances.py.
+# Kept for backward compatibility with legacy generators and compilers.
 # Source: https://wiki.opensourceecology.org/wiki/Wall_instances.yaml
 
 instances:

@@ -1,27 +1,28 @@
 #!/usr/bin/env python3
 """
-Generate web/assets/lib/specs.json from wall_instances.yaml.
+Generate web/assets/lib/specs.json from library module entries.
 
-Run from the repo root after editing wall_instances.yaml:
+Run from the repo root after editing library/modules:
     python scripts/gen_specs.py
 
 specs.json is the single source of wall framing parameters used by the browser
-FreeCAD export (web/js/fcstd.js). The CI asserts this file stays in sync with
-the YAML on every push.
+FreeCAD export (web/js/fcstd.js). The CI asserts this file stays in sync on
+every push.
 
-No FreeCAD required — reads YAML only.
+No FreeCAD required.
 """
 import json
 import os
-import yaml
+
+from entry_instances import instances_document
 
 YAML_PATH = 'wall_instances.yaml'
 OUT_PATH = os.path.join('web', 'assets', 'lib', 'specs.json')
+DATA = None
 
 
 def main():
-    with open(YAML_PATH) as f:
-        data = yaml.safe_load(f)
+    data = DATA if DATA is not None else instances_document()
 
     specs = {}
     for inst in data['instances']:

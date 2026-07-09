@@ -3,13 +3,13 @@
 Geometry baker — runs UNDER freecadcmd. Driven by build_lib.py; not meant to be
 called by hand.
 
-From wall_instances.yaml it produces, for every instance:
+From a wall-instance compatibility YAML it produces, for every instance:
   - cad_library/<id>.FCStd          the Python-compiler library part (gitignored)
   - <libdir>/<id>__<dir>.brp        the browser solid, one per N/S/E/W direction
   - <libdir>/volumes.json           canonical solid volume per module (mm^3, int)
 
 Invocation (build_lib.py builds this command line):
-    freecadcmd scripts/bake_geometry.py <mode> <libdir> <cadlibdir>
+    freecadcmd scripts/bake_geometry.py <mode> <libdir> <cadlibdir> [instances_yaml]
       mode = "write"   -> write the artifacts into <libdir> / <cadlibdir>
       mode = "verify"  -> write into the (temp) <libdir> / <cadlibdir>, then
                           geometrically compare every .brp and volume against the
@@ -85,10 +85,10 @@ def baked_for_direction(base_shape, rot_deg):
     return s
 
 
-def write_artifacts(libdir, cadlibdir):
+def write_artifacts(libdir, cadlibdir, yaml_path=YAML_PATH):
     os.makedirs(libdir, exist_ok=True)
     os.makedirs(cadlibdir, exist_ok=True)
-    data = yaml.safe_load(open(YAML_PATH))
+    data = yaml.safe_load(open(yaml_path))
 
     volumes = {}
     for inst in data["instances"]:
@@ -147,7 +147,7 @@ def _bb_extents(shape):
     return tuple(sorted((bb.XLength, bb.YLength, bb.ZLength)))
 
 
-def verify(libdir, volumes):
+def verify(libdir, volumes, yaml_path=YAML_PATH):
     """Compare freshly-baked artifacts in libdir against committed web/assets/lib.
 
     Writes a machine-readable report to <libdir>/verify_report.json because
@@ -155,7 +155,7 @@ def verify(libdir, volumes):
     """
     ok = True
     report = {"brp": [], "volumes": [], "max_dvol": 0.0, "max_dbb": 0.0}
-    data = yaml.safe_load(open(YAML_PATH))
+    data = yaml.safe_load(open(yaml_path))
     for inst in data["instances"]:
         iid = inst["id"]
         for direction in DIRECTION_TO_ROT:
@@ -201,14 +201,15 @@ def verify(libdir, volumes):
 
 
 def main():
-    # argv: ['freecadcmd', '<script>', mode, libdir, cadlibdir]
+    # argv: ['freecadcmd', '<script>', mode, libdir, cadlibdir, optional_yaml]
     mode = sys.argv[2]
     libdir = sys.argv[3]
     cadlibdir = sys.argv[4]
+    yaml_path = sys.argv[5] if len(sys.argv) > 5 else YAML_PATH
     print("[bake_geometry] mode=%s libdir=%s cadlibdir=%s" % (mode, libdir, cadlibdir))
-    volumes = write_artifacts(libdir, cadlibdir)
+    volumes = write_artifacts(libdir, cadlibdir, yaml_path)
     if mode == "verify":
-        ok = verify(libdir, volumes)
+        ok = verify(libdir, volumes, yaml_path)
         sys.exit(0 if ok else 1)
 
 

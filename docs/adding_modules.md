@@ -6,16 +6,17 @@ module (sliding door, double door, garage header, etc.).
 
 ## The pipeline (what you're plugging into)
 
-Per the Iconic CAD Protocol, one YAML schema compiles three ways:
+Per the Iconic CAD Protocol, one library-entry schema compiles three ways:
 
 ```
-                      ┌── scripts/gen_specs.py ──▶ web/assets/lib/specs.json
-                      │── (freecadcmd) ─────────▶ web/assets/lib/<id>__<dir>.brp  (4: N/S/E/W)
-wall_instances.yaml ──┤── (freecadcmd) ─────────▶ web/assets/lib/volumes.json
-        (schema)      │── (freecadcmd) ─────────▶ cad_library/<id>.FCStd   (the part)
-                      └── (headless Chromium) ──▶ web/thumbs/<id>.png
-                          ▲
-                          └─── python build_lib.py  regenerates ALL of the above
+library/modules/<id>/schema.py ─┬── scripts/gen_specs.py ──▶ web/assets/lib/specs.json
+        (authored schema)       │── scripts/gen_wall_instances.py ──▶ wall_instances.yaml
+                                │── (freecadcmd) ─────────▶ web/assets/lib/<id>__<dir>.brp  (4: N/S/E/W)
+                                │── (freecadcmd) ─────────▶ web/assets/lib/volumes.json
+                                │── (freecadcmd) ─────────▶ cad_library/<id>.FCStd   (the part)
+                                └── (headless Chromium) ──▶ web/thumbs/<id>.png
+                                    ▲
+                                    └─── python build_lib.py  regenerates ALL of the above
 
 web UI (web/js/) ──Export──▶ layout.json ──compile_from_json.py──▶ House.FCStd
   place + snap                   │         (Python + FreeCAD, ./compile.sh,
@@ -27,21 +28,23 @@ web UI (web/js/) ──Export──▶ layout.json ──compile_from_json.py─
                                       (Python, requires ifcopenshell)
 ```
 
-The YAML is the single source of truth. `python build_lib.py` is the single
-command that regenerates every derived artifact from it — the Python compiler's
-`cad_library/*.FCStd`, **and** the committed browser-export assets
+The library entry is the authored source of truth. `python build_lib.py` is the
+single command that validates entries first, then regenerates every derived
+artifact from them — the compatibility `wall_instances.yaml`, the Python
+compiler's `cad_library/*.FCStd`, **and** the committed browser-export assets
 (`web/assets/lib/*.brp`, `volumes.json`, `specs.json`) and `web/thumbs/*.png`.
 The web UI lets a user place parts and exports positions; the JSON compiler (or
 the in-browser `fcstd.js`) reassembles the parts into a house. (The old SVG/icon
 compiler is retired — see the `legacy` branch.)
 
-> **Module ids carry no orientation or material suffix.** The `id:` in the YAML
-> is *the* module id used everywhere downstream — the `specs.json` key, the
-> `<id>__<dir>.brp` filename, the `web/thumbs/<id>.png` name, the
+> **Module ids carry no orientation or material suffix.** The entry directory,
+> `meta.yaml` id, and `SCHEMA["document_name"]` use *the* module id everywhere
+> downstream — the `wall_instances.yaml` compatibility id, the `specs.json` key,
+> the `<id>__<dir>.brp` filename, the `web/thumbs/<id>.png` name, the
 > `cad_library/<id>.FCStd` part, and the `id` in `web/js/constants.js`. Keep it
 > the same string in all of them (e.g. `window_4x8_2x6_36x48`, not
 > `window_4x8_2x6_36x48_south`). `build_lib` enforces this — every artifact is
-> derived from the one YAML id.
+> derived from the entry id.
 
 ## Design principle for apertures
 
@@ -54,31 +57,41 @@ a plain wall. Exact framing dims were measured from OSE source CAD; see
 
 ## The six touch-points
 
-### 1. Schema — `wall_instances.yaml`
+### 1. Library validation entry — `library/modules/<id>/`
 
-Add an instance with the shared wall parameters plus an `aperture` block:
+Add a module entry with `schema.py`, `compiler.py`, `meta.yaml`, and
+`expect.yaml`. The `SCHEMA` parameters carry the shared wall parameters plus an
+`aperture` block:
 
-```yaml
-- id: window_4x8_2x6_36x48      # this exact string is the module id everywhere
-  family: aperture_wall_panel
-  parameters:
-    nominal_width_ft: 4.0
-    nominal_height_ft: 8.0
-    stud_lumber_nominal: "2x6"
-    stud_spacing_oc_in: 16
-    osb_thickness_in: 0.4375
-    exterior_face: south
-    reference_house_orientation: faces_south
-    aperture:
-      type: window            # window | door
-      rough_opening_width_in: 36
-      rough_opening_height_in: 48
-      sill_height_in: 24       # top of sill; 0 = opening to floor (door)
-      header_lumber_nominal: "2x8"
-      header_plies: 2
+```python
+SCHEMA = {
+    "schema_name": "ApertureWallPanel",
+    "units": "in",
+    "document_name": "window_4x8_2x6_36x48",
+    "family": "aperture_wall_panel",
+    "parameters": (
+        ("nominal_width_ft", 4.0),
+        ("nominal_height_ft", 8.0),
+        ("stud_lumber_nominal", "2x6"),
+        ("stud_spacing_oc_in", 16),
+        ("osb_thickness_in", 0.4375),
+        ("exterior_face", "south"),
+        ("reference_house_orientation", "faces_south"),
+        ("aperture", (
+            ("type", "window"),
+            ("rough_opening_width_in", 36),
+            ("rough_opening_height_in", 48),
+            ("sill_height_in", 24),
+            ("header_lumber_nominal", "2x8"),
+            ("header_plies", 2),
+        )),
+    ),
+}
 ```
 
 `osb_thickness_in: 0` makes it an interior (2x4, no-OSB) panel.
+`wall_instances.yaml` is generated from these entries by
+`scripts/gen_wall_instances.py` for older code paths that still read the YAML.
 
 ### 2. CAD generator — `generate_wall_library.py`
 
@@ -111,17 +124,18 @@ Verify a panel's framing by measuring its solids (W × D × H, origin) in
 ### 3b. Regenerate all browser-export assets — `build_lib.py`
 
 This is the step that's easy to forget — and forgetting it is exactly what
-leaves the in-browser FreeCAD export stale. After adding the module to
-`wall_instances.yaml`, regenerate **every** derived artifact with one command:
+leaves the in-browser FreeCAD export stale. After adding the module entry,
+regenerate **every** derived artifact with one command:
 
 ```bash
 python build_lib.py
 ```
 
-It produces (all idempotent, from the YAML):
+It produces (all idempotent, from the entries):
 
 | Artifact | Consumer | Needs |
 |----------|----------|-------|
+| `wall_instances.yaml` | compatibility path for older generators / compilers | plain Python |
 | `web/assets/lib/specs.json` | `fcstd.js` framing params | plain Python |
 | `web/assets/lib/<id>__<dir>.brp` (×4) | `fcstd.js` per-direction solids | `freecadcmd` |
 | `web/assets/lib/volumes.json` | reference / sanity-check | `freecadcmd` |
@@ -141,8 +155,9 @@ python build_lib.py --verify     # rebuild to a temp dir, diff vs committed; clo
 python build_lib.py --no-thumbs  # skip the Chromium thumbnail bake (needs network for the three.js CDN)
 ```
 
-Commit the YAML change together with the regenerated `specs.json`, `.brp`,
-`volumes.json`, and `thumbs`. CI asserts `specs.json` stays in sync with the YAML.
+Commit the entry change together with the regenerated compatibility YAML,
+`specs.json`, `.brp`, `volumes.json`, and `thumbs`. CI asserts the YAML and
+`specs.json` stay in sync with the entries.
 (FreeCAD version differences can make the `.brp` non-byte-identical even when the
 geometry is correct — `--verify` compares geometry, not bytes.)
 
@@ -159,42 +174,41 @@ Add a `module_specs.<id>` entry (`studs`, `plates`, `osb_sheets`,
 equivalent estimates (kings + jacks + cripples + header stock); note this in
 the entry's `notes`.
 
-### 6. Library validation entry — `library/modules/<id>/`
+### 6. Compatibility YAML — `wall_instances.yaml`
 
-In L1, `wall_instances.yaml` remains the source of truth and the library entries
-are its generated validation projection. Run:
-
-```bash
-python scripts/gen_library_entries.py
-```
-
-This writes `schema.py`, `compiler.py`, `meta.yaml`, and `expect.yaml` for each
-module. The fast CI lane runs:
+Do not edit `wall_instances.yaml` directly. It is regenerated from
+`library/modules/<id>/schema.py`:
 
 ```bash
-python scripts/gen_library_entries.py --verify
+python scripts/gen_wall_instances.py
 ```
 
-`--verify` regenerates entries to a temp directory and diffs them against
-`library/modules/`, exiting nonzero on drift.
+The fast CI lane runs:
+
+```bash
+python scripts/gen_wall_instances.py --verify
+```
+
+`--verify` regenerates the YAML to a temp file and byte-compares it against the
+committed copy, exiting nonzero on drift.
 
 ## Checklist for a new module
 
-- [ ] `wall_instances.yaml` instance added (id has **no** orientation/material
+- [ ] `library/modules/<id>/` entry added (id has **no** orientation/material
       suffix — same string used everywhere downstream)
 - [ ] `web/js/constants.js`: module entry in `APERTURE_MODULES` / `INT_APERTURE_MODULES`
       with the **same** `id`
 - [ ] `web/js/render2d.js`: plan silhouette in `drawAperturePlan()`
 - [ ] `web/js/render3d.js`: 3D framing in `buildAperture3D()`
 - [ ] `web/pricing.json`: BOM spec
-- [ ] `python scripts/gen_library_entries.py` — regenerates `library/modules/<id>/`
-      entries from `wall_instances.yaml`
+- [ ] `python scripts/gen_wall_instances.py` — regenerates compatibility
+      `wall_instances.yaml` from the entries
 - [ ] **`python build_lib.py`** — regenerates `specs.json`, the 4 `.brp`,
-      `volumes.json`, `cad_library/*.FCStd`, and the thumbnail. **Don't skip
-      this** — it's what keeps the browser export from going stale. Commit all of
-      it with the YAML change.
+      `volumes.json`, `cad_library/*.FCStd`, the compatibility YAML, and the
+      thumbnail. **Don't skip this** — it's what keeps the browser export from
+      going stale. Commit all of it with the entry change.
 - [ ] `compile_from_json.py` reassembles it (run `./compile.sh test_layout.json`)
 - [ ] `python build_lib.py --verify` clean, and `node tests/parity.mjs` passes
-- [ ] `python scripts/gen_library_entries.py --verify` clean
+- [ ] `python scripts/gen_wall_instances.py --verify` clean
 - [ ] dims sourced from real CAD / code, not guessed — record them in
       [aperture_framing_reference.md](aperture_framing_reference.md)

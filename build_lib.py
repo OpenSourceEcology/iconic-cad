@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 build_lib.py — one command to regenerate EVERY derived artifact from
-wall_instances.yaml. Run from the repo root.
+library module entries. Run from the repo root.
 
     python build_lib.py               # regenerate everything, in place
     python build_lib.py --verify      # regenerate to a temp dir, diff vs committed
@@ -17,9 +17,9 @@ What it produces (and the tool each step needs):
 
 Before this script existed, only specs.json and cad_library/ had a generator;
 the .brp solids, volumes.json, and thumbnails were baked by hand and committed,
-so editing wall_instances.yaml silently staled the browser export. build_lib is
-the single reproducible path the contributor guide (docs/adding_modules.md) now
-points at.
+so edits to module definitions could silently stale the browser export.
+build_lib is the single reproducible path the contributor guide
+(docs/adding_modules.md) now points at.
 
 The geometry steps are delegated to scripts/bake_geometry.py (which runs under
 freecadcmd); specs are generated in-process via scripts/gen_specs.py; thumbnails
@@ -42,12 +42,15 @@ import sys
 import tempfile
 import time
 
+import yaml
+
 REPO_ROOT = os.path.dirname(os.path.abspath(__file__))
 LIB_DIR = os.path.join("web", "assets", "lib")
 CAD_DIR = "cad_library"
 THUMB_DIR = os.path.join("web", "thumbs")
 SPECS_PATH = os.path.join(LIB_DIR, "specs.json")
 BAKE_GEOMETRY = os.path.join("scripts", "bake_geometry.py")
+GEN_WALL_INSTANCES = os.path.join("scripts", "gen_wall_instances.py")
 THUMB_PAGE = "tools/bake_thumbs.html"  # relative to the web/ server root
 
 
@@ -56,30 +59,53 @@ def fail(msg):
     sys.exit(1)
 
 
+def validate_entries():
+    """Run libtools validation before deriving any artifacts."""
+    cmd = [sys.executable, "-m", "libtools", "validate-code", "--root", ".", "--all"]
+    print("[validate] " + " ".join(cmd), flush=True)
+    res = subprocess.run(cmd, cwd=REPO_ROOT)
+    if res.returncode != 0:
+        fail("library entry validation failed; refusing to bake derived artifacts.")
+
+
+def entry_instances_document():
+    sys.path.insert(0, os.path.join(REPO_ROOT, "scripts"))
+    from entry_instances import instances_document
+    return instances_document()
+
+
+def write_instances_yaml(data, path):
+    with open(path, "w") as f:
+        yaml.safe_dump(data, f, sort_keys=False)
+
+
 # --------------------------------------------------------------------------- #
 # specs.json  (no FreeCAD)
 # --------------------------------------------------------------------------- #
-def run_specs(out_path):
+def run_specs(out_path, data):
     """Generate specs.json to out_path via scripts/gen_specs.py (in-process)."""
     sys.path.insert(0, os.path.join(REPO_ROOT, "scripts"))
     import gen_specs
     orig = gen_specs.OUT_PATH
+    orig_data = gen_specs.DATA
     gen_specs.OUT_PATH = out_path
+    gen_specs.DATA = data
     try:
         os.makedirs(os.path.dirname(out_path), exist_ok=True)
         gen_specs.main()
     finally:
         gen_specs.OUT_PATH = orig
+        gen_specs.DATA = orig_data
 
 
 # --------------------------------------------------------------------------- #
 # geometry: cad_library/*.FCStd + lib/*.brp + volumes.json  (freecadcmd)
 # --------------------------------------------------------------------------- #
-def run_geometry(mode, libdir, cadlibdir):
+def run_geometry(mode, libdir, cadlibdir, instances_yaml):
     freecadcmd = shutil.which("freecadcmd")
     if not freecadcmd:
         fail("freecadcmd not found on PATH — install FreeCAD to bake geometry.")
-    cmd = [freecadcmd, BAKE_GEOMETRY, mode, libdir, cadlibdir]
+    cmd = [freecadcmd, BAKE_GEOMETRY, mode, libdir, cadlibdir, instances_yaml]
     print("[geometry] " + " ".join(cmd))
     # freecadcmd is chatty on stderr; stream it through so the user sees progress.
     res = subprocess.run(cmd, cwd=REPO_ROOT)
@@ -197,6 +223,15 @@ def verify_thumbs(tmp_thumbs):
     return ok
 
 
+def verify_wall_instances():
+    cmd = [sys.executable, GEN_WALL_INSTANCES, "--verify"]
+    print("[yaml] " + " ".join(cmd))
+    res = subprocess.run(cmd, cwd=REPO_ROOT)
+    ok = res.returncode == 0
+    print("  wall_instances.yaml: %s" % ("PASS (identical)" if ok else "DIFF vs entries"))
+    return ok
+
+
 # --------------------------------------------------------------------------- #
 # main
 # --------------------------------------------------------------------------- #
@@ -210,6 +245,8 @@ def main():
                     help="skip the headless-Chromium thumbnail bake")
     args = ap.parse_args()
     os.chdir(REPO_ROOT)
+    validate_entries()
+    instances_data = entry_instances_document()
 
     if args.verify:
         tmp = tempfile.mkdtemp(prefix="build_lib_verify_")
@@ -217,12 +254,16 @@ def main():
         tmp_cad = os.path.join(tmp, "cad_library")
         tmp_specs = os.path.join(tmp, "specs.json")
         tmp_thumbs = os.path.join(tmp, "thumbs")
+        tmp_instances = os.path.join(tmp, "wall_instances.yaml")
         print("=== build_lib --verify (temp: %s) ===" % tmp)
+        write_instances_yaml(instances_data, tmp_instances)
 
-        run_specs(tmp_specs)
+        ok_yaml = verify_wall_instances()
+
+        run_specs(tmp_specs, instances_data)
         ok_specs = verify_specs(tmp_specs)
 
-        rc = run_geometry("verify", tmp_lib, tmp_cad)  # compares .brp internally
+        rc = run_geometry("verify", tmp_lib, tmp_cad, tmp_instances)  # compares .brp internally
         ok_geo = rc == 0
 
         ok_thumbs = True
@@ -237,22 +278,33 @@ def main():
                 ok_thumbs = None  # could not check, not a hard fail
 
         print("\n=== verify summary ===")
+        print("  wall YAML  : %s" % ("PASS" if ok_yaml else "DIFF"))
         print("  specs.json : %s" % ("PASS" if ok_specs else "DIFF"))
         print("  geometry   : %s" % ("PASS" if ok_geo else "FAIL"))
         print("  thumbnails : %s" % ("PASS" if ok_thumbs else
                                       ("skipped" if ok_thumbs is None else "FAIL")))
-        hard_fail = (not ok_geo) or (ok_thumbs is False)
+        hard_fail = (not ok_yaml) or (not ok_specs) or (not ok_geo) or (ok_thumbs is False)
         shutil.rmtree(tmp, ignore_errors=True)
         sys.exit(1 if hard_fail else 0)
 
     # ---- in-place regenerate -------------------------------------------- #
     print("=== build_lib: regenerating all derived artifacts ===")
-    print("[specs] writing %s" % SPECS_PATH)
-    run_specs(SPECS_PATH)
+    print("[yaml] writing wall_instances.yaml")
+    subprocess.check_call([sys.executable, GEN_WALL_INSTANCES], cwd=REPO_ROOT)
 
-    rc = run_geometry("write", LIB_DIR, CAD_DIR)
-    if rc != 0:
-        fail("geometry bake (freecadcmd) failed with exit code %d" % rc)
+    print("[specs] writing %s" % SPECS_PATH)
+    run_specs(SPECS_PATH, instances_data)
+
+    with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as f:
+        tmp_instances = f.name
+    try:
+        write_instances_yaml(instances_data, tmp_instances)
+        rc = run_geometry("write", LIB_DIR, CAD_DIR, tmp_instances)
+        if rc != 0:
+            fail("geometry bake (freecadcmd) failed with exit code %d" % rc)
+    finally:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp_instances)
 
     if args.no_thumbs:
         print("[thumbs] skipped (--no-thumbs)")
