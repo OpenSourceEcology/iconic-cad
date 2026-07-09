@@ -1,0 +1,26 @@
+# Manual job: bake the VCS-12 palette assets (BREPs + thumbnails) from a
+# fresh vcs-library checkout under FreeCAD. Run when vcs-library's wall
+# entries change; download the artifact and commit the refreshed assets.
+name: bake-vcs-assets
+on:
+  workflow_dispatch:
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install FreeCAD
+        run: |
+          sudo add-apt-repository -y ppa:freecad-maintainers/freecad-stable
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq freecad
+          command -v freecadcmd
+      - run: python3 -m pip install --break-system-packages -r requirements.txt -r requirements-dev.txt 'libtools @ git+https://github.com/OpenSourceEcology/vcs-library'
+      - run: git clone --depth 1 https://github.com/OpenSourceEcology/vcs-library /tmp/vcs-library
+      - run: python3 scripts/bake_external_library.py /tmp/vcs-library
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vcs12-assets
+          path: |
+            web/assets/lib/vcs12/
+            web/data/systems/vcs12.json
