@@ -145,11 +145,6 @@ export function initHome() {
   // Harmless if already in design view (showDesign is idempotent).
   window.addEventListener('iconic:loaded', () => showDesign());
 
-  // Tutorial link is a placeholder — prevent navigation until real URL is set.
-  document.getElementById('btn-home-tutorial').addEventListener('click', (e) => {
-    if (e.currentTarget.getAttribute('href') === '#') e.preventDefault();
-  });
-
   // HOME button inside design area — confirm before discarding unsaved work.
   document.getElementById('btn-go-home').addEventListener('click', () => {
     if (confirm('Leave design? Unsaved changes may be lost.')) showHome();
