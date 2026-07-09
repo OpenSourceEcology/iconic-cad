@@ -190,9 +190,9 @@ modules, a drag-and-snap layout editor, two independent CAD compilers held
 equal by automated parity tests, and the beginnings of the build book. Those
 fifteen modules are now expressed as validated library entries themselves,
 and every drawing, cut list, and browser asset is baked from entries that
-pass validation — a failing entry stops the bake. The validators promptly
-earned their keep: they surfaced framing defects the parity tests could not
-see, because both compilers shared the same mistake. Known spec violations
+pass validation — a failing entry stops the bake. The validators immediately
+caught framing defects the parity tests could not see — both compilers
+shared the same mistake. Known spec violations
 are tracked and being fixed before anything else is built on top. To keep
 the specifications this compiler reads — they live on the OSE wiki —
 accurate and current, we built
