@@ -4,13 +4,27 @@ import { activeSystem } from './systems.js';
 import { showNotice } from './notices.js';
 
 const registry = new Map();
+const BUILTIN_LIBRARY_GROUP = 'VILLAGE CONSTRUCTION SET';
+const BUILTIN_LIBRARY_BASE = 'data/builtin_library';
+let builtinLibraryPromise = null;
+let builtinLibraryLoaded = false;
 
 export function loadedCustomEntries(systemId = activeSystem().id) {
   return [...registry.values()].filter(entry => entry.interface.system === systemId);
 }
 
+export function loadedUserEntries(systemId = activeSystem().id) {
+  return loadedCustomEntries(systemId).filter(entry => !entry.builtin);
+}
+
+export function loadedBuiltinEntries(systemId = activeSystem().id) {
+  return loadedCustomEntries(systemId).filter(entry => entry.builtin);
+}
+
 export function clearCustomLibrary() {
   registry.clear();
+  builtinLibraryPromise = null;
+  builtinLibraryLoaded = false;
 }
 
 export function missingEntryModuleRefs(entry, manifest = activeSystem()) {
@@ -36,6 +50,13 @@ export function acceptCustomEntry(entry, manifest = activeSystem()) {
   }
   registry.set(entry.id, entry);
   return entry;
+}
+
+export async function ensureBuiltinLibrary(manifest = activeSystem()) {
+  if (manifest.id !== 'vcs12') return { accepted: [], refused: [] };
+  if (builtinLibraryLoaded) return { accepted: loadedBuiltinEntries(manifest.id), refused: [] };
+  if (!builtinLibraryPromise) builtinLibraryPromise = loadBuiltinLibrary(manifest);
+  return builtinLibraryPromise;
 }
 
 export async function loadLibraryZipFile(file, manifest = activeSystem()) {
@@ -86,6 +107,11 @@ export async function loadLibraryDirectory(manifest = activeSystem()) {
 
 export function renderCustomLibrary(container, { onPick, manifest = activeSystem() } = {}) {
   container.innerHTML = '';
+  if (manifest.id === 'vcs12' && !builtinLibraryLoaded) {
+    ensureBuiltinLibrary(manifest).then(() => {
+      renderCustomLibrary(container, { onPick, manifest });
+    }).catch(err => console.warn(`Built-in library unavailable: ${err.message}`));
+  }
   const controls = document.createElement('div');
   controls.className = 'custom-library-controls';
   const loadButton = document.createElement('button');
@@ -113,15 +139,18 @@ export function renderCustomLibrary(container, { onPick, manifest = activeSystem
     }
   });
 
-  const entries = loadedCustomEntries(manifest.id);
-  if (!entries.length) {
+  const builtins = loadedBuiltinEntries(manifest.id);
+  const userEntries = loadedUserEntries(manifest.id);
+  if (manifest.id === 'vcs12' && !builtinLibraryLoaded && !userEntries.length) return;
+  if (!builtins.length && !userEntries.length) {
     const empty = document.createElement('div');
     empty.className = 'custom-library-empty';
     empty.textContent = 'Load a library zip exported from this editor, or an entry folder with a canonical <id>.json view.';
     container.appendChild(empty);
     return;
   }
-  for (const entry of entries) container.appendChild(customEntryCard(entry, manifest, onPick));
+  if (builtins.length) appendEntryGroup(container, BUILTIN_LIBRARY_GROUP, builtins, manifest, onPick);
+  for (const entry of userEntries) container.appendChild(customEntryCard(entry, manifest, onPick));
 }
 
 export function customAssemblyBounds(entry, manifest = activeSystem()) {
@@ -157,16 +186,68 @@ function customEntryCard(entry, manifest, onPick) {
   text.querySelector('.iso-label').textContent = entry.title;
   text.querySelector('.iso-hint').textContent = entry.id;
   text.querySelector('.custom-entry-meta').textContent = `${entry.owner} | ${entry.status}`;
-  if (entry.status === 'wip') {
+  if (entry.builtin || entry.status === 'wip') {
     const badge = document.createElement('span');
-    badge.className = 'custom-entry-badge';
-    badge.textContent = 'wip';
+    badge.className = `custom-entry-badge${entry.builtin ? ' builtin' : ''}`;
+    badge.textContent = entry.builtin ? 'built-in' : 'wip';
     text.querySelector('.custom-entry-meta').appendChild(badge);
   }
   item.appendChild(thumb);
   item.appendChild(text);
   item.addEventListener('click', () => onPick?.(entry));
   return item;
+}
+
+function appendEntryGroup(container, label, entries, manifest, onPick) {
+  const group = document.createElement('div');
+  group.className = 'custom-entry-group';
+  const heading = document.createElement('div');
+  heading.className = 'custom-entry-group-label';
+  heading.textContent = label;
+  group.appendChild(heading);
+  for (const entry of entries) group.appendChild(customEntryCard(entry, manifest, onPick));
+  container.appendChild(group);
+}
+
+async function loadBuiltinLibrary(manifest) {
+  const accepted = [];
+  const refused = [];
+  let filenames;
+  try {
+    const indexResp = await fetch(`${BUILTIN_LIBRARY_BASE}/index.json`, { cache: 'reload' });
+    if (!indexResp.ok) throw new Error(`HTTP ${indexResp.status}`);
+    filenames = await indexResp.json();
+    if (!Array.isArray(filenames)) throw new Error('index must be an array');
+  } catch (err) {
+    console.warn(`Built-in library index skipped: ${err.message}`);
+    builtinLibraryLoaded = true;
+    return { accepted, refused: [err.message] };
+  }
+
+  for (const name of filenames) {
+    try {
+      if (typeof name !== 'string' || !name.endsWith('.json') || name.includes('/')) {
+        throw new Error(`invalid filename: ${name}`);
+      }
+      const resp = await fetch(`${BUILTIN_LIBRARY_BASE}/${name}`, { cache: 'reload' });
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const entry = parseEntryJson(await resp.text());
+      accepted.push(acceptBuiltinEntry(entry, manifest));
+    } catch (err) {
+      refused.push(`${name}: ${err.message}`);
+      console.warn(`Built-in library entry skipped: ${name}: ${err.message}`);
+    }
+  }
+  builtinLibraryLoaded = true;
+  return { accepted, refused };
+}
+
+function acceptBuiltinEntry(entry, manifest) {
+  return acceptCustomEntry({
+    ...entry,
+    builtin: true,
+    builtinGroup: BUILTIN_LIBRARY_GROUP,
+  }, manifest);
 }
 
 function drawEntryThumbnail(canvas, entry, manifest) {

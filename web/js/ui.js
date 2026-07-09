@@ -25,7 +25,7 @@ import { framingEditable } from './trades.js';
 import { activeSystem, isVcs12Active, manifestPaletteModules } from './systems.js';
 import { showVcsDisabled } from './notices.js';
 import { saveCustomModuleFromDocument } from './custom_save.js';
-import { customAssemblyBounds, loadLibraryZipFiles, renderCustomLibrary } from './custom_library.js';
+import { customAssemblyBounds, ensureBuiltinLibrary, loadLibraryZipFiles, renderCustomLibrary } from './custom_library.js';
 import { explodeAssembly } from './assembly_translate.js';
 
 const canvas = document.getElementById('design-canvas');
@@ -123,6 +123,7 @@ function buildSidebar() {
   const lib = document.getElementById('module-library');
   lib.innerHTML = '';
   if (isVcs12Active() && !['walls', 'custom'].includes(ui.libCategory)) ui.libCategory = 'walls';
+  if (isVcs12Active() && ui.libCategory !== 'custom') ensureBuiltinLibrary(activeSystem());
   if (ui.libCategory === 'custom') {
     renderCustomLibrary(lib, { onPick: pickCustomAssembly, manifest: activeSystem() });
     return;

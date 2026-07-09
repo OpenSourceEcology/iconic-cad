@@ -156,6 +156,14 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
   padding: 10px 12px; font-size: 11px; line-height: 1.5;
   width: 320px; height: 64px; box-sizing: border-box; flex-shrink: 0;
 }
+.custom-entry-group {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.custom-entry-group-label {
+  width: 82px; color: #8fb8dd; font-size: 9px; line-height: 1.25;
+  letter-spacing: 0.7px; text-transform: uppercase;
+  font-family: 'Space Mono', 'Courier New', monospace;
+}
 .custom-entry-card canvas {
   width: 72px; height: 48px; border: 1px solid #22344d; border-radius: 3px;
   background: #0a1020; flex-shrink: 0;
@@ -167,6 +175,9 @@ body { font-family: 'Space Mono', 'Courier New', monospace; display: flex; heigh
   display: inline-block; margin-left: 6px; padding: 1px 4px;
   border: 1px solid #6c7f2a; border-radius: 3px; color: #d7e36d;
   font-size: 9px; text-transform: uppercase;
+}
+.custom-entry-badge.builtin {
+  border-color: #4f7ea8; color: #9fd8ff;
 }
 
 /* NESW direction selector (top-left of grid) */

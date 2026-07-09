@@ -1,0 +1,142 @@
+{
+  "id": "cabin_walls_floor",
+  "layer": "assembly",
+  "title": "Cabin floor and walls assembly",
+  "owner": "Catarina",
+  "version": "0.1.0",
+  "status": "active",
+  "units": "in",
+  "schema": {
+    "schema_name": "Cabin_Floor_Walls_Assembly",
+    "units": "in",
+    "document_name": "Cabin_155x144_Floor_Walls_Only",
+    "name": "Cabin_155x144_Floor_Walls_Only",
+    "floor": {
+      "width_in": 155,
+      "depth_in": 144,
+      "framing_lumber": "2x8",
+      "joist_spacing_in": 24,
+      "double_rim_joists": true,
+      "sheet_width_in": 48,
+      "sheet_length_in": 96,
+      "top_sheathing_material": "OSB",
+      "top_osb_thickness_in": 0.75,
+      "bottom_sheathing_material": "Pressure_Treated_Plywood",
+      "bottom_osb_thickness_in": 0.75
+    },
+    "common_wall": {
+      "module_width_in": 48,
+      "stud_height_in": 92.625,
+      "stud_spacing_in": 24,
+      "lumber": "2x6",
+      "osb_thickness_in": 0.5,
+      "osb_sheet_width_in": 48,
+      "osb_sheet_height_in": 96,
+      "include_osb": true
+    },
+    "walls": [
+      {
+        "name": "Left_Wall",
+        "side": "left",
+        "modules": [
+          {
+            "type": "standard",
+            "right_corner_reinforcement": true,
+            "left_corner_reinforcement": false
+          },
+          {
+            "type": "standard",
+            "right_corner_reinforcement": false,
+            "left_corner_reinforcement": false
+          },
+          {
+            "type": "standard",
+            "right_corner_reinforcement": false,
+            "left_corner_reinforcement": true
+          }
+        ]
+      },
+      {
+        "name": "Right_Wall",
+        "side": "right",
+        "modules": [
+          {
+            "type": "standard",
+            "left_corner_reinforcement": true,
+            "right_corner_reinforcement": false
+          },
+          {
+            "type": "standard",
+            "left_corner_reinforcement": false,
+            "right_corner_reinforcement": false
+          },
+          {
+            "type": "standard",
+            "left_corner_reinforcement": false,
+            "right_corner_reinforcement": true
+          }
+        ]
+      },
+      {
+        "name": "Front_Wall",
+        "side": "front",
+        "start_offset_in": 5.5,
+        "modules": [
+          {
+            "type": "window",
+            "window_rough_width_in": 30,
+            "window_rough_height_in": 60,
+            "window_sill_height_in": 24,
+            "window_left_in": null
+          },
+          {
+            "type": "door",
+            "door_rough_width_in": 38.25,
+            "door_rough_height_in": 82,
+            "door_left_in": null
+          },
+          {
+            "type": "window",
+            "window_rough_width_in": 30,
+            "window_rough_height_in": 60,
+            "window_sill_height_in": 24,
+            "window_left_in": null
+          }
+        ]
+      },
+      {
+        "name": "Back_Wall",
+        "side": "back",
+        "start_offset_in": 5.5,
+        "modules": [
+          {
+            "type": "standard",
+            "left_corner_reinforcement": false,
+            "right_corner_reinforcement": false
+          },
+          {
+            "type": "door",
+            "door_rough_width_in": 38.25,
+            "door_rough_height_in": 82,
+            "door_left_in": null
+          },
+          {
+            "type": "standard",
+            "left_corner_reinforcement": false,
+            "right_corner_reinforcement": false
+          }
+        ]
+      }
+    ]
+  },
+  "provenance": {
+    "author": "Catarina",
+    "drive_file_id": "1T-KZ7tfeXxm8RcStqN4M0vSjetUI7tLe",
+    "original_filename": "Schema - cabin assembly - walls + floor.py",
+    "source": "https://wiki.opensourceecology.org/wiki/Catarina_Log"
+  },
+  "interface": {
+    "system": "vcs12",
+    "role": "assembly"
+  }
+}

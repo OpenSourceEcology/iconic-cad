@@ -157,6 +157,7 @@ entry id, with `schema.py`, `compiler.py`, `meta.yaml`, `expect.yaml`,
 `<id>.json` view; it never executes the Python files.
 
 Custom assemblies are `layer: assembly` entries and default to `status: wip`.
+The editor also ships built-in VCS assemblies from `vcs-library` exported canonical views in `web/data/builtin_library/`.
 Validate a saved zip by unpacking it into a library root and running:
 
 ```bash

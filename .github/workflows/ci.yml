@@ -49,6 +49,7 @@ jobs:
           node tests/assembly_translate.mjs
           node tests/entry_files.mjs
           node tests/custom_roundtrip.mjs
+          node tests/builtin_library.mjs
 
       - name: Check Markdown relative links
         run: python scripts/check_links.py

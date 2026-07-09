@@ -32,7 +32,7 @@ export function explodeAssembly(schema, manifest, originMM = { x_mm: 0, y_mm: 0 
   const entities = [];
 
   if (schema.floor) warnings.push('floor not placed');
-  for (const key of ['top_plate', 'top_plates', 'topPlate']) {
+  for (const key of ['top_plate', 'top_plates', 'topPlate', 'single_top_plate']) {
     if (schema[key]) warnings.push(`${key} not placed`);
   }
 
