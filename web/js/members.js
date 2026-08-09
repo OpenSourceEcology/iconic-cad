@@ -7,14 +7,21 @@
 // pure, deterministic, dependency-light function: imports constants only — no
 // DOM, no three.js.
 //
-// NOTE — it is NOT the source of the browser FreeCAD wall solids. fcstd.js does
-// NOT build geometry from this list; it translates PRE-BAKED BREP assets
-// (web/assets/lib/<module>__<dir>.brp), generated offline by
-// generate_wall_library.py via scripts/bake_geometry.py, and imports
-// enumerateMembers() only for panel HEIGHT. The BREP generator and this member
-// list are kept in sync by `build_lib.py --verify --no-thumbs`, enforced in CI
-// (see CAD-AUD-009); a framing change here that skips a BREP regenerate would
-// otherwise diverge silently from FreeCAD export.
+// NOTE — the browser itself does NOT build geometry from this list at runtime.
+// fcstd.js translates PRE-BAKED BREP assets (web/assets/lib/<module>__<dir>.brp)
+// and imports enumerateMembers() only for panel HEIGHT. But those BREPs are no
+// longer an independent implementation of the framing math: since the
+// single-enumerator refactor (design_decisions.md Decision 6), THIS function's
+// output is exported by `node scripts/export_members.mjs` to the committed
+// web/assets/lib/members.json, which seh_lib/wall_builder.py (used by both
+// generate_wall_library.py and every library/modules/<id>/compiler.py) reads to
+// build the framing-lumber solids that scripts/bake_geometry.py then bakes into
+// those BREPs. So this IS the source for framing lumber end-to-end; the one
+// exception is OSB sheathing, which the Python side still generates separately
+// (see the NOTE at the top of seh_lib/wall_builder.py — CAD-AUD-005, not
+// resolved by this refactor). `build_lib.py --verify --no-thumbs`, enforced in
+// CI (see CAD-AUD-009), keeps members.json and the baked BREPs in sync with
+// this function.
 //
 // This is a FAITHFUL PORT of the geometry render3d.js builds today. Same
 // members, same panel-local positions, same sizes. It is a transcription, not a
