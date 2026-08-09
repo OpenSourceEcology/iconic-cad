@@ -11,12 +11,15 @@ Per the Iconic CAD Protocol, one library-entry schema compiles three ways:
 ```
 library/modules/<id>/schema.py ─┬── scripts/gen_specs.py ──▶ web/assets/lib/specs.json
         (authored schema)       │── scripts/gen_wall_instances.py ──▶ wall_instances.yaml
-                                │── (freecadcmd) ─────────▶ web/assets/lib/<id>__<dir>.brp  (4: N/S/E/W)
-                                │── (freecadcmd) ─────────▶ web/assets/lib/volumes.json
-                                │── (freecadcmd) ─────────▶ cad_library/<id>.FCStd   (the part)
+                                │── (node) scripts/export_members.mjs ──▶ web/assets/lib/members.json
+                                │      (enumerateMembers() — the single framing-lumber source, Decision 6)
+                                │── (freecadcmd, reads members.json) ──▶ web/assets/lib/<id>__<dir>.brp  (4: N/S/E/W)
+                                │── (freecadcmd, reads members.json) ──▶ web/assets/lib/volumes.json
+                                │── (freecadcmd, reads members.json) ──▶ cad_library/<id>.FCStd   (the part)
                                 └── (headless Chromium) ──▶ web/thumbs/<id>.png
                                     ▲
                                     └─── python build_lib.py  regenerates ALL of the above
+                                         (members.json is baked FIRST, ahead of the freecadcmd steps)
 
 web UI (web/js/) ──Export──▶ layout.json ──compile_from_json.py──▶ House.FCStd
   place + snap                   │         (Python + FreeCAD, ./compile.sh,
@@ -137,6 +140,7 @@ It produces (all idempotent, from the entries):
 |----------|----------|-------|
 | `wall_instances.yaml` | compatibility path for older generators / compilers | plain Python |
 | `web/assets/lib/specs.json` | `fcstd.js` framing params | plain Python |
+| `web/assets/lib/members.json` | `seh_lib/wall_builder.py`'s framing-lumber solids | `node` |
 | `web/assets/lib/<id>__<dir>.brp` (×4) | `fcstd.js` per-direction solids | `freecadcmd` |
 | `web/assets/lib/volumes.json` | reference / sanity-check | `freecadcmd` |
 | `cad_library/<id>.FCStd` | `compile_from_json.py` (CLI) | `freecadcmd` |
@@ -223,12 +227,15 @@ committed copy, exiting nonzero on drift.
 - [ ] `web/pricing.json`: BOM spec
 - [ ] `python scripts/gen_wall_instances.py` — regenerates compatibility
       `wall_instances.yaml` from the entries
-- [ ] **`python build_lib.py`** — regenerates `specs.json`, the 4 `.brp`,
-      `volumes.json`, `cad_library/*.FCStd`, the compatibility YAML, and the
-      thumbnail. **Don't skip this** — it's what keeps the browser export from
-      going stale. Commit all of it with the entry change.
+- [ ] **`python build_lib.py`** — regenerates `specs.json`, `members.json`,
+      the 4 `.brp`, `volumes.json`, `cad_library/*.FCStd`, the compatibility
+      YAML, and the thumbnail. **Don't skip this** — it's what keeps the
+      browser export (and, since the single-enumerator refactor, the Python
+      compiler's framing geometry too) from going stale. Commit all of it
+      with the entry change.
 - [ ] `compile_from_json.py` reassembles it (run `./compile.sh test_layout.json`)
 - [ ] `python build_lib.py --verify` clean, and `node tests/parity.mjs` passes
+- [ ] `node tests/enumerate_parity.mjs` and `node tests/members_export.mjs` pass
 - [ ] `python scripts/gen_wall_instances.py --verify` clean
 - [ ] dims sourced from real CAD / code, not guessed — record them in
       [aperture_framing_reference.md](aperture_framing_reference.md)

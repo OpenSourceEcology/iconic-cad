@@ -21,6 +21,10 @@ on:
       - 'scripts/gen_library_entries.py'
       - 'scripts/gen_specs.py'
       - 'scripts/gen_wall_instances.py'
+      - 'scripts/export_members.mjs'
+      - 'web/js/members.js'
+      - 'web/js/constants.js'
+      - 'web/js/systems.js'
       - 'wall_instances.yaml'
       - 'web/assets/lib/**'
       - '.github/workflows/geometry-verify.yml'
@@ -32,6 +36,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
       - name: Install Python deps
         run: python3 -m pip install --break-system-packages -r requirements.txt -r requirements-dev.txt

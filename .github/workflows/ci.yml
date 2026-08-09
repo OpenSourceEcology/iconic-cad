@@ -25,8 +25,11 @@ jobs:
       - name: Assert specs.json is in sync with library entries
         run: python scripts/gen_specs.py && git diff --exit-code web/assets/lib/specs.json
 
+      - name: Assert members.json is in sync with enumerateMembers()
+        run: node scripts/export_members.mjs --verify
+
       - name: Python blocking-math unit tests
-        run: python -m pytest tests/test_blocking_math.py tests/test_library_drift.py tests/test_generated_entry.py -v
+        run: python -m pytest tests/test_blocking_math.py tests/test_library_drift.py tests/test_generated_entry.py tests/test_members_boxes.py -v
 
       - name: Validate library entry code
         run: python -m libtools validate-code --root . --all
@@ -50,6 +53,7 @@ jobs:
           node tests/entry_files.mjs
           node tests/custom_roundtrip.mjs
           node tests/builtin_library.mjs
+          node tests/members_export.mjs
 
       - name: Check Markdown relative links
         run: python scripts/check_links.py
