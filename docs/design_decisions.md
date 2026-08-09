@@ -123,14 +123,33 @@ rather than an aspiration.
 regenerate, which needs FreeCAD for the geometry step. (The operational *how* of this
 contract lives in `AGENTS.md`; this entry records the *why*.)
 
-**Directional — partially built.** The artifact pipeline above is built and live. But
-the framing-math *implementation* still lives in more than one place (the browser
-exporter, the Python compiler, the 3D view); the parity test guarantees they agree,
-which means they are kept-in-sync duplicates, not yet a single source. Consolidating
-them into one member enumerator is planned (see the build-documentation scoping) and
-would turn the parity test from a divergence guard into refactor insurance. A related
-known gap: `pricing.json`'s member counts are still hand-authored, not derived from
-geometry.
+**Single-enumerator refactor — landed for framing lumber, 2026-08.**
+`enumerateMembers()` (`web/js/members.js`) is now the one place stud, plate,
+king, jack, header, cripple, sill, and blocking positions are computed.
+`scripts/export_members.mjs` bakes its output to the committed
+`web/assets/lib/members.json`; `seh_lib/wall_builder.py` (shared by both
+`generate_wall_library.py` and every `library/modules/<id>/compiler.py`) reads
+that file and turns it into FreeCAD box shapes — it no longer re-derives stud
+or cripple positions itself. `build_lib.py` bakes members.json before the
+freecadcmd geometry step, and `--verify` checks it's current; CI's fast lane
+(`node scripts/export_members.mjs --verify`) and the geometry-verify job both
+gate on it. `tests/enumerate_parity.mjs` (JS) and `tests/test_members_boxes.py`
+(Python, no FreeCAD) now assert each *consumer* faithfully renders the single
+source, rather than asserting two independent implementations happen to agree.
+
+**Still NOT single-sourced: OSB sheathing.** The JS/3D side models exterior
+OSB as several rectangular strips split around a rough opening
+(`enumerateMembers`'s `sheathing` role entries); the Python/FreeCAD side still
+cuts a single full sheet with a rectangular hole. This is a real, pre-existing
+geometry difference between the two implementations — tracked as CAD-AUD-005
+and recorded as a `known_issue` on every aperture module's `meta.yaml` — and
+the single-enumerator refactor deliberately did not resolve it: `sheathing`
+members are exported in members.json (so JS consumers are unaffected) but
+skipped on the Python side rather than silently picking one behavior over the
+other. Consolidating OSB generation is separate follow-up work.
+
+A related known gap, also untouched here: `pricing.json`'s member counts are
+still hand-authored, not derived from geometry.
 
 ---
 

@@ -13,7 +13,15 @@ What it produces (and the tool each step needs):
     web/assets/lib/<id>__<dir>.brp  browser solids, 4 per id    [freecadcmd]   (committed)
     web/assets/lib/volumes.json     canonical volume per module [freecadcmd]   (committed)
     web/assets/lib/specs.json       framing params              [plain python] (committed)
+    web/assets/lib/members.json     framing member list         [node]         (committed)
     web/thumbs/<id>.png             isometric thumbnails        [chromium]     (committed)
+
+members.json (enumerateMembers() per module, see web/js/members.js and
+design_decisions.md Decision 6) is generated FIRST, ahead of the freecadcmd
+geometry step: seh_lib/wall_builder.py reads it instead of re-deriving stud/
+king/jack/header/cripple/sill/blocking positions, so the .brp/.FCStd geometry
+step is now downstream of the single source rather than a second
+implementation of the same math.
 
 Before this script existed, only specs.json and cad_library/ had a generator;
 the .brp solids, volumes.json, and thumbnails were baked by hand and committed,
@@ -49,6 +57,8 @@ LIB_DIR = os.path.join("web", "assets", "lib")
 CAD_DIR = "cad_library"
 THUMB_DIR = os.path.join("web", "thumbs")
 SPECS_PATH = os.path.join(LIB_DIR, "specs.json")
+MEMBERS_PATH = os.path.join(LIB_DIR, "members.json")
+EXPORT_MEMBERS = os.path.join("scripts", "export_members.mjs")
 BAKE_GEOMETRY = os.path.join("scripts", "bake_geometry.py")
 GEN_WALL_INSTANCES = os.path.join("scripts", "gen_wall_instances.py")
 THUMB_PAGE = "tools/bake_thumbs.html"  # relative to the web/ server root
@@ -96,6 +106,37 @@ def run_specs(out_path, data):
     finally:
         gen_specs.OUT_PATH = orig
         gen_specs.DATA = orig_data
+
+
+# --------------------------------------------------------------------------- #
+# members.json  (no FreeCAD, needs node — must run before the geometry step)
+# --------------------------------------------------------------------------- #
+def run_members_export():
+    """Regenerate web/assets/lib/members.json in place via node."""
+    node = shutil.which("node")
+    if not node:
+        fail("node not found on PATH — required to bake members.json.")
+    cmd = [node, EXPORT_MEMBERS]
+    print("[members] " + " ".join(cmd))
+    res = subprocess.run(cmd, cwd=REPO_ROOT)
+    if res.returncode != 0:
+        fail("scripts/export_members.mjs failed.")
+
+
+def verify_members_export():
+    """Check web/assets/lib/members.json matches enumerateMembers() right now.
+
+    Does not write anything — mirrors gen_wall_instances.py --verify.
+    """
+    node = shutil.which("node")
+    if not node:
+        fail("node not found on PATH — required to verify members.json.")
+    cmd = [node, EXPORT_MEMBERS, "--verify"]
+    print("[members] " + " ".join(cmd))
+    res = subprocess.run(cmd, cwd=REPO_ROOT)
+    ok = res.returncode == 0
+    print("  members.json: %s" % ("PASS (identical)" if ok else "DIFF vs enumerateMembers()"))
+    return ok
 
 
 # --------------------------------------------------------------------------- #
@@ -263,6 +304,12 @@ def main():
         run_specs(tmp_specs, instances_data)
         ok_specs = verify_specs(tmp_specs)
 
+        # members.json must be current BEFORE the geometry step: bake_geometry.py
+        # (via seh_lib.wall_builder) always reads the real committed
+        # web/assets/lib/members.json, not a temp copy — so if this is stale the
+        # geometry step below is comparing against stale framing math too.
+        ok_members = verify_members_export()
+
         rc = run_geometry("verify", tmp_lib, tmp_cad, tmp_instances)  # compares .brp internally
         ok_geo = rc == 0
 
@@ -278,12 +325,13 @@ def main():
                 ok_thumbs = None  # could not check, not a hard fail
 
         print("\n=== verify summary ===")
-        print("  wall YAML  : %s" % ("PASS" if ok_yaml else "DIFF"))
-        print("  specs.json : %s" % ("PASS" if ok_specs else "DIFF"))
-        print("  geometry   : %s" % ("PASS" if ok_geo else "FAIL"))
-        print("  thumbnails : %s" % ("PASS" if ok_thumbs else
+        print("  wall YAML   : %s" % ("PASS" if ok_yaml else "DIFF"))
+        print("  specs.json  : %s" % ("PASS" if ok_specs else "DIFF"))
+        print("  members.json: %s" % ("PASS" if ok_members else "DIFF"))
+        print("  geometry    : %s" % ("PASS" if ok_geo else "FAIL"))
+        print("  thumbnails  : %s" % ("PASS" if ok_thumbs else
                                       ("skipped" if ok_thumbs is None else "FAIL")))
-        hard_fail = (not ok_yaml) or (not ok_specs) or (not ok_geo) or (ok_thumbs is False)
+        hard_fail = (not ok_yaml) or (not ok_specs) or (not ok_members) or (not ok_geo) or (ok_thumbs is False)
         shutil.rmtree(tmp, ignore_errors=True)
         sys.exit(1 if hard_fail else 0)
 
@@ -294,6 +342,11 @@ def main():
 
     print("[specs] writing %s" % SPECS_PATH)
     run_specs(SPECS_PATH, instances_data)
+
+    # members.json BEFORE the geometry step: seh_lib.wall_builder reads the
+    # committed web/assets/lib/members.json to build framing-lumber solids
+    # (Decision 6 single enumerator), so it must be fresh before freecadcmd runs.
+    run_members_export()
 
     with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as f:
         tmp_instances = f.name
@@ -311,7 +364,7 @@ def main():
     else:
         run_thumbs(THUMB_DIR)
 
-    print("\nDone. Regenerated specs.json, %s/*.brp, volumes.json, cad_library/*.FCStd%s."
+    print("\nDone. Regenerated specs.json, members.json, %s/*.brp, volumes.json, cad_library/*.FCStd%s."
           % (LIB_DIR, "" if args.no_thumbs else ", thumbs/*.png"))
 
 
