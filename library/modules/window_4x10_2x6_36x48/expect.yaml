@@ -27,19 +27,17 @@ solids:
     count: 2
   - pattern: sill
     count: 1
-  - pattern: lower_cripple_*
-    count: 2
   - pattern: subheader
     count: 1
+  - pattern: lower_cripple_*
+    count: 2
   - pattern: osb_panel
     count: 1
   - pattern: port_*
     count: 2
 overlap:
   tolerance_in3: 0.01
-  allowed_contact:
-  - - lower_cripple_*
-    - subheader
+  allowed_contact: []
 params:
 - key: module_width_in
   min: 48.0

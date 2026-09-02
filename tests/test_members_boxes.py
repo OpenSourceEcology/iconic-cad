@@ -95,7 +95,8 @@ def test_window_acceptance_spec_matches_js_side():
     assert abs(boxes["sill"][0] - 914.4) < 1e-3
 
     assert set(n for n in boxes if n.startswith("lower_cripple_")) == {"lower_cripple_1", "lower_cripple_2"}
-    assert abs(boxes["lower_cripple_1"][2] - 533.4) < 1e-3
+    assert abs(boxes["lower_cripple_1"][2] - 495.3) < 1e-3
+    assert abs(boxes["lower_cripple_1"][5] - 76.2) < 1e-3
 
     assert "subheader" in boxes
     assert not any(n.startswith("blocking_") for n in boxes)  # 21" zone < 24" spacing

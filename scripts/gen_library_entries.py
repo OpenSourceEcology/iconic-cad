@@ -185,7 +185,7 @@ def expect_yaml(inst: dict) -> dict:
         },
         "overlap": {
             "tolerance_in3": 0.01,
-            "allowed_contact": issue12_contacts(inst),
+            "allowed_contact": allowed_contacts(inst),
         },
         "params": param_rules(inst),
     }
@@ -251,16 +251,18 @@ def aperture_role_counts(inst: dict) -> list[dict]:
         # docs/aperture_framing_reference.md: windows add a sill, lower
         # OC-grid cripples, a subheader just above the sole plate when the
         # lower zone is tall enough, and horizontal blocking every 24 inches
-        # in that zone.
+        # upward from the top of that subheader.
         lower_top = sill_top - st
         lower_bot = st
         roles.append({"pattern": "sill", "count": 1})
-        if lower_top - lower_bot > (1.0 / 25.4):
-            roles.append({"pattern": "lower_cripple_*", "count": cripple_count})
-        if lower_top - lower_bot > st + (1.0 / 25.4):
+        has_subheader = lower_top - lower_bot > st + (1.0 / 25.4)
+        if has_subheader:
             roles.append({"pattern": "subheader", "count": 1})
+        cripple_bot = lower_bot + (st if has_subheader else 0)
+        if lower_top - cripple_bot > (1.0 / 25.4):
+            roles.append({"pattern": "lower_cripple_*", "count": cripple_count})
         blocking = 0
-        z = lower_bot + 24.0
+        z = cripple_bot + 24.0
         while z + st < lower_top - (1.0 / 25.4):
             blocking += 1
             z += 24.0
@@ -315,10 +317,6 @@ def known_issues(inst: dict) -> list[str]:
         issues.append(
             "SOL-01 follow-up: the exterior double door requires two top plates, but its 83 in rough opening plus 2x12 header does not fit below a double stack in the 96 in envelope. It remains single-plate pending an explicit envelope/header decision."
         )
-    if aperture.get("type") == "window":
-        issues.append(
-            "Issue #12: lower cripples intersect the subheader (12.375 in3 each); allowed_contact records current behavior."
-        )
     if aperture.get("type") == "garage":
         issues.append(
             "SOL-03: the exterior garage requires two top plates, but its 84 in rough opening plus 2x12 header does not fit the 96 in envelope. It remains single-plate pending an explicit envelope/header decision; the header intersects that plate (408.375 in3)."
@@ -330,15 +328,12 @@ def known_issues(inst: dict) -> list[str]:
     return issues
 
 
-def issue12_contacts(inst: dict) -> list[list[str]]:
-    # Documented current-behavior intersections, tracked in issue #12:
-    # window lower cripples run through the subheader; the garage header
-    # reaches into the top plate. Allowances go away with the members fix.
+def allowed_contacts(inst: dict) -> list[list[str]]:
+    # The garage header reaches into the top plate (SOL-03). Keep that separate
+    # known intersection allowlisted until its envelope/header policy is ruled.
     aperture = inst["parameters"].get("aperture")
     if not aperture:
         return []
-    if aperture.get("type") == "window":
-        return [["lower_cripple_*", "subheader"]]
     if aperture.get("type") == "garage":
         return [["top_plate", "header"]]
     return []

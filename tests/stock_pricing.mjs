@@ -51,5 +51,19 @@ for (const mod of ALL_MODULES) {
   }
 }
 
+// 4. SOL-02 shortens both lower cripples from 21" to 19½". That changes the
+// cut length but legitimately leaves their 8 ft stock key and quantity intact.
+const windowMod = ALL_MODULES.find(m => m.id === 'window_4x8_2x6_36x48');
+const lowerCripples = enumerateMembers(windowMod).filter(m => m.role === 'lower_cripple');
+if (lowerCripples.length === 2) ok('window BOM sees two lower cripples');
+else fail(`window BOM sees ${lowerCripples.length} lower cripples, expected 2`);
+for (const m of lowerCripples) {
+  if (Math.abs(m.length_mm / IN_TO_MM - 19.5) < 1e-6) ok('lower cripple cut length is 19½"');
+  else fail(`lower cripple cut length is ${m.length_mm / IN_TO_MM}", expected 19.5"`);
+  const key = stockKeyFor(m, false, 4);
+  if (key === '2x6_8ft') ok('19½" lower cripple remains 2x6_8ft stock');
+  else fail(`19½" lower cripple mapped to ${key}, expected 2x6_8ft`);
+}
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

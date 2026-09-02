@@ -156,10 +156,14 @@ function enumerateAperture(mod) {
   if (isWin) {
     const zSillBot = roZ0 - PT;
     emit('sill', studNom, roX0, roW, zSillBot, PT);
-    const zCripBot = zStudBot;
+    const lowerZoneH = zSillBot - zStudBot;
+    const hasSubheader = lowerZoneH > PT + 1;
+    if (hasSubheader) {
+      emit('subheader', studNom, roX0, roW, zStudBot, PT);
+    }
+    const zCripBot = zStudBot + (hasSubheader ? PT : 0);
     for (const cx of cripX) emit('lower_cripple', studNom, cx, ST, zCripBot, zSillBot - zCripBot);
-    if (zSillBot - zCripBot > PT + 1) {
-      emit('subheader', studNom, roX0, roW, zCripBot, PT);
+    if (hasSubheader) {
       const blockSpacing = 24 * IN_TO_MM;
       for (let zb = zCripBot + blockSpacing; zb + PT < zSillBot - 1; zb += blockSpacing) {
         emit('sill_block', studNom, roX0, roW, zb, PT);
