@@ -22,33 +22,35 @@ const mod = id => ALL_MODULES.find(m => m.id === id);
 function fail(msg) { console.error(`  FAIL ${msg}`); failed++; }
 function ok(msg) { passed++; if (process.env.VERBOSE) console.log(`  ok ${msg}`); }
 
-// ---- golden: verbatim pre-refactor render3d box math --------------------
+// ---- golden: independent framing-policy box math ------------------------
 // Returns [sx,sy,sz,px,py,pz,tag] per box. This is the geometry the 3D view
-// produced before the member-list refactor — the acceptance spec for the port.
+// expected from authored height, spacing, and top-plate policy fields.
 function goldenBoxes(m, dir) {
   if (m.aperture) return goldenAperture(m, dir);
   const b = [];
   const add = (sx, sy, sz, px, py, pz, t) => b.push([sx, sy, sz, px, py, pz, t]);
   const isInt = m.interior;
   const W = m.width_mm;
-  const H = (m.id.includes('8.5') ? 8.5 : 8) * 12 * IN_TO_MM;
+  const H = m.height_mm;
   const D = isInt ? (3.5 * IN_TO_MM) : STUD_DEPTH;
   const O = isInt ? 0 : OSB_THICK;
   const PT = STUD_THICK, ST = STUD_THICK;
-  const oc = m.id.includes('16oc') ? 16 : m.id.includes('24oc') ? 24 : 18;
   const sp = [0];
-  let cur = oc * IN_TO_MM;
-  while (cur + ST <= W - ST) { sp.push(cur); cur += oc * IN_TO_MM; }
+  let cur = m.stud_spacing_mm;
+  while (cur + ST <= W - ST) { sp.push(cur); cur += m.stud_spacing_mm; }
   sp.push(W - ST);
-  const studH = H - 2 * PT;
+  const zT = H - m.top_plate_count * PT;
+  const studH = zT - PT;
   if (dir === 'north' || dir === 'south') {
     const oy = dir === 'south' ? -O / 2 : D + O / 2;
-    add(W, D, PT, W / 2, D / 2, PT / 2, 'L'); add(W, D, PT, W / 2, D / 2, H - PT / 2, 'L');
+    add(W, D, PT, W / 2, D / 2, PT / 2, 'L');
+    for (let i = 0; i < m.top_plate_count; i++) add(W, D, PT, W / 2, D / 2, zT + i * PT + PT / 2, 'L');
     for (const sx of sp) add(ST, D, studH, sx + ST / 2, D / 2, PT + studH / 2, 'L');
     if (O > 0) add(W, O, H, W / 2, oy, H / 2, 'O');
   } else {
     const ox = dir === 'west' ? -O / 2 : D + O / 2;
-    add(D, W, PT, D / 2, -W / 2, PT / 2, 'L'); add(D, W, PT, D / 2, -W / 2, H - PT / 2, 'L');
+    add(D, W, PT, D / 2, -W / 2, PT / 2, 'L');
+    for (let i = 0; i < m.top_plate_count; i++) add(D, W, PT, D / 2, -W / 2, zT + i * PT + PT / 2, 'L');
     for (const sy of sp) add(D, ST, studH, D / 2, -(sy + ST / 2), PT + studH / 2, 'L');
     if (O > 0) add(O, W, H, ox, -W / 2, H / 2, 'O');
   }
@@ -58,7 +60,7 @@ function goldenBoxes(m, dir) {
 function goldenAperture(m, dir) {
   const b = [];
   const isInt = m.interior, a = m.aperture, W = m.width_mm;
-  const H = (a.height_ft || (m.id.includes('4x9') ? 9 : m.id.includes('4x10') ? 10 : 8)) * 12 * IN_TO_MM;
+  const H = m.height_mm;
   const D = isInt ? (3.5 * IN_TO_MM) : STUD_DEPTH;
   const O = isInt ? 0 : OSB_THICK;
   const PT = STUD_THICK, ST = STUD_THICK;
@@ -66,10 +68,10 @@ function goldenAperture(m, dir) {
   const roZ0 = a.sill_in * IN_TO_MM, roZ1 = roZ0 + a.ro_h_in * IN_TO_MM;
   const isWin = a.type === 'window' && roZ0 > 0;
   const hdrDep = LUMBER_DEPTH[a.header_nominal] || 7.25 * IN_TO_MM;
-  const zT = H - PT, zB = PT;
+  const zT = H - m.top_plate_count * PT, zB = PT;
   const cripX = [];
-  let g = a.oc * IN_TO_MM;
-  while (g + ST < roX1) { if (g > roX0) cripX.push(g); g += a.oc * IN_TO_MM; }
+  let g = m.stud_spacing_mm;
+  while (g + ST < roX1) { if (g > roX0) cripX.push(g); g += m.stud_spacing_mm; }
   if (!cripX.length) cripX.push((roX0 + roX1) / 2 - ST / 2);
   const horiz = (dir === 'north' || dir === 'south');
   const osbAt = horiz ? (dir === 'south' ? -O / 2 : D + O / 2) : (dir === 'west' ? -O / 2 : D + O / 2);
@@ -84,7 +86,7 @@ function goldenAperture(m, dir) {
     else b.push([O, rl, zl, osbAt, -(rs + rl / 2), z0 + zl / 2, 'O']);
   };
   if (isWin) mem(0, W, 0, PT); else { mem(0, roX0, 0, PT); mem(roX1, W - roX1, 0, PT); }
-  mem(0, W, zT, PT);
+  for (let i = 0; i < m.top_plate_count; i++) mem(0, W, zT + i * PT, PT);
   mem(0, ST, zB, zT - zB); mem(W - ST, ST, zB, zT - zB);
   mem(roX0 - ST, ST, zB, roZ1 - zB); mem(roX1, ST, zB, roZ1 - zB);
   mem(roX0 - ST, roW + 2 * ST, roZ1, hdrDep);
@@ -174,13 +176,13 @@ const roleOf = (ms, r) => ms.filter(x => x.role === r);
   const sub = roleOf(ms, 'subheader'), blk = roleOf(ms, 'sill_block');
   let good = true;
   if (kings.length !== 2) { fail(`window kings: ${kings.length} != 2`); good = false; }
-  else good = near(kings[0].h_mm, 2362.2, 'king h') && good;
+  else good = near(kings[0].h_mm, 2324.1, 'king h') && good;
   if (jacks.length !== 2) { fail(`window jacks: ${jacks.length} != 2`); good = false; }
   else good = near(jacks[0].h_mm, 1790.7, 'jack h') && good;
   if (hdr.length !== 1) { fail(`window header: ${hdr.length} != 1`); good = false; }
   else { good = near(hdr[0].w_mm, 990.6, 'header w') && good; if (hdr[0].plies !== 2) { fail(`header plies: ${hdr[0].plies} != 2`); good = false; } }
   if (tc.length !== 2) { fail(`window top cripples: ${tc.length} != 2`); good = false; }
-  else good = near(tc[0].h_mm, 387.35, 'top cripple h') && good;
+  else good = near(tc[0].h_mm, 349.25, 'top cripple h') && good;
   if (sill.length !== 1) { fail(`window sill: ${sill.length} != 1`); good = false; }
   else good = near(sill[0].w_mm, 914.4, 'sill w') && good;
   if (lc.length !== 2) { fail(`window lower cripples: ${lc.length} != 2`); good = false; }

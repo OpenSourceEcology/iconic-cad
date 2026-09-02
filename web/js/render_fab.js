@@ -25,16 +25,15 @@ const G = '#0f8a57'; // dimension green (§9)
 
 // ---- instance numbers feeding the authored template tokens ----------------
 function ocOf(mod) {
-  if (mod.aperture) return mod.aperture.oc;
-  return mod.id.includes('16oc') ? 16 : mod.id.includes('24oc') ? 24 : mod.id.includes('single') ? null : 18;
+  return mod.stud_spacing_mm / IN_TO_MM;
 }
 
 function numbers(mod) {
   const members = enumerateMembers(mod);
   const W = mod.width_mm, H = panelHeightMM(members);
-  const PT = STUD_THICK;
   const widthIn = W / IN_TO_MM, heightIn = H / IN_TO_MM;
-  const studLenIn = (H - 2 * PT) / IN_TO_MM;
+  const fullHeight = members.find(m => m.role === 'stud') || members.find(m => m.role === 'king');
+  const studLenIn = fullHeight ? fullHeight.h_mm / IN_TO_MM : 0;
   const studCount = members.filter(m => m.role === 'stud').length;
   const gaps = bayFaces(members).map(b => b.gap / IN_TO_MM);
   const oc = ocOf(mod);
@@ -43,6 +42,8 @@ function numbers(mod) {
     height: inFrac(heightIn),
     stud_len: inFrac(studLenIn),
     stud_count: String(studCount),
+    plate_count: String(1 + mod.top_plate_count),
+    top_plate_count: String(mod.top_plate_count),
     bay_count: String(gaps.length),
     oc: oc ? String(oc) : 'single',
     layout: studLayoutIn(members).join(', '),
@@ -126,6 +127,9 @@ export function cardSVG(entity, opts = {}) {
 
   const W = mod.width_mm, H = panelHeightMM(members);
   const PT = STUD_THICK;
+  const topPlates = members.filter(m => m.role === 'top_plate');
+  const topPlateBottom = Math.min(...topPlates.map(m => m.z_mm));
+  const topPlateStackH = H - topPlateBottom;
 
   const SVW = 850, SVH = 1040;
   const p = [];
@@ -170,20 +174,20 @@ export function cardSVG(entity, opts = {}) {
 
   // ---- LEFT HEIGHT CHAIN (outside, left of panel) ----
   const cx1 = PANEL_X - 24, cx2 = PANEL_X - 52;
-  for (const z of [0, PT, H - PT, H]) witnessH(p, py(z), px(0), cx1);
+  for (const z of [0, PT, topPlateBottom, H]) witnessH(p, py(z), px(0), cx1);
   dimV(p, cx1, py(0), py(PT), `${inFrac(PT / IN_TO_MM)}″`);
-  dimV(p, cx1, py(PT), py(H - PT), `${nums.stud_len}″ stud`);
-  dimV(p, cx1, py(H - PT), py(H), `${inFrac(PT / IN_TO_MM)}″`);
+  dimV(p, cx1, py(PT), py(topPlateBottom), `${nums.stud_len}″ stud`);
+  dimV(p, cx1, py(topPlateBottom), py(H), `${inFrac(topPlateStackH / IN_TO_MM)}″ top stack`);
   witnessH(p, py(0), cx2, cx1); witnessH(p, py(H), cx2, cx1);
   dimV(p, cx2, py(0), py(H), ftInLabel(H / IN_TO_MM));
 
   // stud-length callout: short leader off the panel, text right-anchored to the
   // column edge so it never crosses the divider into the right column.
-  const calloutEnd = 470, cy = (py(PT) + py(H - PT)) / 2;
+  const calloutEnd = 470, cy = (py(PT) + py(topPlateBottom)) / 2;
   const lead0 = px(W) + (isInt ? 3 : 13);
   p.push(`<line x1="${f2(lead0)}" y1="${f2(cy)}" x2="${f2(lead0 + 14)}" y2="${f2(cy)}" stroke="#b5651d" stroke-width=".7"/>`);
   p.push(`<text x="${calloutEnd}" y="${f2(cy - 3)}" class="tpl bsmono" font-size="9" text-anchor="end">stud ${esc(nums.stud_len)}″</text>`);
-  p.push(`<text x="${calloutEnd}" y="${f2(cy + 9)}" class="tpl bsmono" font-size="8" text-anchor="end">= ${esc(nums.height)} − 2×${inFrac(PT / IN_TO_MM)} (plates)</text>`);
+  p.push(`<text x="${calloutEnd}" y="${f2(cy + 9)}" class="tpl bsmono" font-size="8" text-anchor="end">= ${esc(nums.height)} − ${esc(nums.plate_count)}×${inFrac(PT / IN_TO_MM)} (plates)</text>`);
 
   // ---- BOTTOM BAY DIMS (clear gap per bay, witness on stud faces) ----
   const bays = bayFaces(members);

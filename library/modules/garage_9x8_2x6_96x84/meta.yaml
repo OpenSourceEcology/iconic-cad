@@ -15,9 +15,9 @@ slots:
   bom: null
   cheatsheet: null
 known_issues:
-- 'CAD-AUD-001: current geometry emits a single top plate; expect.yaml records current
-  behavior.'
 - 'CAD-AUD-005: current exterior aperture geometry cuts the OSB opening in CAD; expect.yaml
   records current behavior.'
-- 'Issue #12: header intersects the top plate (408.375 in3); allowed_contact records
-  current behavior.'
+- 'SOL-03: the exterior garage requires two top plates, but its 84 in rough opening
+  plus 2x12 header does not fit the 96 in envelope. It remains single-plate pending
+  an explicit envelope/header decision; the header intersects that plate (408.375
+  in3).'

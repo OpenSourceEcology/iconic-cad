@@ -32,6 +32,7 @@ def main():
             'h': p['nominal_height_ft'],
             'lum': p['stud_lumber_nominal'],
             'oc': p['stud_spacing_oc_in'],
+            'top_plate_count': p['top_plate_count'],
             'osb': p.get('osb_thickness_in', 0),
         }
 

@@ -72,6 +72,10 @@ def _member_object_name(role, index, total):
         if total == 1:
             return "bottom_plate"
         return "bottom_plate_left" if index == 0 else "bottom_plate_right"
+    if role == "top_plate":
+        if total == 1:
+            return "top_plate"
+        return f"top_plate_{index + 1}"
     if role == "stud":
         return f"stud_{index + 1}"
     if role == "top_cripple":
@@ -80,7 +84,7 @@ def _member_object_name(role, index, total):
         return f"lower_cripple_{index + 1}"
     if role == "sill_block":
         return f"blocking_{index + 1}"
-    # top_plate, header, sill, subheader: one per panel, no suffix.
+    # header, sill, subheader: one per panel, no suffix.
     return role
 
 

@@ -7,9 +7,9 @@ const SEH = {
   stud_spacing_in: 16,
   wall_depth_in: 5.9375,
   palette: [
-    { id: 'wall_4x8_2x6_16oc', label: '4x8 16OC', thumb: 'thumbs/wall_4x8_2x6_16oc.png', brep_base: 'assets/lib/wall_4x8_2x6_16oc', width_in: 48, height_in: 96, depth_in: 5.9375, exterior_face: '-y' },
-    { id: 'wall_4x8_2x6_24oc', label: '4x8 24OC', thumb: 'thumbs/wall_4x8_2x6_24oc.png', brep_base: 'assets/lib/wall_4x8_2x6_24oc', width_in: 48, height_in: 96, depth_in: 5.9375, exterior_face: '-y' },
-    { id: 'wall_3x8.5_2x6_16oc', label: '3x8.5 16OC', thumb: 'thumbs/wall_3x8.5_2x6_16oc.png', brep_base: 'assets/lib/wall_3x8.5_2x6_16oc', width_in: 36, height_in: 102, depth_in: 5.9375, exterior_face: '-y' },
+    { id: 'wall_4x8_2x6_16oc', label: '4x8 16OC', thumb: 'thumbs/wall_4x8_2x6_16oc.png', brep_base: 'assets/lib/wall_4x8_2x6_16oc', width_in: 48, height_in: 96, depth_in: 5.9375, stud_spacing_in: 16, top_plate_count: 2, exterior_face: '-y' },
+    { id: 'wall_4x8_2x6_24oc', label: '4x8 24OC', thumb: 'thumbs/wall_4x8_2x6_24oc.png', brep_base: 'assets/lib/wall_4x8_2x6_24oc', width_in: 48, height_in: 96, depth_in: 5.9375, stud_spacing_in: 24, top_plate_count: 2, exterior_face: '-y' },
+    { id: 'wall_3x8.5_2x6_16oc', label: '3x8.5 16OC', thumb: 'thumbs/wall_3x8.5_2x6_16oc.png', brep_base: 'assets/lib/wall_3x8.5_2x6_16oc', width_in: 36, height_in: 102, depth_in: 5.9375, stud_spacing_in: 16, top_plate_count: 2, exterior_face: '-y' },
   ],
 };
 
@@ -72,6 +72,8 @@ export function manifestPaletteModules(id = activeSystemId) {
     width_mm: p.width_in * IN_TO_MM,
     height_mm: p.height_in * IN_TO_MM,
     depth_mm: p.depth_in * IN_TO_MM,
+    stud_spacing_mm: (p.stud_spacing_in ?? manifest.stud_spacing_in) * IN_TO_MM,
+    top_plate_count: p.top_plate_count ?? 1,
     exterior_face: p.exterior_face,
     system: manifest.id,
     ...(p.type ? { type: p.type } : {}),

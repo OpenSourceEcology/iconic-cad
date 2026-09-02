@@ -15,7 +15,5 @@ slots:
   bom: null
   cheatsheet: null
 known_issues:
-- 'CAD-AUD-001: current geometry emits a single top plate; expect.yaml records current
-  behavior.'
 - 'CAD-AUD-010: current interior door uses shared jack/header aperture framing; expect.yaml
   records current behavior.'

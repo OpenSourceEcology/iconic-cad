@@ -15,7 +15,7 @@ solids:
   roles:
   - pattern: bottom_plate*
     count: 2
-  - pattern: top_plate
+  - pattern: top_plate*
     count: 1
   - pattern: king_stud_*
     count: 2
@@ -42,6 +42,9 @@ params:
 - key: stud_spacing_in
   min: 16
   max: 16
+- key: top_plate_count
+  min: 1
+  max: 1
 - key: osb_thickness_in
   min: 0.4375
   max: 0.4375

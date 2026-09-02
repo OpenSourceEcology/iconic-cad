@@ -14,9 +14,9 @@
     "tape", "hammer stapler", "housewrap scissors", "insulation knife"
   ],
   "procedure": [
-    { "text": "Cut {stud_count} studs to {stud_len}″ (= {height}″ − 2×1½ plates)." },
-    { "text": "Mark stud layout on both plates: {layout}″." },
-    { "text": "Screw studs through plates (3-⅛″ T25) → frame." },
+    { "text": "Cut {stud_count} studs to {stud_len}″ (= {height}″ − {plate_count}×1½ plates)." },
+    { "text": "Mark stud layout on the bottom and top plates: {layout}″." },
+    { "text": "Screw studs through the bottom and first top plate (3-⅛″ T25) → frame." },
     { "text": "Drill interconnect holes in side studs —", "note": "[OSE] 24″ from each end + ctr; L Ø½″, R Ø¼″; 1″ ctr pin." },
     { "text": "Staple house wrap; 18″ bottom / 6″ top overhang." },
     { "text": "Fasten OSB, ¾″ down from panel top." },
@@ -40,7 +40,7 @@
   ],
   "salient": [
     "Clear bays {first_bay}″; last bay {last_bay}″ — end stud sits flush at the {width}″ edge.",
-    "Single top plate — a lapping cap plate is added at assembly to tie modules (= double top plate).",
+    "Authored top-plate stack: {top_plate_count} plate(s); exterior panels use two and interior panels use one.",
     "Plain panel has no edge blocking; adjacent panels meet at a doubled stud, lag-bolted (see interconnect)."
   ]
 }

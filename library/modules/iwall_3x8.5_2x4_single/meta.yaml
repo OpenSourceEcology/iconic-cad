@@ -14,6 +14,3 @@ slots:
   fab_drawing: null
   bom: null
   cheatsheet: null
-known_issues:
-- 'CAD-AUD-001: current geometry emits a single top plate; expect.yaml records current
-  behavior.'

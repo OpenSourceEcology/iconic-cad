@@ -99,8 +99,11 @@ rough opening, sill, bottom cripples, sole plate):
 - **Sill (window only)**: horizontal at the rough-opening bottom (master shows a
   doubled flat member). Door has no sill.
 - **Lower cripples (window only)**: short studs sill→bottom-plate, at OC spacing.
-- **Plates**: double top plate, single bottom plate (exterior). OSB 7/16 over
-  the whole panel face (not cut for the opening in CAD — opening cut on install).
+- **Plates**: double top plate, single bottom plate (exterior). The current 8′
+  double-door and garage envelopes cannot fit their authored 2x12 headers below
+  that stack; both remain explicitly single-plate `known_issue` exceptions until
+  an envelope/header decision is approved. OSB 7/16 over the whole panel face
+  (not cut for the opening in CAD — opening cut on install).
 
 ## Parametric model the generator encodes
 

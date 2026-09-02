@@ -14,11 +14,11 @@ const mod = id => ALL_MODULES.find(m => m.id === id);
 
 // (module, fractional length that must appear, wrong whole-inch that must NOT)
 const CASES = [
-  ['door_4x8_2x6_38x83', '4¼″', '4″'],
+  ['door_4x8_2x6_38x83', '2¾″', '3″'],
   ['door_4x8_2x6_38x83', '81½″', '82″'],
-  ['window_4x8_2x6_36x48', '15¼″', '15″'],
-  // note: window_4x10 also has a genuine 39" member, so only assert 39¼ appears
-  ['window_4x10_2x6_36x48', '39¼″', null],
+  ['window_4x8_2x6_36x48', '13¾″', '14″'],
+  // note: window_4x10 also has a genuine 39" member, so only assert 37¾ appears
+  ['window_4x10_2x6_36x48', '37¾″', null],
   ['window_4x8_2x6_36x48', '70½″', '70″'],
 ];
 

@@ -170,6 +170,7 @@ def append_instance(lines: list[str], inst: dict[str, Any]) -> None:
             f"      nominal_height_ft: {fmt(p['nominal_height_ft'])}",
             f"      stud_lumber_nominal: \"{p['stud_lumber_nominal']}\"",
             f"      stud_spacing_oc_in: {fmt(p['stud_spacing_oc_in'])}",
+            f"      top_plate_count: {fmt(p['top_plate_count'])}",
             f"      osb_thickness_in: {fmt(p['osb_thickness_in'])}",
             f"      exterior_face: {p['exterior_face']}",
             f"      reference_house_orientation: {p['reference_house_orientation']}",

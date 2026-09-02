@@ -11,12 +11,12 @@ envelope:
     - 96.0
   tolerance_in: 0.05
 solids:
-  min_count: 16
+  min_count: 17
   roles:
   - pattern: bottom_plate*
     count: 1
-  - pattern: top_plate
-    count: 1
+  - pattern: top_plate*
+    count: 2
   - pattern: king_stud_*
     count: 2
   - pattern: jack_stud_*
@@ -50,6 +50,9 @@ params:
 - key: stud_spacing_in
   min: 16
   max: 16
+- key: top_plate_count
+  min: 2
+  max: 2
 - key: osb_thickness_in
   min: 0.4375
   max: 0.4375

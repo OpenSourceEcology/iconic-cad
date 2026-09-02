@@ -15,7 +15,5 @@ slots:
   bom: null
   cheatsheet: null
 known_issues:
-- 'CAD-AUD-001: current geometry emits a single top plate; expect.yaml records current
-  behavior.'
 - 'CAD-AUD-005: current exterior aperture geometry cuts the OSB opening in CAD; expect.yaml
   records current behavior.'

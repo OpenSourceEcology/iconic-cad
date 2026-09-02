@@ -11,6 +11,7 @@ instances:
       nominal_height_ft: 8.0
       stud_lumber_nominal: "2x6"
       stud_spacing_oc_in: 24
+      top_plate_count: 2
       osb_thickness_in: 0.4375
       exterior_face: south
       reference_house_orientation: faces_south
@@ -22,6 +23,7 @@ instances:
       nominal_height_ft: 8.0
       stud_lumber_nominal: "2x6"
       stud_spacing_oc_in: 16
+      top_plate_count: 2
       osb_thickness_in: 0.4375
       exterior_face: south
       reference_house_orientation: faces_south
@@ -33,6 +35,7 @@ instances:
       nominal_height_ft: 8.5
       stud_lumber_nominal: "2x6"
       stud_spacing_oc_in: 16
+      top_plate_count: 2
       osb_thickness_in: 0.4375
       exterior_face: south
       reference_house_orientation: faces_south
@@ -45,6 +48,7 @@ instances:
       nominal_height_ft: 8.0
       stud_lumber_nominal: "2x4"
       stud_spacing_oc_in: 16
+      top_plate_count: 1
       osb_thickness_in: 0
       exterior_face: none
       reference_house_orientation: interior
@@ -56,6 +60,7 @@ instances:
       nominal_height_ft: 8.0
       stud_lumber_nominal: "2x4"
       stud_spacing_oc_in: 24
+      top_plate_count: 1
       osb_thickness_in: 0
       exterior_face: none
       reference_house_orientation: interior
@@ -67,6 +72,7 @@ instances:
       nominal_height_ft: 8.5
       stud_lumber_nominal: "2x4"
       stud_spacing_oc_in: 18
+      top_plate_count: 1
       osb_thickness_in: 0
       exterior_face: none
       reference_house_orientation: interior
@@ -89,6 +95,7 @@ instances:
       nominal_height_ft: 8.0
       stud_lumber_nominal: "2x6"
       stud_spacing_oc_in: 16
+      top_plate_count: 2
       osb_thickness_in: 0.4375
       exterior_face: south
       reference_house_orientation: faces_south
@@ -107,6 +114,7 @@ instances:
       nominal_height_ft: 9.0
       stud_lumber_nominal: "2x6"
       stud_spacing_oc_in: 16
+      top_plate_count: 2
       osb_thickness_in: 0.4375
       exterior_face: south
       reference_house_orientation: faces_south
@@ -125,6 +133,7 @@ instances:
       nominal_height_ft: 10.0
       stud_lumber_nominal: "2x6"
       stud_spacing_oc_in: 16
+      top_plate_count: 2
       osb_thickness_in: 0.4375
       exterior_face: south
       reference_house_orientation: faces_south
@@ -144,6 +153,7 @@ instances:
       nominal_height_ft: 8.0
       stud_lumber_nominal: "2x6"
       stud_spacing_oc_in: 16
+      top_plate_count: 2
       osb_thickness_in: 0.4375
       exterior_face: south
       reference_house_orientation: faces_south
@@ -163,6 +173,7 @@ instances:
       nominal_height_ft: 8.0
       stud_lumber_nominal: "2x6"
       stud_spacing_oc_in: 16
+      top_plate_count: 2
       osb_thickness_in: 0.4375
       exterior_face: south
       reference_house_orientation: faces_south
@@ -184,6 +195,7 @@ instances:
       nominal_height_ft: 8.0
       stud_lumber_nominal: "2x6"
       stud_spacing_oc_in: 16
+      top_plate_count: 1
       osb_thickness_in: 0.4375
       exterior_face: south
       reference_house_orientation: faces_south
@@ -203,6 +215,7 @@ instances:
       nominal_height_ft: 8.0
       stud_lumber_nominal: "2x6"
       stud_spacing_oc_in: 16
+      top_plate_count: 2
       osb_thickness_in: 0.4375
       exterior_face: south
       reference_house_orientation: faces_south
@@ -223,6 +236,7 @@ instances:
       nominal_height_ft: 8.0
       stud_lumber_nominal: "2x6"
       stud_spacing_oc_in: 16
+      top_plate_count: 1
       osb_thickness_in: 0.4375
       exterior_face: south
       reference_house_orientation: faces_south
@@ -242,6 +256,7 @@ instances:
       nominal_height_ft: 8.0
       stud_lumber_nominal: "2x4"
       stud_spacing_oc_in: 16
+      top_plate_count: 1
       osb_thickness_in: 0
       exterior_face: none
       reference_house_orientation: interior

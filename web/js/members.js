@@ -23,10 +23,8 @@
 // CI (see CAD-AUD-009), keeps members.json and the baked BREPs in sync with
 // this function.
 //
-// This is a FAITHFUL PORT of the geometry render3d.js builds today. Same
-// members, same panel-local positions, same sizes. It is a transcription, not a
-// redesign. If the port and the existing 3D view ever disagree, the port is
-// wrong — fix the port.
+// render3d.js consumes this list directly, so framing-policy changes belong
+// here and flow to preview, BOM, fab output, and the exported Python input.
 //
 // Member = {
 //   role:     'bottom_plate'|'top_plate'|'stud'|'king'|'jack'|'header'|
@@ -58,28 +56,46 @@ export function enumerateMembers(mod) {
   return mod.aperture ? enumerateAperture(mod) : enumerateWall(mod);
 }
 
+function framingPolicy(mod) {
+  const height_mm = Number(mod.height_mm);
+  const stud_spacing_mm = Number(mod.stud_spacing_mm);
+  const top_plate_count = Number(mod.top_plate_count);
+  if (!(height_mm > 0)) throw new Error(`${mod.id}: invalid height_mm`);
+  if (!(stud_spacing_mm > 0)) throw new Error(`${mod.id}: invalid stud_spacing_mm`);
+  if (!Number.isInteger(top_plate_count) || top_plate_count < 1) {
+    throw new Error(`${mod.id}: invalid top_plate_count`);
+  }
+  return { height_mm, stud_spacing_mm, top_plate_count };
+}
+
+function emitTopPlates(out, nominal, width, height, plateThickness, count) {
+  const stackBottom = height - count * plateThickness;
+  for (let i = 0; i < count; i++) {
+    out.push(member('top_plate', nominal, 0, stackBottom + i * plateThickness, width, plateThickness));
+  }
+  return stackBottom;
+}
+
 // ---- Plain wall (ported from render3d.buildWall3D) ------------------------
 function enumerateWall(mod) {
   const isInt = mod.interior;
   const out = [];
 
   const W = mod.width_mm;
-  const H = (mod.id.includes('8.5') ? 8.5 : 8) * 12 * IN_TO_MM;
+  const { height_mm: H, stud_spacing_mm: oc, top_plate_count: topPlateCount } = framingPolicy(mod);
   const O = isInt ? 0 : OSB_THICK;
   const PT = STUD_THICK;
   const ST = STUD_THICK;
   const studNom = isInt ? '2x4' : '2x6';
 
-  const oc = mod.id.includes('16oc') ? 16 : mod.id.includes('24oc') ? 24 : 18;
   const studPos = [0];
-  let cur = oc * IN_TO_MM;
-  while (cur + ST <= W - ST) { studPos.push(cur); cur += oc * IN_TO_MM; }
+  let cur = oc;
+  while (cur + ST <= W - ST) { studPos.push(cur); cur += oc; }
   studPos.push(W - ST);
-  const studH = H - 2 * PT;
 
   out.push(member('bottom_plate', studNom, 0, 0, W, PT));
-  // NOTE: spec says double top plate; render3d models single. Faithful port — do not change here.
-  out.push(member('top_plate', studNom, 0, H - PT, W, PT));
+  const zStudTop = emitTopPlates(out, studNom, W, H, PT, topPlateCount);
+  const studH = zStudTop - PT;
   for (const sx of studPos) out.push(member('stud', studNom, sx, PT, ST, studH));
   if (O > 0) out.push(member('sheathing', 'OSB', 0, 0, W, H));
 
@@ -93,7 +109,7 @@ function enumerateAperture(mod) {
   const out = [];
 
   const W = mod.width_mm;
-  const H = (a.height_ft || (mod.id.includes('4x9') ? 9 : mod.id.includes('4x10') ? 10 : 8)) * 12 * IN_TO_MM;
+  const { height_mm: H, stud_spacing_mm: oc, top_plate_count: topPlateCount } = framingPolicy(mod);
   const O = isInt ? 0 : OSB_THICK;
   const PT = STUD_THICK, ST = STUD_THICK;
   const studNom = isInt ? '2x4' : '2x6';
@@ -105,11 +121,11 @@ function enumerateAperture(mod) {
   const roZ1 = roZ0 + a.ro_h_in * IN_TO_MM;
   const isWin = a.type === 'window' && roZ0 > 0;
   const hdrDep = LUMBER_DEPTH[a.header_nominal] || 7.25 * IN_TO_MM;
-  const zStudTop = H - PT, zStudBot = PT;
+  const zStudTop = H - topPlateCount * PT, zStudBot = PT;
 
   const cripX = [];
-  let g = a.oc * IN_TO_MM;
-  while (g + ST < roX1) { if (g > roX0) cripX.push(g); g += a.oc * IN_TO_MM; }
+  let g = oc;
+  while (g + ST < roX1) { if (g > roX0) cripX.push(g); g += oc; }
   if (!cripX.length) cripX.push((roX0 + roX1) / 2 - ST / 2);
 
   // helper: emit a member only if it has positive extent (mirrors render3d's guard)
@@ -121,8 +137,7 @@ function enumerateAperture(mod) {
   // Bottom plate: continuous under a window, cut out across a door opening.
   if (isWin) emit('bottom_plate', studNom, 0, W, 0, PT);
   else { emit('bottom_plate', studNom, 0, roX0, 0, PT); emit('bottom_plate', studNom, roX1, W - roX1, 0, PT); }
-  // NOTE: spec says double top plate; render3d models single. Faithful port — do not change here.
-  emit('top_plate', studNom, 0, W, zStudTop, PT);
+  emitTopPlates(out, studNom, W, H, PT, topPlateCount);
 
   // King studs (full height each side), jack studs (carry the header).
   emit('king', studNom, 0, ST, zStudBot, zStudTop - zStudBot);

@@ -70,6 +70,9 @@ def test_plain_wall_16oc_four_studs():
     for got, want in zip(xs, expected):
         assert abs(got - want) < 1e-3, (got, want)
 
+    top_plate_names = sorted(name for name, *_ in boxes if name.startswith("top_plate"))
+    assert top_plate_names == ["top_plate_1", "top_plate_2"]
+
 
 def test_window_acceptance_spec_matches_js_side():
     # Literal values transcribed from tests/enumerate_parity.mjs's window
@@ -79,7 +82,7 @@ def test_window_acceptance_spec_matches_js_side():
     boxes = {name: (sx, sy, sz, px, py, pz) for name, sx, sy, sz, px, py, pz in boxes_from_members(members, depth_mm=139.7)}
 
     assert set(n for n in boxes if n.startswith("king_stud")) == {"king_stud_left", "king_stud_right"}
-    assert abs(boxes["king_stud_left"][2] - 2362.2) < 1e-3  # sz = height
+    assert abs(boxes["king_stud_left"][2] - 2324.1) < 1e-3  # sz = height
 
     assert set(n for n in boxes if n.startswith("jack_stud")) == {"jack_stud_left", "jack_stud_right"}
     assert abs(boxes["jack_stud_left"][2] - 1790.7) < 1e-3
@@ -87,7 +90,7 @@ def test_window_acceptance_spec_matches_js_side():
     assert abs(boxes["header"][0] - 990.6) < 1e-3  # sx = width
 
     assert set(n for n in boxes if n.startswith("top_cripple_")) == {"top_cripple_1", "top_cripple_2"}
-    assert abs(boxes["top_cripple_1"][2] - 387.35) < 1e-2
+    assert abs(boxes["top_cripple_1"][2] - 349.25) < 1e-2
 
     assert abs(boxes["sill"][0] - 914.4) < 1e-3
 

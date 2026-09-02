@@ -11,9 +11,9 @@ export const IWALL_DEPTH = 3.5 * IN_TO_MM;            // 88.9mm — 2x4 stud, no
 export const MODULES = manifestPaletteModules('seh');
 
 export const INTERIOR_MODULES = [
-  { id: 'iwall_4x8_2x4_16oc', label: '4x8 16OC', width_mm: 4 * 12 * IN_TO_MM, depth_mm: IWALL_DEPTH, interior: true },
-  { id: 'iwall_4x8_2x4_24oc', label: '4x8 24OC', width_mm: 4 * 12 * IN_TO_MM, depth_mm: IWALL_DEPTH, interior: true },
-  { id: 'iwall_3x8.5_2x4_single', label: '3x8.5 1S', width_mm: 3 * 12 * IN_TO_MM, depth_mm: IWALL_DEPTH, interior: true },
+  { id: 'iwall_4x8_2x4_16oc', label: '4x8 16OC', width_mm: 4 * 12 * IN_TO_MM, height_mm: 8 * 12 * IN_TO_MM, depth_mm: IWALL_DEPTH, stud_spacing_mm: 16 * IN_TO_MM, top_plate_count: 1, interior: true },
+  { id: 'iwall_4x8_2x4_24oc', label: '4x8 24OC', width_mm: 4 * 12 * IN_TO_MM, height_mm: 8 * 12 * IN_TO_MM, depth_mm: IWALL_DEPTH, stud_spacing_mm: 24 * IN_TO_MM, top_plate_count: 1, interior: true },
+  { id: 'iwall_3x8.5_2x4_single', label: '3x8.5 1S', width_mm: 3 * 12 * IN_TO_MM, height_mm: 8.5 * 12 * IN_TO_MM, depth_mm: IWALL_DEPTH, stud_spacing_mm: 18 * IN_TO_MM, top_plate_count: 1, interior: true },
 ];
 
 // Aperture modules (windows + doors). A door is a window taken to the floor:
@@ -21,27 +21,27 @@ export const INTERIOR_MODULES = [
 // Sill_in = 0 means the opening runs to the floor (door). These snap exactly
 // like a plain 48" wall panel. See docs/aperture_framing_reference.md.
 export const APERTURE_MODULES = [
-  { id: 'window_4x8_2x6_36x48', label: 'Window 36x48 (8\')', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
-    aperture: { type: 'window', ro_w_in: 36, ro_h_in: 48, sill_in: 24, oc: 16, header_nominal: '2x8', header_plies: 2 } },
-  { id: 'window_4x9_2x6_36x48', label: 'Window 36x48 (9\')', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
-    aperture: { type: 'window', ro_w_in: 36, ro_h_in: 48, sill_in: 24, oc: 16, header_nominal: '2x8', header_plies: 2, height_ft: 9 } },
-  { id: 'window_4x10_2x6_36x48', label: 'Window 36x48 (10\')', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
-    aperture: { type: 'window', ro_w_in: 36, ro_h_in: 48, sill_in: 24, oc: 16, header_nominal: '2x8', header_plies: 2, height_ft: 10 } },
-  { id: 'door_4x8_2x6_38x83', label: 'Door (in)', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
-    aperture: { type: 'door', ro_w_in: 38, ro_h_in: 83, sill_in: 0, oc: 16, header_nominal: '2x8', header_plies: 2, swing: 'in' } },
-  { id: 'door_out_4x8_2x6_38x83', label: 'Door (out)', width_mm: 4 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
-    aperture: { type: 'door', ro_w_in: 38, ro_h_in: 83, sill_in: 0, oc: 16, header_nominal: '2x8', header_plies: 2, swing: 'out' } },
-  { id: 'double_door_8x8_2x6_72x83', label: 'Double Door', width_mm: 8 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
-    aperture: { type: 'double_door', ro_w_in: 72, ro_h_in: 83, sill_in: 0, oc: 16, header_nominal: '2x12', header_plies: 2, swing: 'in' } },
-  { id: 'sliding_8x8_2x6_72x80', label: 'Sliding Door', width_mm: 8 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
-    aperture: { type: 'sliding', ro_w_in: 72, ro_h_in: 80, sill_in: 0, oc: 16, header_nominal: '2x12', header_plies: 2 } },
-  { id: 'garage_9x8_2x6_96x84', label: 'Garage Door', width_mm: 9 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH,
-    aperture: { type: 'garage', ro_w_in: 96, ro_h_in: 84, sill_in: 0, oc: 16, header_nominal: '2x12', header_plies: 2 } },
+  { id: 'window_4x8_2x6_36x48', label: 'Window 36x48 (8\')', width_mm: 4 * 12 * IN_TO_MM, height_mm: 8 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH, stud_spacing_mm: 16 * IN_TO_MM, top_plate_count: 2,
+    aperture: { type: 'window', ro_w_in: 36, ro_h_in: 48, sill_in: 24, header_nominal: '2x8', header_plies: 2 } },
+  { id: 'window_4x9_2x6_36x48', label: 'Window 36x48 (9\')', width_mm: 4 * 12 * IN_TO_MM, height_mm: 9 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH, stud_spacing_mm: 16 * IN_TO_MM, top_plate_count: 2,
+    aperture: { type: 'window', ro_w_in: 36, ro_h_in: 48, sill_in: 24, header_nominal: '2x8', header_plies: 2 } },
+  { id: 'window_4x10_2x6_36x48', label: 'Window 36x48 (10\')', width_mm: 4 * 12 * IN_TO_MM, height_mm: 10 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH, stud_spacing_mm: 16 * IN_TO_MM, top_plate_count: 2,
+    aperture: { type: 'window', ro_w_in: 36, ro_h_in: 48, sill_in: 24, header_nominal: '2x8', header_plies: 2 } },
+  { id: 'door_4x8_2x6_38x83', label: 'Door (in)', width_mm: 4 * 12 * IN_TO_MM, height_mm: 8 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH, stud_spacing_mm: 16 * IN_TO_MM, top_plate_count: 2,
+    aperture: { type: 'door', ro_w_in: 38, ro_h_in: 83, sill_in: 0, header_nominal: '2x8', header_plies: 2, swing: 'in' } },
+  { id: 'door_out_4x8_2x6_38x83', label: 'Door (out)', width_mm: 4 * 12 * IN_TO_MM, height_mm: 8 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH, stud_spacing_mm: 16 * IN_TO_MM, top_plate_count: 2,
+    aperture: { type: 'door', ro_w_in: 38, ro_h_in: 83, sill_in: 0, header_nominal: '2x8', header_plies: 2, swing: 'out' } },
+  { id: 'double_door_8x8_2x6_72x83', label: 'Double Door', width_mm: 8 * 12 * IN_TO_MM, height_mm: 8 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH, stud_spacing_mm: 16 * IN_TO_MM, top_plate_count: 1,
+    aperture: { type: 'double_door', ro_w_in: 72, ro_h_in: 83, sill_in: 0, header_nominal: '2x12', header_plies: 2, swing: 'in' } },
+  { id: 'sliding_8x8_2x6_72x80', label: 'Sliding Door', width_mm: 8 * 12 * IN_TO_MM, height_mm: 8 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH, stud_spacing_mm: 16 * IN_TO_MM, top_plate_count: 2,
+    aperture: { type: 'sliding', ro_w_in: 72, ro_h_in: 80, sill_in: 0, header_nominal: '2x12', header_plies: 2 } },
+  { id: 'garage_9x8_2x6_96x84', label: 'Garage Door', width_mm: 9 * 12 * IN_TO_MM, height_mm: 8 * 12 * IN_TO_MM, depth_mm: WALL_DEPTH, stud_spacing_mm: 16 * IN_TO_MM, top_plate_count: 1,
+    aperture: { type: 'garage', ro_w_in: 96, ro_h_in: 84, sill_in: 0, header_nominal: '2x12', header_plies: 2 } },
 ];
 
 export const INT_APERTURE_MODULES = [
-  { id: 'idoor_4x8_2x4_38x83', label: 'Int Door 38x83', width_mm: 4 * 12 * IN_TO_MM, depth_mm: IWALL_DEPTH, interior: true,
-    aperture: { type: 'door', ro_w_in: 38, ro_h_in: 83, sill_in: 0, oc: 16, header_nominal: '2x4', header_plies: 1 } },
+  { id: 'idoor_4x8_2x4_38x83', label: 'Int Door 38x83', width_mm: 4 * 12 * IN_TO_MM, height_mm: 8 * 12 * IN_TO_MM, depth_mm: IWALL_DEPTH, stud_spacing_mm: 16 * IN_TO_MM, top_plate_count: 1, interior: true,
+    aperture: { type: 'door', ro_w_in: 38, ro_h_in: 83, sill_in: 0, header_nominal: '2x4', header_plies: 1 } },
 ];
 
 export const ALL_MODULES = [...MODULES, ...INTERIOR_MODULES, ...APERTURE_MODULES, ...INT_APERTURE_MODULES];

@@ -205,7 +205,7 @@ def plain_wall_role_counts(inst: dict) -> list[dict]:
     stud_count = len(stud_positions(width_in, st, p["stud_spacing_oc_in"]))
     roles = [
         {"pattern": "bottom_plate", "count": 1},
-        {"pattern": "top_plate", "count": 1},
+        {"pattern": "top_plate*", "count": p["top_plate_count"]},
         {"pattern": "stud_*", "count": stud_count},
     ]
     if p["osb_thickness_in"] > 0:
@@ -226,11 +226,10 @@ def aperture_role_counts(inst: dict) -> list[dict]:
     sill_top = a.get("sill_height_in", 0) or 0
     is_window = a["type"] == "window" and sill_top > 0
 
-    # docs/aperture_framing_reference.md: aperture panels keep a single top
-    # plate in current geometry, use full-height edge kings, jacks flanking
-    # the centered RO, one header solid above the RO, and OC-grid cripples
-    # inside the opening.
-    top_plate_z = height_in - st
+    # docs/aperture_framing_reference.md: exterior aperture panels use a
+    # double top plate; the measured non-bearing interior door uses one.
+    # Full-height vertical members stop at the underside of that authored stack.
+    top_plate_z = height_in - p["top_plate_count"] * st
     ro_top = sill_top + ro_h
     header_top = ro_top + hdr_depth
     cripple_count = len(
@@ -240,7 +239,7 @@ def aperture_role_counts(inst: dict) -> list[dict]:
 
     roles = [
         {"pattern": "bottom_plate*", "count": 1 if is_window else 2},
-        {"pattern": "top_plate", "count": 1},
+        {"pattern": "top_plate*", "count": p["top_plate_count"]},
         {"pattern": "king_stud_*", "count": 2},
         {"pattern": "jack_stud_*", "count": 2},
         {"pattern": "header", "count": 1},
@@ -280,6 +279,7 @@ def validator_params(inst: dict) -> dict:
         "module_width_in": p["nominal_width_ft"] * 12.0,
         "module_height_in": p["nominal_height_ft"] * 12.0,
         "stud_spacing_in": p["stud_spacing_oc_in"],
+        "top_plate_count": p["top_plate_count"],
         "osb_thickness_in": p["osb_thickness_in"],
     }
     if "aperture" in p:
@@ -305,21 +305,23 @@ def param_rules(inst: dict) -> list[dict]:
 
 def known_issues(inst: dict) -> list[str]:
     p = inst["parameters"]
-    issues = [
-        "CAD-AUD-001: current geometry emits a single top plate; expect.yaml records current behavior.",
-    ]
+    issues = []
     if "aperture" in p and p["osb_thickness_in"] > 0:
         issues.append(
             "CAD-AUD-005: current exterior aperture geometry cuts the OSB opening in CAD; expect.yaml records current behavior."
         )
     aperture = p.get("aperture") or {}
+    if aperture.get("type") == "double_door":
+        issues.append(
+            "SOL-01 follow-up: the exterior double door requires two top plates, but its 83 in rough opening plus 2x12 header does not fit below a double stack in the 96 in envelope. It remains single-plate pending an explicit envelope/header decision."
+        )
     if aperture.get("type") == "window":
         issues.append(
             "Issue #12: lower cripples intersect the subheader (12.375 in3 each); allowed_contact records current behavior."
         )
     if aperture.get("type") == "garage":
         issues.append(
-            "Issue #12: header intersects the top plate (408.375 in3); allowed_contact records current behavior."
+            "SOL-03: the exterior garage requires two top plates, but its 84 in rough opening plus 2x12 header does not fit the 96 in envelope. It remains single-plate pending an explicit envelope/header decision; the header intersects that plate (408.375 in3)."
         )
     if inst["id"] == "idoor_4x8_2x4_38x83":
         issues.append(

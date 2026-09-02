@@ -13,6 +13,8 @@
       "width_in": 48,
       "height_in": 96,
       "depth_in": 5.9375,
+      "stud_spacing_in": 16,
+      "top_plate_count": 2,
       "exterior_face": "-y"
     },
     {
@@ -23,6 +25,8 @@
       "width_in": 48,
       "height_in": 96,
       "depth_in": 5.9375,
+      "stud_spacing_in": 24,
+      "top_plate_count": 2,
       "exterior_face": "-y"
     },
     {
@@ -33,6 +37,8 @@
       "width_in": 36,
       "height_in": 102,
       "depth_in": 5.9375,
+      "stud_spacing_in": 16,
+      "top_plate_count": 2,
       "exterior_face": "-y"
     }
   ]

@@ -8,7 +8,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { stockKeyFor } from '../web/js/bom.js';
 import { enumerateMembers } from '../web/js/members.js';
-import { APERTURE_MODULES, INT_APERTURE_MODULES, IN_TO_MM } from '../web/js/constants.js';
+import { ALL_MODULES, APERTURE_MODULES, INT_APERTURE_MODULES, IN_TO_MM } from '../web/js/constants.js';
 
 const pricing = JSON.parse(readFileSync(fileURLToPath(new URL('../web/pricing.json', import.meta.url))));
 const catalog = { ...pricing.lumber, ...pricing.hardware };
@@ -33,6 +33,21 @@ for (const mod of [...APERTURE_MODULES, ...INT_APERTURE_MODULES]) {
     const price = catalog[key] && catalog[key].unit_price;
     if (price > 0) ok(`${mod.id} header ${m.nominal} -> ${key} @ $${price}`);
     else fail(`${mod.id} header ${m.nominal} -> ${key} prices ${price}`);
+  }
+}
+
+// 3. Every authored top plate becomes one priced stock item. This is the BOM
+// quantity regression for the exterior double-stack/interior single-stack rule.
+for (const mod of ALL_MODULES) {
+  const plates = enumerateMembers(mod).filter(m => m.role === 'top_plate');
+  if (plates.length === mod.top_plate_count) ok(`${mod.id} BOM sees ${plates.length} top plate(s)`);
+  else fail(`${mod.id} BOM sees ${plates.length} top plates, policy requires ${mod.top_plate_count}`);
+  const plateLenFt = mod.width_mm / IN_TO_MM / 12;
+  for (const plate of plates) {
+    const key = stockKeyFor(plate, !!mod.interior, plateLenFt);
+    const price = catalog[key] && catalog[key].unit_price;
+    if (price > 0) ok(`${mod.id} top plate -> ${key} @ $${price}`);
+    else fail(`${mod.id} top plate -> ${key} prices ${price}`);
   }
 }
 
