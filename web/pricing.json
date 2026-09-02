@@ -21,8 +21,21 @@
     "screw_3in": { "description": "3\" structural screw", "unit_price": 0.15, "unit": "each" }
   },
   "foundation": {
-    "concrete_m3": { "description": "Ready-mix concrete, in place", "unit_price": 200.00, "unit": "m3", "todo": "confirm price" },
-    "eps_skirt_sf": { "description": "EPS frost skirt insulation", "unit_price": 0.85, "unit": "sf", "todo": "confirm price" }
+    "concrete_m3": {
+      "description": "Ready-mix concrete, in place",
+      "unit_price": 742.00,
+      "unit": "m3",
+      "source": "OSE wiki 'Slab Foundation' page: installed slab-on-grade cost quoted $5-9/sf across its cited sources (HomeGuide 'concrete slab cost' $5-7/sf and 'foundation cost' $7/sf, HowMuch.net 'concrete foundation', HomeAdvisor 'install a foundation', Fixr 'concrete foundation' national avg $9/sf; Homewyse 'cost to install cement slab' $7,300-8,800/1,000sf = $7.30-8.80/sf, excavation and gravel excluded). Midpoint of the quoted $5-9/sf range = $7.00/sf, converted to $/m3 assuming a 4in (0.1016m) slab -- this app's own default slab thickness (DEFAULTS.slab = 101.6mm in web/js/foundation.js): $7.00/sf / 0.0929030 m2-per-sf / 0.1016m = $741.6/m3, rounded to $742/m3. The page also cites an actual Seed Eco-Home 2 build budget of $3,111/module (~$12,444/1,000sf = $12.44/sf) for foundation, noted there as high because a slab is both foundation and floor; cited here as corroboration that real-build costs run above generic online quotes, not folded into the midpoint since it bundles the floor. Gravel base ($600-1,000/1,000sf at 6in depth per the same page, via omnicalculator.com) is a separate line item not modeled by this key and is excluded, consistent with the Homewyse figure's own exclusion.",
+      "as_of": "2026-09-02"
+    },
+    "eps_skirt_sf": {
+      "description": "EPS frost skirt insulation",
+      "unit_price": 0.85,
+      "unit": "sf",
+      "source": "UNCONFIRMED. No EPS / rigid-foam-insulation pricing was found on the assigned OSE wiki pages (Slab Foundation, Helical Pier Foundation, Foundation Types) -- the Slab Foundation page's only insulation reference is the unpriced 'Foundation Base Cover (protects foam board insulation at base of house)' line in the Iconic CAD Housing Library's 301-item list. The pre-existing $0.85/sf estimate is retained as-is pending a dedicated EPS/XPS sourcing pass; it is not derived from wiki data.",
+      "todo": "confirm price - no wiki source found for EPS skirt insulation",
+      "as_of": "2026-09-02"
+    }
   },
   "module_specs": {
     "wall_4x8_2x6_16oc": {

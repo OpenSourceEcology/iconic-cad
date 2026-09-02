@@ -107,6 +107,10 @@ They must be presented as "starting layout, review required," never as a finishe
 electrical/plumbing plan. The override mechanism (a user edit as a recorded
 exception on the entity) is real work that must exist before manual entry is safe.
 
+`docs/layers_seed.md` is a sourced seed (OSE wiki "30 Master Layers") for the
+still-unpopulated `layers` array this decision anticipates — not enforced by
+code.
+
 ## 6. Derived artifacts are generated, not hand-maintained — and kept honest by tests
 
 `wall_instances.yaml` is authored; everything else (`specs.json`, the per-direction
