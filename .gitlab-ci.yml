@@ -22,6 +22,7 @@ test:
     - python -c "import shutil; shutil.copy('web/assets/lib/specs.json', '/tmp/specs_orig.json')"
     - python scripts/gen_specs.py
     - python -c "import sys,json; a=json.load(open('/tmp/specs_orig.json')); b=json.load(open('web/assets/lib/specs.json')); sys.exit('specs.json out of sync -- re-run gen_specs.py' if a!=b else 0)"
+    - node scripts/gen_landing_hero.mjs --verify
     - python -m pytest tests/test_blocking_math.py -v
     - node tests/parity.mjs
     - node tests/enumerate_parity.mjs
@@ -36,6 +37,7 @@ test:
     - node tests/fcstd_local_jszip.mjs
     - node tests/ci_verify_gate.mjs
     - node tests/export_gate.mjs
+    - node tests/landing_hero.mjs
     - python scripts/check_links.py
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"

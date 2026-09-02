@@ -103,72 +103,74 @@ a priced cut list, and a printable build book for the
 Change the file, and every drawing, price, and instruction changes with it.
 <a href="https://opensourceecology.github.io/iconic-cad/">Try the editor in your browser</a>.</p>
 
+<!-- generated: gen_landing_hero -->
 <div class="compile">
-<div class="yaml"><span class="k">- id:</span> <span class="v">ext_window_8ft</span>
+<div class="yaml"><span class="k">- id:</span> <span class="v">window_4x8_2x6_36x48</span>
 <span class="k">  family:</span> <span class="v">aperture_wall_panel</span>
 <span class="k">  parameters:</span>
-<span class="k">    nominal_width_ft:</span> <span class="v">8</span>
-<span class="k">    stud_nominal:</span> <span class="v">2x6</span>
-<span class="k">    stud_spacing_in:</span> <span class="v">16</span>
+<span class="k">    nominal_width_ft:</span> <span class="v">4</span>
+<span class="k">    nominal_height_ft:</span> <span class="v">8</span>
+<span class="k">    stud_lumber_nominal:</span> <span class="v">2x6</span>
+<span class="k">    stud_spacing_oc_in:</span> <span class="v">16</span>
+<span class="k">    top_plate_count:</span> <span class="v">2</span>
 <span class="k">    aperture:</span>
 <span class="k">      type:</span> <span class="v">window</span>
 <span class="k">      rough_opening_in:</span> <span class="v">[36, 48]</span>
-<span class="k">      sill_height_in:</span> <span class="v">32</span>
-<span class="k">      header:</span> <span class="v">{nominal: 2x10, plies: 2}</span></div>
+<span class="k">      sill_height_in:</span> <span class="v">24</span>
+<span class="k">      header:</span> <span class="v">{nominal: 2x8, plies: 2}</span></div>
 
 <div class="arrow">──compiles──▶</div>
 
 <div class="panel">
-<svg viewBox="0 0 452 436" role="img" aria-label="Framing elevation of an eight-foot wall panel with a window opening: double top plate, king and jack studs, two-ply header, sill, and cripples, with dimension lines">
-<!-- members: fill lumber, build order bottom-up -->
+<svg viewBox="0 0 452 436" role="img" aria-label="Framing elevation of a 4-by-8-foot wall panel with a 36-by-48-inch window opening, 24-inch sill, 2 top plates, and a 2-ply 2x8 header, with dimension lines">
+<!-- framing members: enumerateMembers() order; sheathing omitted for clarity -->
 <g stroke="#21201c" stroke-width="1" fill="#e9d8a6">
-  <rect class="m" x="16" y="398" width="384" height="6"/>                <!-- bottom plate -->
-  <rect class="m" x="16"  y="28" width="6" height="370"/>               <!-- end stud L -->
-  <rect class="m" x="394" y="28" width="6" height="370"/>               <!-- end stud R -->
-  <rect class="m" x="80"  y="28" width="6" height="370"/>               <!-- stud @16 -->
-  <rect class="m" x="336" y="28" width="6" height="370"/>               <!-- stud @80 -->
-  <rect class="m" x="124" y="28" width="6" height="370"/>               <!-- king L -->
-  <rect class="m" x="286" y="28" width="6" height="370"/>               <!-- king R -->
-  <rect class="m" x="130" y="84" width="6" height="314"/>               <!-- jack L -->
-  <rect class="m" x="280" y="84" width="6" height="314"/>               <!-- jack R -->
-  <rect class="m" x="176" y="282" width="6" height="116"/>              <!-- cripple bl -->
-  <rect class="m" x="240" y="282" width="6" height="116"/>              <!-- cripple br -->
-  <rect class="m" x="136" y="276" width="144" height="6"/>              <!-- sill -->
-  <rect class="m" x="130" y="47" width="156" height="37"/>              <!-- header 2x10 x2 -->
-  <rect class="m" x="176" y="28" width="6" height="19"/>                <!-- cripple tl -->
-  <rect class="m" x="240" y="28" width="6" height="19"/>                <!-- cripple tr -->
-  <rect class="m" x="16" y="22" width="384" height="6"/>                <!-- top plate 1 -->
-  <rect class="m" x="16" y="16" width="384" height="6"/>                <!-- top plate 2 -->
+  <rect class="m" x="112" y="394" width="192" height="6"/> <!-- bottom_plate -->
+  <rect class="m" x="112" y="22" width="192" height="6"/> <!-- top_plate -->
+  <rect class="m" x="112" y="16" width="192" height="6"/> <!-- top_plate -->
+  <rect class="m" x="112" y="28" width="6" height="366"/> <!-- king -->
+  <rect class="m" x="298" y="28" width="6" height="366"/> <!-- king -->
+  <rect class="m" x="130" y="112" width="6" height="282"/> <!-- jack -->
+  <rect class="m" x="280" y="112" width="6" height="282"/> <!-- jack -->
+  <rect class="m" x="130" y="83" width="156" height="29"/> <!-- header -->
+  <rect class="m" x="176" y="28" width="6" height="55"/> <!-- top_cripple -->
+  <rect class="m" x="240" y="28" width="6" height="55"/> <!-- top_cripple -->
+  <rect class="m" x="136" y="304" width="144" height="6"/> <!-- sill -->
+  <rect class="m" x="176" y="310" width="6" height="84"/> <!-- lower_cripple -->
+  <rect class="m" x="240" y="310" width="6" height="84"/> <!-- lower_cripple -->
+  <rect class="m" x="136" y="388" width="144" height="6"/> <!-- subheader -->
 </g>
-<!-- header ply line -->
-<line x1="130" y1="65.5" x2="286" y2="65.5" stroke="#a08c53" stroke-width="1"/>
+<!-- header ply lines -->
+<line x1="130" y1="97.5" x2="286" y2="97.5" stroke="#a08c53" stroke-width="1"/>
 <!-- rough opening -->
-<rect x="136" y="84" width="144" height="192" fill="none" stroke="#8a8578" stroke-width="1" stroke-dasharray="5 4"/>
-<text x="208" y="176" font-family="IBM Plex Mono,monospace" font-size="11" fill="#8a8578" text-anchor="middle">R.O.</text>
-<text x="208" y="192" font-family="IBM Plex Mono,monospace" font-size="11" fill="#8a8578" text-anchor="middle">36 × 48</text>
+<rect x="136" y="112" width="144" height="192" fill="none" stroke="#8a8578" stroke-width="1" stroke-dasharray="5 4"/>
+<text x="208" y="204" font-family="IBM Plex Mono,monospace" font-size="11" fill="#8a8578" text-anchor="middle">R.O.</text>
+<text x="208" y="220" font-family="IBM Plex Mono,monospace" font-size="11" fill="#8a8578" text-anchor="middle">36 × 48</text>
 <!-- dimension: overall width -->
 <g stroke="#21201c" stroke-width="0.75">
-  <line x1="16" y1="414" x2="400" y2="414"/>
-  <line x1="16" y1="409" x2="16" y2="419"/>
-  <line x1="400" y1="409" x2="400" y2="419"/>
+  <line x1="112" y1="414" x2="304" y2="414"/>
+  <line x1="112" y1="409" x2="112" y2="419"/>
+  <line x1="304" y1="409" x2="304" y2="419"/>
 </g>
-<text x="208" y="430" font-family="IBM Plex Mono,monospace" font-size="11" fill="#21201c" text-anchor="middle">96</text>
+<text x="208" y="430" font-family="IBM Plex Mono,monospace" font-size="11" fill="#21201c" text-anchor="middle">48</text>
 <!-- dimension: height -->
 <g stroke="#21201c" stroke-width="0.75">
-  <line x1="416" y1="16" x2="416" y2="404"/>
+  <line x1="416" y1="16" x2="416" y2="400"/>
   <line x1="411" y1="16" x2="421" y2="16"/>
-  <line x1="411" y1="404" x2="421" y2="404"/>
+  <line x1="411" y1="400" x2="421" y2="400"/>
 </g>
-<text x="432" y="214" font-family="IBM Plex Mono,monospace" font-size="11" fill="#21201c" text-anchor="middle" transform="rotate(90 432 214)">97</text>
+<text x="432" y="208" font-family="IBM Plex Mono,monospace" font-size="11" fill="#21201c" text-anchor="middle" transform="rotate(90 432 208)">96</text>
 <!-- labels -->
-<text x="8" y="12" font-family="IBM Plex Mono,monospace" font-size="10" fill="#8a8578">DOUBLE TOP PLATE</text>
-<text x="296" y="70" font-family="IBM Plex Mono,monospace" font-size="10" fill="#8a8578">HEADER 2×10 ×2</text>
+<text x="104" y="12" font-family="IBM Plex Mono,monospace" font-size="10" fill="#8a8578">2 TOP PLATES</text>
+<text x="312" y="101.5" font-family="IBM Plex Mono,monospace" font-size="10" fill="#8a8578">HEADER 2×8 ×2</text>
 </svg>
 </div>
 </div>
-<p class="cap">One entry in wall_instances.yaml and the panel it compiles to.
-Dimensions in inches. Every member here — plates, kings, jacks, cripples,
-sill, header — is enumerated by the same function that prices the cut list.</p>
+<p class="cap">One active library entry and the panel it compiles to.
+Dimensions in inches. All 18 member records come from the same enumerator
+that prices the cut list; this elevation shows its 14 lumber rectangles
+(4 sheathing pieces omitted for clarity).</p>
+<!-- /generated -->
 
 <h2>One file, three outputs</h2>
 <div class="outs">
