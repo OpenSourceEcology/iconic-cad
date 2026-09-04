@@ -7,6 +7,8 @@ from typing import Any
 
 from libtools.registry import discover, load_schema
 
+from aperture_envelope import validate_aperture_envelopes
+
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -15,13 +17,18 @@ def load_entry_instances(root: Path = ROOT, *, active_only: bool = True) -> list
     entries = [
         entry
         for entry in discover(root)
-        if entry.layer == "module" and (entry.status == "active" or not active_only)
+        if entry.layer == "module"
     ]
-    instances = []
+    instances_by_id = {}
     for entry in sorted(entries, key=lambda entry: module_sort_key(entry.id)):
         schema = load_schema(entry)
-        instances.append(instance_from_schema(schema))
-    return instances
+        instances_by_id[entry.id] = instance_from_schema(schema)
+    validate_aperture_envelopes(instances_by_id.values())
+    return [
+        instances_by_id[entry.id]
+        for entry in sorted(entries, key=lambda entry: module_sort_key(entry.id))
+        if entry.status == "active" or not active_only
+    ]
 
 
 def instance_from_schema(schema: dict[str, Any]) -> dict[str, Any]:

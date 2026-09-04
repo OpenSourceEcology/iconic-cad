@@ -105,6 +105,11 @@ rough opening, sill, bottom cripples, sole plate):
   an envelope/header decision is approved. OSB 7/16 over the whole panel face
   (not cut for the opening in CAD — opening cut on install).
 
+Envelope constraint: RO top (sill + RO height) + nominal header depth + top-plate
+stack must not exceed panel height. Exterior checks use the required two 1.5"
+plates. `double_door_8x8_2x6_72x83` and `garage_9x8_2x6_96x84` are the only
+current exceptions, pending an OSE envelope/header decision.
+
 ## Parametric model the generator encodes
 
 One builder, driven by an `aperture` block on a wall instance:
