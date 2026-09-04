@@ -94,9 +94,11 @@ function goldenAperture(m, dir) {
   for (const cx of cripX) mem(cx, ST, zA, zT - zA);
   if (isWin) {
     const zS = roZ0 - PT; mem(roX0, roW, zS, PT);
-    const zC = zB; for (const cx of cripX) mem(cx, ST, zC, zS - zC);
-    if (zS - zC > PT + 1) {
-      mem(roX0, roW, zC, PT);
+    const hasSubheader = zS - zB > PT + 1;
+    if (hasSubheader) mem(roX0, roW, zB, PT);
+    const zC = zB + (hasSubheader ? PT : 0);
+    for (const cx of cripX) mem(cx, ST, zC, zS - zC);
+    if (hasSubheader) {
       const bs = 24 * IN_TO_MM;
       for (let zb = zC + bs; zb + PT < zS - 1; zb += bs) mem(roX0, roW, zb, PT);
     }
@@ -186,7 +188,10 @@ const roleOf = (ms, r) => ms.filter(x => x.role === r);
   if (sill.length !== 1) { fail(`window sill: ${sill.length} != 1`); good = false; }
   else good = near(sill[0].w_mm, 914.4, 'sill w') && good;
   if (lc.length !== 2) { fail(`window lower cripples: ${lc.length} != 2`); good = false; }
-  else good = near(lc[0].h_mm, 533.4, 'lower cripple h') && good;
+  else {
+    good = near(lc[0].z_mm, 76.2, 'lower cripple z') && good;
+    good = near(lc[0].h_mm, 495.3, 'lower cripple h') && good;
+  }
   if (sub.length !== 1) { fail(`window subheader: ${sub.length} != 1`); good = false; }
   if (blk.length !== 0) { fail(`window sill_block: ${blk.length} != 0 (21" zone < 24")`); good = false; }
   if (good) ok('window_4x8_2x6_36x48: full §7 acceptance spec');

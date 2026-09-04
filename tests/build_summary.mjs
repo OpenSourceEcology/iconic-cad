@@ -181,6 +181,17 @@ const memberCount = m => enumerateMembers(m.mod).reduce((s, x) => s + (x.plies |
   eq(whole, summed, 'whole-build cut-list total == sum over instances');
 }
 
+// SOL-02: the derived cut list and fabrication card carry the shortened
+// subheader-supported lower-cripple cut length (19½", formerly 21").
+{
+  const e = { kind: 'wall', mod: mod('window_4x8_2x6_36x48') };
+  const cripple = cutListGrouped([e]).find(row => row.part === 'Cripple' && row.lengthLabel === '19½″');
+  eq(cripple?.qty, 2, 'window cut list has two 19½″ lower cripples');
+  const svg = cardSVG(e, { label: 'A-1', templates: null });
+  if (svg.includes('19½″')) ok('window fabrication card prints 19½″ cripple cut length');
+  else fail('window fabrication card missing 19½″ cripple cut length');
+}
+
 // ---- 4. cardSVG renders derived-only (no template) -------------------------
 {
   try {
