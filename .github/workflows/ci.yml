@@ -32,7 +32,7 @@ jobs:
         run: node scripts/gen_landing_hero.mjs --verify
 
       - name: Python blocking-math unit tests
-        run: python -m pytest tests/test_blocking_math.py tests/test_library_drift.py tests/test_generated_entry.py tests/test_members_boxes.py -v
+        run: python -m pytest tests/test_aperture_envelope.py tests/test_blocking_math.py tests/test_library_drift.py tests/test_generated_entry.py tests/test_members_boxes.py -v
 
       - name: Validate library entry code
         run: python -m libtools validate-code --root . --all
@@ -58,6 +58,7 @@ jobs:
           node tests/builtin_library.mjs
           node tests/members_export.mjs
           node tests/landing_hero.mjs
+          node tests/aperture_envelope.mjs
 
       - name: Check Markdown relative links
         run: python scripts/check_links.py

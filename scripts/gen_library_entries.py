@@ -13,6 +13,8 @@ from pathlib import Path
 
 import yaml
 
+from aperture_envelope import validate_aperture_envelopes
+
 
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE_YAML = ROOT / "wall_instances.yaml"
@@ -47,7 +49,9 @@ def main() -> int:
 
 def load_instances() -> list[dict]:
     with SOURCE_YAML.open("r", encoding="utf-8") as f:
-        return yaml.safe_load(f)["instances"]
+        instances = yaml.safe_load(f)["instances"]
+    validate_aperture_envelopes(instances)
+    return instances
 
 
 def verify(instances: list[dict]) -> int:
