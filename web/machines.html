@@ -11,33 +11,36 @@
 <body>
   <header class="machine-header">
     <a class="brand" href="index.html">ICONIC CAD <span>/ MACHINES</span></a>
-    <div class="header-note">Source geometry demo · engineering review pending</div>
+    <div class="header-note">Source geometry inspection · engineering review pending</div>
     <a class="housing-link" href="index.html">Housing editor ↗</a>
   </header>
   <main class="machine-layout">
     <aside class="panel catalog-panel" aria-label="Machine catalog">
       <div class="panel-heading"><h1>Machine library</h1><p>Place source geometry in a millimetre assembly.</p></div>
       <section aria-labelledby="demo-title"><h2 id="demo-title">Demo assemblies</h2><div id="demo-list" class="demo-list"></div></section>
-      <section aria-labelledby="catalog-title"><h2 id="catalog-title">Catalog</h2><div id="catalog-list" class="catalog-list"></div></section>
+      <section aria-labelledby="catalog-title"><h2 id="catalog-title">Catalog</h2><label class="catalog-search" for="catalog-filter">Filter source entries<input id="catalog-filter" type="search" autocomplete="off" placeholder="Name, family, variant"></label><div id="catalog-list" class="catalog-list"></div></section>
       <p id="catalog-status" class="status" role="status">Loading local catalog…</p>
     </aside>
 
     <section class="viewport-panel" aria-label="3D machine assembly preview">
       <div id="viewport" tabindex="0" aria-label="Orbit, pan, and zoom 3D preview"></div>
+      <div class="view-controls" aria-label="Canonical camera views"><button type="button" data-view="iso">Iso</button><button type="button" data-view="front">Front</button><button type="button" data-view="top">Top</button><button type="button" data-view="side">Side</button></div>
       <div class="viewport-hud"><span>ORBIT drag</span><span>PAN right drag</span><span>ZOOM wheel</span><span>units: mm</span></div>
       <div id="empty-state" class="empty-state"><strong>Start an assembly</strong><span>Choose a demo or place a machine from the library.</span></div>
     </section>
 
     <aside class="panel inspector-panel" aria-label="Assembly controls">
-      <section><h2>Assembly</h2><div class="actions two"><button id="new-workspace" type="button">New</button><button id="fit-view" type="button">Fit view</button></div><div class="actions two"><button id="duplicate-instance" type="button" disabled>Duplicate</button><button id="delete-instance" class="danger" type="button" disabled>Delete selected</button></div></section>
+      <section><h2>Assembly</h2><div class="actions two"><button id="undo-workspace" type="button" disabled>Undo</button><button id="redo-workspace" type="button" disabled>Redo</button></div><div class="actions two"><button id="new-workspace" type="button">New</button><button id="fit-view" type="button">Fit view</button></div><div class="actions two"><button id="duplicate-instance" type="button" disabled>Duplicate</button><button id="delete-instance" class="danger" type="button" disabled>Delete selected</button></div></section>
       <section><h2>Placed instances</h2><div id="instance-list" class="instance-list"><p class="muted">No machines placed.</p></div></section>
       <section><h2>Selected instance</h2><p id="selected-name" class="selected-name">Nothing selected</p><p id="selected-detail" class="field-help">Select a placed machine to inspect its catalog bounds.</p><form id="transform-form" class="transform-form">
         <label>Position X <input id="position-x" type="number" step="1" disabled></label>
         <label>Position Y <input id="position-y" type="number" step="1" disabled></label>
         <label>Position Z <input id="position-z" type="number" step="1" disabled></label>
+        <label>Rotate X <input id="rotation-x" type="number" step="1" disabled></label>
+        <label>Rotate Y <input id="rotation-y" type="number" step="1" disabled></label>
         <label>Rotate Z <input id="rotation-z" type="number" step="1" disabled></label>
         <button id="apply-transform" type="submit" disabled>Apply transform</button>
-      </form><p class="field-help">XYZ is millimetres. Rotation is degrees around Z.</p></section>
+      </form><p class="field-help">XYZ is millimetres. Rotations are degrees; X then Y then Z.</p></section>
       <section><h2>Files</h2><div class="actions"><button id="save-workspace" type="button">Save JSON</button><button id="load-workspace" type="button">Load JSON</button><input id="load-file" type="file" accept="application/json" hidden></div><div class="actions"><button id="export-bom" type="button">Export component BOM CSV</button><button id="export-fcstd" type="button">Export FreeCAD</button></div></section>
       <section><h2>Component BOM</h2><div id="component-list" class="component-list"><p class="muted">No placed components.</p></div><p class="field-help">Counts catalog components only; it does not estimate materials, fabrication, or prices.</p></section>
       <p id="message" class="message" role="status"></p>

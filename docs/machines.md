@@ -26,7 +26,17 @@ workbench keeps these sources inspectable and exportable while marking them
 
 Saved workspaces use `{ "version": 1, "units": "mm", "instances": [...] }`.
 Loads are validated before replacing the current workspace, so an invalid file
-leaves the current assembly intact.
+leaves the current assembly intact. Existing v1 files with only `rotation_deg`
+continue to load as Z-only rotations. Newer saved instances may add optional
+`rotation_x_deg` and `rotation_y_deg`; the preview applies X, then Y, then Z
+(`Rz * Ry * Rx`).
+
+The workbench records place, duplicate, delete, transform, demo, new, and load
+actions in local undo/redo history. Camera and selection are view state, so they
+do not change the saved workspace. The filter searches local catalog title,
+family, variant, description, and id. Iso, Front, Top, and Side controls frame
+the current source geometry; the yellow selection outline and placed-instance
+list make small or occluded components selectable.
 
 FreeCAD export packages each baked local BREP as a `Part::Feature` sidecar and
 appends the instance XYZ translation and Z rotation as an OCCT Location. The

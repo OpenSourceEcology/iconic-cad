@@ -2,6 +2,7 @@
 // dependency on the house-editor document: a machine assembly is portable on
 // its own and uses millimetres throughout.
 export const MACHINE_WORKSPACE_VERSION = 1;
+export const MACHINE_HISTORY_LIMIT = 100;
 
 const finite = n => typeof n === 'number' && Number.isFinite(n);
 const hex = v => typeof v === 'string' && /^#[0-9a-f]{6}$/i.test(v);
@@ -73,6 +74,7 @@ export function validateMachineWorkspace(value, catalog) {
     if (!entries.has(inst.entry_id)) errors.push(`Instance ${inst.id || '(unnamed)'} references an unavailable catalog entry.`);
     if (!Array.isArray(inst.position_mm) || inst.position_mm.length !== 3 || !inst.position_mm.every(finite)) errors.push(`Instance ${inst.id || '(unnamed)'} needs finite XYZ millimetre coordinates.`);
     if (!finite(inst.rotation_deg)) errors.push(`Instance ${inst.id || '(unnamed)'} needs a finite Z rotation.`);
+    for (const axis of ['rotation_x_deg', 'rotation_y_deg']) if (inst[axis] != null && !finite(inst[axis])) errors.push(`Instance ${inst.id || '(unnamed)'} needs a finite ${axis === 'rotation_x_deg' ? 'X' : 'Y'} rotation when provided.`);
   }
   return { ok: errors.length === 0, errors };
 }
@@ -83,6 +85,46 @@ export function validateMeshPayload(value) {
   const vertexCount = Array.isArray(value?.vertices) ? value.vertices.length / 3 : 0;
   if (!Array.isArray(value?.triangles) || value.triangles.length < 3 || value.triangles.length % 3 || !value.triangles.every(index => Number.isInteger(index) && index >= 0 && index < vertexCount)) errors.push('Mesh triangles must be in-range vertex indices grouped as triples.');
   return { ok: errors.length === 0, errors };
+}
+
+// Rotation convention shared by the preview and FreeCAD exporter: apply X,
+// then Y, then Z, which produces Rz * Ry * Rx in column-vector form.
+export function rotationMatrixXYZ(rotationXDeg = 0, rotationYDeg = 0, rotationZDeg = 0) {
+  if (![rotationXDeg, rotationYDeg, rotationZDeg].every(finite)) throw new Error('Rotation matrix needs finite degree values.');
+  const x = rotationXDeg * Math.PI / 180, y = rotationYDeg * Math.PI / 180, z = rotationZDeg * Math.PI / 180;
+  const sx = Math.sin(x), cx = Math.cos(x), sy = Math.sin(y), cy = Math.cos(y), sz = Math.sin(z), cz = Math.cos(z);
+  return [
+    cz * cy, cz * sy * sx - sz * cx, cz * sy * cx + sz * sx,
+    sz * cy, sz * sy * sx + cz * cx, sz * sy * cx - cz * sx,
+    -sy, cy * sx, cy * cx,
+  ];
+}
+
+// History is deliberately workspace-only: catalog data remains a local static
+// source, and selection/camera are view state rather than saved design edits.
+export function createMachineHistory(initialWorkspace, catalog) {
+  const valid = validateMachineWorkspace(initialWorkspace, catalog);
+  if (!valid.ok) throw new Error(valid.errors.join(' '));
+  return { past: [], present: copy(initialWorkspace), future: [] };
+}
+
+export function recordMachineWorkspace(history, nextWorkspace, catalog) {
+  const valid = validateMachineWorkspace(nextWorkspace, catalog);
+  if (!valid.ok) throw new Error(valid.errors.join(' '));
+  const next = copy(nextWorkspace);
+  if (JSON.stringify(history.present) === JSON.stringify(next)) return history;
+  return { past: [...history.past, copy(history.present)].slice(-MACHINE_HISTORY_LIMIT), present: next, future: [] };
+}
+
+export function undoMachineWorkspace(history) {
+  if (!history.past.length) return history;
+  const past = history.past.slice(0, -1);
+  return { past, present: copy(history.past.at(-1)), future: [copy(history.present), ...history.future].slice(0, MACHINE_HISTORY_LIMIT) };
+}
+
+export function redoMachineWorkspace(history) {
+  if (!history.future.length) return history;
+  return { past: [...history.past, copy(history.present)].slice(-MACHINE_HISTORY_LIMIT), present: copy(history.future[0]), future: history.future.slice(1) };
 }
 
 export function workspaceFromDemo(demo, catalog) {
@@ -102,7 +144,7 @@ export function nextInstanceId(workspace, entryId) {
 }
 
 export function addMachineInstance(workspace, entryId, position = [0, 0, 0]) {
-  return { ...workspace, instances: [...workspace.instances, { id: nextInstanceId(workspace, entryId), entry_id: entryId, position_mm: [...position], rotation_deg: 0 }] };
+  return { ...workspace, instances: [...workspace.instances, { id: nextInstanceId(workspace, entryId), entry_id: entryId, position_mm: [...position], rotation_x_deg: 0, rotation_y_deg: 0, rotation_deg: 0 }] };
 }
 
 export function bomRows(workspace, catalog) {
