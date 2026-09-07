@@ -19,11 +19,38 @@ visible catalog error and never falls back. Imported source entries use
 `license_review: "pending"`; project-owned examples may use
 `license_review: "cleared"` with their stated license.
 
-The generated GVCS catalog and source assets are normally ignored by Git; the
-bundled original example remains source-controlled for the public fallback.
-Build the GVCS library from the sibling `gvcs-library` using `libtools bake-web`, then run
-`python scripts/install_demo.py --iconic-web ../iconic-cad/web` from that library.
-Its README records source hashes, versions, validation and release status.
+The generated GVCS catalog and source assets are ignored by Git; the bundled
+original example remains source-controlled for the public fallback. The canonical
+source is [`OpenSourceEcology/vcs-library/collections/gvcs`](https://github.com/OpenSourceEcology/vcs-library/tree/main/collections/gvcs).
+Pages builds it from the exact repository commit and collection recorded in
+`gvcs-source-lock.json`. The generated `web/data/gvcs-build-receipt.json` is public
+with the app and records that same source commit, validation phases, inputs, and
+output hashes.
+
+To update the public source, first publish the canonical collection, replace
+`revision` in `gvcs-source-lock.json` with its full 40-character commit SHA, and run
+the same release gate locally from clean checkouts:
+
+```sh
+git -C ../vcs-library checkout "$(jq -r .revision gvcs-source-lock.json)"
+python3 -m pip install -e ../vcs-library
+python3 ../vcs-library/collections/gvcs/scripts/build_release.py \
+  --root ../vcs-library/collections/gvcs \
+  --dist /tmp/iconic-gvcs-release \
+  --iconic-web web \
+  --receipt web/data/gvcs-build-receipt.json
+node scripts/validate_gvcs_release.mjs \
+  --lock gvcs-source-lock.json --web web \
+  --receipt web/data/gvcs-build-receipt.json \
+  --source-checkout ../vcs-library --stamp-receipt
+```
+
+Use the system Python paired with the PPA FreeCAD package. Do not add
+`actions/setup-python` to the Pages build: its `LD_LIBRARY_PATH` can break
+`freecadcmd` standard-library resolution. Generated outputs remain uncommitted;
+Pages rebuilds them before every deployment affected by the web app or source lock.
+The broader public catalog is also available in the
+[OSE library browser](https://opensourceecology.github.io/ose-library-site/).
 Three.js 0.170.0 and its OrbitControls are vendored under `web/vendor/three/`
 with their MIT license; loading the machine workbench needs no CDN requests.
 

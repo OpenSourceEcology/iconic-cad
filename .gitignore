@@ -15,12 +15,14 @@ exported/
 # Local stash
 icons/stash/
 
-# Generated machine catalog; source archive lives in sibling gvcs-library.
+# Generated machine release; source is pinned from OpenSourceEcology/vcs-library.
 web/assets/gvcs/
 web/data/gvcs-machines.json
+web/data/gvcs-build-receipt.json
 
 # Exported / test layout JSONs (root only; web/pricing.json stays tracked)
 /*.json
+!/gvcs-source-lock.json
 
 # OS
 .DS_Store

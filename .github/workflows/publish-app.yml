@@ -1,10 +1,14 @@
-# Publishes the layout editor (web/) to GitHub Pages. The app is fully
-# static; the committed BREP/spec assets are the same ones CI verifies.
+# Builds the pinned canonical GVCS collection, validates its public catalog and
+# assets, then publishes the complete static app under web/ to GitHub Pages.
 name: publish-app
 on:
   push:
     branches: [main]
-    paths: ['web/**', '.github/workflows/publish-app.yml']
+    paths:
+      - 'web/**'
+      - 'gvcs-source-lock.json'
+      - 'scripts/validate_gvcs_release.mjs'
+      - '.github/workflows/publish-app.yml'
   workflow_dispatch:
 permissions:
   pages: write
@@ -16,11 +20,57 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - name: Validate pinned GVCS source lock
+        id: source-lock
+        run: |
+          node scripts/validate_gvcs_release.mjs --lock gvcs-source-lock.json --lock-only
+          echo "repository=$(jq -r .repository gvcs-source-lock.json)" >> "$GITHUB_OUTPUT"
+          echo "revision=$(jq -r .revision gvcs-source-lock.json)" >> "$GITHUB_OUTPUT"
+          echo "collection=$(jq -r .collection gvcs-source-lock.json)" >> "$GITHUB_OUTPUT"
+      - name: Check out pinned canonical library
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.source-lock.outputs.repository }}
+          ref: ${{ steps.source-lock.outputs.revision }}
+          path: gvcs-source
+          persist-credentials: false
+      - name: Verify pinned checkout
+        env:
+          PINNED_REVISION: ${{ steps.source-lock.outputs.revision }}
+        run: test "$(git -C gvcs-source rev-parse HEAD)" = "$PINNED_REVISION"
+      - name: Install FreeCAD
+        run: |
+          sudo add-apt-repository -y ppa:freecad-maintainers/freecad-stable
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq freecad
+          command -v freecadcmd
+      # Keep system Python: actions/setup-python can leak LD_LIBRARY_PATH and
+      # break the PPA freecadcmd's standard-library resolution.
+      - name: Install pinned library toolkit
+        run: python3 -m pip install --break-system-packages -e ./gvcs-source
+      - name: Build and install canonical GVCS web release
+        env:
+          GVCS_COLLECTION: ${{ steps.source-lock.outputs.collection }}
+        run: |
+          python3 "gvcs-source/$GVCS_COLLECTION/scripts/build_release.py" \
+            --root "gvcs-source/$GVCS_COLLECTION" \
+            --dist "$RUNNER_TEMP/gvcs-release" \
+            --iconic-web web \
+            --receipt web/data/gvcs-build-receipt.json
+      - name: Validate publish catalog, provenance, and referenced assets
+        run: |
+          node scripts/validate_gvcs_release.mjs \
+            --lock gvcs-source-lock.json \
+            --web web \
+            --receipt web/data/gvcs-build-receipt.json \
+            --source-checkout gvcs-source \
+            --stamp-receipt
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web
