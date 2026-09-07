@@ -74,7 +74,7 @@ async function meshGroup(entry) {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(data.vertices, 3));
     geometry.setIndex(data.triangles); geometry.computeVertexNormals(); geometry.computeBoundingSphere();
-    const material = new THREE.MeshStandardMaterial({ color: part.color, roughness: .67, metalness: .12 });
+    const material = new THREE.MeshStandardMaterial({ color: part.color, roughness: .67, metalness: .12, flatShading: true });
     const mesh = new THREE.Mesh(geometry, material); mesh.name = part.label; return mesh;
   })).then(meshes => { const group = new THREE.Group(); meshes.forEach(mesh => group.add(mesh)); return group; });
   entryMeshCache.set(entry.id, loading);
