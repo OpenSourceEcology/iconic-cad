@@ -26,7 +26,7 @@ export function validateCatalog(value) {
       if (typeof entry[key] !== 'string' || !entry[key].trim()) errors.push(`Entry ${entry.id || '(unnamed)'} needs ${key}.`);
     }
     if (!(typeof entry.source_revision === 'string' && entry.source_revision.trim()) && !Number.isSafeInteger(entry.source_revision)) errors.push(`Entry ${entry.id || '(unnamed)'} needs a nonempty source revision string or integer.`);
-    if (entry.license_review !== 'pending') errors.push(`Entry ${entry.id || '(unnamed)'} must record license_review as pending.`);
+    if (!['pending', 'cleared'].includes(entry.license_review)) errors.push(`Entry ${entry.id || '(unnamed)'} must record license_review as pending or cleared.`);
     if (!entry.validation || !['passed', 'failed'].includes(entry.validation.geometry) || entry.validation.engineering !== 'unreviewed') errors.push(`Entry ${entry.id || '(unnamed)'} has invalid validation status.`);
     if (entry.validation?.assembly != null && !['passed', 'failed'].includes(entry.validation.assembly)) errors.push(`Entry ${entry.id || '(unnamed)'} has invalid assembly validation status.`);
     if (entry.validation?.issues != null && (!Array.isArray(entry.validation.issues) || !entry.validation.issues.every(issue => typeof issue === 'string' && issue.trim()))) errors.push(`Entry ${entry.id || '(unnamed)'} has invalid validation issues.`);
@@ -92,6 +92,8 @@ export function normalizeDegrees(value) {
   const normalized = value % 360;
   return Object.is(normalized, -0) ? 0 : normalized;
 }
+
+export function fallbackCatalogPath(status) { return status === 404 ? 'data/machine-example.json' : null; }
 
 // Rotation convention shared by the preview and FreeCAD exporter: apply X,
 // then Y, then Z, which produces Rz * Ry * Rx in column-vector form.

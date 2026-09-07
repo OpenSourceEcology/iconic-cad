@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { addMachineInstance, bomCsv, bomRows, createMachineHistory, newMachineWorkspace, normalizeDegrees, recordMachineWorkspace, redoMachineWorkspace, undoMachineWorkspace, validateCatalog, validateMachineWorkspace, validateMeshPayload, workspaceFromDemo } from './machine-core.js';
+import { addMachineInstance, bomCsv, bomRows, createMachineHistory, fallbackCatalogPath, newMachineWorkspace, normalizeDegrees, recordMachineWorkspace, redoMachineWorkspace, undoMachineWorkspace, validateCatalog, validateMachineWorkspace, validateMeshPayload, workspaceFromDemo } from './machine-core.js';
 import { buildMachineFcstd } from './machine-fcstd.js';
 
 const $ = id => document.getElementById(id);
@@ -157,7 +157,8 @@ function renderCatalog() {
 function renderInspector() {
   const selected = instanceFor(selectedId); const entry = selected && entryFor(selected.entry_id); const hasSelection = Boolean(selected);
   ui['selected-name'].textContent = entry ? `${entry.title} · ${selected.id}` : 'Nothing selected';
-  ui['selected-detail'].textContent = entry ? `Catalog bounds: ${formatBounds(entry.bounds_mm)} mm. Geometry ${entry.validation.geometry}.${entry.validation.assembly === 'failed' ? ' Source intersections need review.' : ''} Engineering and license review pending.` : 'Select a placed machine to inspect its catalog bounds.';
+  const licenseStatus = entry?.license_review === 'cleared' ? `License review cleared${entry.license ? ` (${entry.license})` : ''}.` : 'License review pending.';
+  ui['selected-detail'].textContent = entry ? `Catalog bounds: ${formatBounds(entry.bounds_mm)} mm. Geometry ${entry.validation.geometry}.${entry.validation.assembly === 'failed' ? ' Source intersections need review.' : ''} Engineering review pending. ${licenseStatus}` : 'Select a placed machine to inspect its catalog bounds.';
   ui['undo-workspace'].disabled = !workspaceHistory.past.length; ui['redo-workspace'].disabled = !workspaceHistory.future.length;
   for (const element of [ui['position-x'], ui['position-y'], ui['position-z'], ui['rotation-x'], ui['rotation-y'], ui['rotation-z'], ui['apply-transform'], ui['duplicate-instance'], ui['delete-instance']]) element.disabled = !hasSelection;
   if (selected) { ui['position-x'].value = selected.position_mm[0]; ui['position-y'].value = selected.position_mm[1]; ui['position-z'].value = selected.position_mm[2]; ui['rotation-x'].value = selected.rotation_x_deg ?? 0; ui['rotation-y'].value = selected.rotation_y_deg ?? 0; ui['rotation-z'].value = selected.rotation_deg; }
@@ -191,6 +192,25 @@ ui['catalog-filter'].addEventListener('input', () => { catalogFilter = ui['catal
 document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => canonicalView(button.dataset.view)));
 window.addEventListener('keydown', event => { if (event.target.matches('input')) return; if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'z') { event.preventDefault(); if (event.shiftKey) ui['redo-workspace'].click(); else ui['undo-workspace'].click(); } else if ((event.key === 'Delete' || event.key === 'Backspace') && selectedId) ui['delete-instance'].click(); });
 
+async function loadCatalog(path) {
+  const response = await fetch(path, { cache: 'no-store' });
+  if (!response.ok) { const error = new Error(`catalog returned ${response.status}`); error.status = response.status; throw error; }
+  const candidate = await response.json();
+  const valid = validateCatalog(candidate);
+  if (!valid.ok) throw new Error(valid.errors.join(' '));
+  return candidate;
+}
+function activateCatalog(candidate, status) {
+  catalog = candidate; renderCatalog(); renderInspector(); ui['catalog-status'].textContent = status; ui['catalog-status'].className = 'status';
+}
 async function initialize() {
-  try { const response = await fetch('data/gvcs-machines.json', { cache: 'no-store' }); if (!response.ok) throw new Error(`catalog returned ${response.status}`); const candidate = await response.json(); const valid = validateCatalog(candidate); if (!valid.ok) throw new Error(valid.errors.join(' ')); catalog = candidate; renderCatalog(); renderInspector(); ui['catalog-status'].textContent = `${catalog.entries.length} source entries · ${catalog.demos.length} demos`; ui['catalog-status'].className = 'status'; } catch (error) { ui['catalog-status'].textContent = `Catalog unavailable: ${error.message}`; ui['catalog-status'].className = 'status error'; message('The machine workbench needs its local catalog assets. Serve the web directory over HTTP.', 'error'); } finally { resize(); } }
+  try {
+    try { const primary = await loadCatalog('data/gvcs-machines.json'); activateCatalog(primary, `${primary.entries.length} source entries · ${primary.demos.length} demos`); }
+    catch (error) {
+      const fallback = fallbackCatalogPath(error.status);
+      if (!fallback) throw error;
+      activateCatalog(await loadCatalog(fallback), 'Example library — GVCS source library not installed');
+    }
+  } catch (error) { ui['catalog-status'].textContent = `Catalog unavailable: ${error.message}`; ui['catalog-status'].className = 'status error'; message('The machine workbench could not load its local catalog.', 'error'); } finally { resize(); }
+}
 initialize();
