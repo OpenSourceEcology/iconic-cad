@@ -52,6 +52,13 @@ function fitAssembly() {
   camera.position.copy(sphere.center).add(viewDirection.normalize().multiplyScalar(distance));
   controls.target.copy(sphere.center);
   camera.near = Math.max(distance / 1000, 0.01); camera.far = Math.max(distance * 100, 1000);
+  // Keep inspection helpers useful from a 20 mm spacer to a large assembly.
+  // GridHelper starts on XZ; its existing X rotation makes this a Z-up XY grid.
+  const helperRadius = Math.max(sphere.radius, 1);
+  grid.scale.setScalar(Math.max(helperRadius * 3, 10) / 7000);
+  grid.position.set(sphere.center.x, sphere.center.y, box.min.z);
+  axes.scale.setScalar(Math.max(helperRadius * .45, 2) / 450);
+  axes.position.set(box.min.x, box.min.y, box.min.z);
   camera.updateProjectionMatrix(); controls.update();
 }
 function formatMM(value) { const precision = Math.abs(value) < 10 ? 2 : 1; return Number(value.toFixed(precision)).toString(); }
