@@ -73,6 +73,20 @@ try {
   await page.screenshot({ path: resolve(output,'mobile.png'), fullPage: true });
   assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, 'no mobile overflow');
   assert.deepEqual(errors, []); assert.deepEqual(external, []);
+  const fallback = await browser.newPage();
+  await fallback.route('**/data/gvcs-machines.json', route => route.fulfill({ status: 404, body: '' }));
+  await fallback.goto(`${base}/machines.html`);
+  await fallback.waitForFunction(() => document.querySelector('#demo-list').textContent.includes('Example assembly'));
+  await fallback.locator('#demo-list button').click();
+  await fallback.waitForFunction(() => document.querySelectorAll('#instance-list .instance-item').length === 2);
+  assert.equal(await fallback.locator('#empty-state').isVisible(), false);
+  await fallback.close();
+  const invalidCatalog = await browser.newPage();
+  await invalidCatalog.route('**/data/gvcs-machines.json', route => route.fulfill({ status: 200, contentType: 'application/json', body: '{"version":999}' }));
+  await invalidCatalog.goto(`${base}/machines.html`);
+  await invalidCatalog.waitForFunction(() => document.querySelector('#catalog-status').textContent.startsWith('Catalog unavailable'));
+  assert.equal(await invalidCatalog.locator('#demo-list button').count(), 0, 'invalid source catalog must not silently fall back');
+  await invalidCatalog.close();
   console.log('PASS machine browser: filtering, XYZ, history, legacy demo, save/load, invalid load, views, downloads, responsive viewport, offline assets');
 } finally {
   await browser?.close();
