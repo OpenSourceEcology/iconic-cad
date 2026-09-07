@@ -77,6 +77,14 @@ export function validateMachineWorkspace(value, catalog) {
   return { ok: errors.length === 0, errors };
 }
 
+export function validateMeshPayload(value) {
+  const errors = [];
+  if (!value || typeof value !== 'object' || !Array.isArray(value.vertices) || value.vertices.length < 9 || value.vertices.length % 3 || !value.vertices.every(finite)) errors.push('Mesh vertices must be finite XYZ triples.');
+  const vertexCount = Array.isArray(value?.vertices) ? value.vertices.length / 3 : 0;
+  if (!Array.isArray(value?.triangles) || value.triangles.length < 3 || value.triangles.length % 3 || !value.triangles.every(index => Number.isInteger(index) && index >= 0 && index < vertexCount)) errors.push('Mesh triangles must be in-range vertex indices grouped as triples.');
+  return { ok: errors.length === 0, errors };
+}
+
 export function workspaceFromDemo(demo, catalog) {
   const next = { version: MACHINE_WORKSPACE_VERSION, units: 'mm', instances: copy(demo?.instances || []) };
   const valid = validateMachineWorkspace(next, catalog);

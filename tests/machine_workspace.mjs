@@ -1,4 +1,4 @@
-import { addMachineInstance, bomCsv, bomRows, newMachineWorkspace, validateCatalog, validateMachineWorkspace, workspaceFromDemo } from '../web/js/machine-core.js';
+import { addMachineInstance, bomCsv, bomRows, newMachineWorkspace, validateCatalog, validateMachineWorkspace, validateMeshPayload, workspaceFromDemo } from '../web/js/machine-core.js';
 
 let passed = 0; let failed = 0;
 const ok = message => { passed++; if (process.env.VERBOSE) console.log(`  ok ${message}`); };
@@ -21,4 +21,7 @@ assert(bomCsv(expanded, catalog).includes('"source_url"') && bomCsv(expanded, ca
 assert(!validateMachineWorkspace({ ...newMachineWorkspace(), instances: [{ id: 'bad id', entry_id: 'axis', position_mm: [0, 0, 0], rotation_deg: 0 }] }, catalog).ok, 'rejects unsafe instance ids transactionally');
 assert(!validateMachineWorkspace({ ...newMachineWorkspace(), instances: {} }, catalog).ok, 'rejects non-array workspace instances without throwing');
 assert(!validateMachineWorkspace({ ...newMachineWorkspace(), instances: [null] }, catalog).ok, 'rejects null workspace instances without throwing');
+assert(validateMeshPayload({ vertices: [0, 0, 0, 10, 0, 0, 0, 10, 0], triangles: [0, 1, 2] }).ok, 'accepts a valid triangle mesh payload');
+assert(!validateMeshPayload({ vertices: [0, 0, 0, 10, 0, 0, 0, 10, 0], triangles: [0, 1, 3] }).ok, 'rejects triangle indices beyond available vertices');
+assert(!validateMeshPayload({ vertices: [0, 0, 0, 10, 0, 0, 0, 10, 0], triangles: [-1, 1, 2] }).ok, 'rejects negative triangle indices');
 console.log(`\n${passed} passed, ${failed} failed`); process.exit(failed ? 1 : 0);

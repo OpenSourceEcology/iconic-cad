@@ -29,7 +29,8 @@
     </section>
 
     <aside class="panel inspector-panel" aria-label="Assembly controls">
-      <section><h2>Assembly</h2><div class="actions two"><button id="new-workspace" type="button">New</button><button id="duplicate-instance" type="button" disabled>Duplicate</button></div><button id="delete-instance" class="danger" type="button" disabled>Delete selected</button></section>
+      <section><h2>Assembly</h2><div class="actions two"><button id="new-workspace" type="button">New</button><button id="fit-view" type="button">Fit view</button></div><div class="actions two"><button id="duplicate-instance" type="button" disabled>Duplicate</button><button id="delete-instance" class="danger" type="button" disabled>Delete selected</button></div></section>
+      <section><h2>Placed instances</h2><div id="instance-list" class="instance-list"><p class="muted">No machines placed.</p></div></section>
       <section><h2>Selected instance</h2><p id="selected-name" class="selected-name">Nothing selected</p><p id="selected-detail" class="field-help">Select a placed machine to inspect its catalog bounds.</p><form id="transform-form" class="transform-form">
         <label>Position X <input id="position-x" type="number" step="1" disabled></label>
         <label>Position Y <input id="position-y" type="number" step="1" disabled></label>
