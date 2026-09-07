@@ -1,0 +1,22 @@
+import { buildMachineFcstd, fcstdParts, machineDocumentXml, zPlacement } from '../web/js/machine-fcstd.js';
+import { workspaceFromDemo } from '../web/js/machine-core.js';
+import JSZip from '../web/vendor/jszip.min.mjs';
+
+let passed = 0; let failed = 0;
+const ok = message => { passed++; if (process.env.VERBOSE) console.log(`  ok ${message}`); };
+const fail = message => { failed++; console.error(`  FAIL ${message}`); };
+const assert = (test, message) => test ? ok(message) : fail(message);
+const catalog = { version: 1, units: 'mm', entries: [{ id: 'press', title: 'CEB Press', family: 'fabrication', variant: 'demo', description: 'source geometry', source_url: 'https://example.test/press', source_revision: 'rev-7', validation: { geometry: 'passed', engineering: 'unreviewed' }, bounds_mm: [1, 1, 1], parts: [{ id: 'body', label: 'Body', mesh: 'assets/gvcs/press.mesh.json', brep: 'assets/gvcs/press.brp', color: '#334455' }] }], demos: [{ id: 'demo', title: 'Demo', description: '', instances: [{ id: 'press-1', entry_id: 'press', position_mm: [125, -50, 8], rotation_deg: 90 }] }] };
+const workspace = workspaceFromDemo(catalog.demos[0], catalog);
+const placement = zPlacement([125, -50, 8], 90);
+assert(Math.abs(placement.q2 - Math.SQRT1_2) < 1e-12 && Math.abs(placement.q3 - Math.SQRT1_2) < 1e-12, 'uses a Z-axis quaternion for placement rotation');
+const parts = fcstdParts(workspace, catalog, { 'assets/gvcs/press.brp': 'BREP-SOURCE' });
+const xml = machineDocumentXml(parts);
+assert(xml.includes('Px="125" Py="-50" Pz="8"') && xml.includes('A="90" Ox="0" Oy="0" Oz="1"'), 'writes instance Placement into Document.xml');
+assert(!parts[0].brep.includes('125'), 'does not rewrite source BREP with instance translation');
+const archive = await buildMachineFcstd(workspace, catalog, async path => path === 'assets/gvcs/press.brp' ? 'BREP-SOURCE' : '', JSZip);
+const zip = await JSZip.loadAsync(archive);
+assert(Object.keys(zip.files).some(name => name === 'Document.xml') && Object.keys(zip.files).some(name => name.endsWith('.brp')), 'archive contains FCStd document and source BREP sidecar');
+assert((await zip.file('Document.xml').async('string')).includes('SourceRevision'), 'archive records source provenance');
+assert(await zip.file(Object.keys(zip.files).find(name => name.endsWith('.brp'))).async('string') === 'BREP-SOURCE', 'archive retains exact BREP payload');
+console.log(`\n${passed} passed, ${failed} failed`); process.exit(failed ? 1 : 0);

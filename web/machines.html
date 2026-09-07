@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>Iconic CAD — Machine Workbench</title>
+  <script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
+  <link rel="stylesheet" href="css/machines.css">
+</head>
+<body>
+  <header class="machine-header">
+    <a class="brand" href="index.html">ICONIC CAD <span>/ MACHINES</span></a>
+    <div class="header-note">Source geometry demo · engineering review pending</div>
+    <a class="housing-link" href="index.html">Housing editor ↗</a>
+  </header>
+  <main class="machine-layout">
+    <aside class="panel catalog-panel" aria-label="Machine catalog">
+      <div class="panel-heading"><h1>Machine library</h1><p>Place source geometry in a millimetre assembly.</p></div>
+      <section aria-labelledby="demo-title"><h2 id="demo-title">Demo assemblies</h2><div id="demo-list" class="demo-list"></div></section>
+      <section aria-labelledby="catalog-title"><h2 id="catalog-title">Catalog</h2><div id="catalog-list" class="catalog-list"></div></section>
+      <p id="catalog-status" class="status" role="status">Loading local catalog…</p>
+    </aside>
+
+    <section class="viewport-panel" aria-label="3D machine assembly preview">
+      <div id="viewport" tabindex="0" aria-label="Orbit, pan, and zoom 3D preview"></div>
+      <div class="viewport-hud"><span>ORBIT drag</span><span>PAN right drag</span><span>ZOOM wheel</span><span>units: mm</span></div>
+      <div id="empty-state" class="empty-state"><strong>Start an assembly</strong><span>Choose a demo or place a machine from the library.</span></div>
+    </section>
+
+    <aside class="panel inspector-panel" aria-label="Assembly controls">
+      <section><h2>Assembly</h2><div class="actions two"><button id="new-workspace" type="button">New</button><button id="duplicate-instance" type="button" disabled>Duplicate</button></div><button id="delete-instance" class="danger" type="button" disabled>Delete selected</button></section>
+      <section><h2>Selected instance</h2><p id="selected-name" class="selected-name">Nothing selected</p><p id="selected-detail" class="field-help">Select a placed machine to inspect its catalog bounds.</p><form id="transform-form" class="transform-form">
+        <label>Position X <input id="position-x" type="number" step="1" disabled></label>
+        <label>Position Y <input id="position-y" type="number" step="1" disabled></label>
+        <label>Position Z <input id="position-z" type="number" step="1" disabled></label>
+        <label>Rotate Z <input id="rotation-z" type="number" step="1" disabled></label>
+        <button id="apply-transform" type="submit" disabled>Apply transform</button>
+      </form><p class="field-help">XYZ is millimetres. Rotation is degrees around Z.</p></section>
+      <section><h2>Files</h2><div class="actions"><button id="save-workspace" type="button">Save JSON</button><button id="load-workspace" type="button">Load JSON</button><input id="load-file" type="file" accept="application/json" hidden></div><div class="actions"><button id="export-bom" type="button">Export BOM CSV</button><button id="export-fcstd" type="button">Export FreeCAD</button></div></section>
+      <section><h2>Components</h2><div id="component-list" class="component-list"><p class="muted">No placed components.</p></div></section>
+      <p id="message" class="message" role="status"></p>
+    </aside>
+  </main>
+  <footer>Geometry and source metadata are supplied by the catalog. Validate fit, safety, and engineering before fabrication.</footer>
+  <script type="module" src="js/machines.js"></script>
+</body>
+</html>
