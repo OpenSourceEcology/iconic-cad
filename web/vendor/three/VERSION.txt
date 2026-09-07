@@ -1,0 +1,4 @@
+three 0.170.0
+Source: https://registry.npmjs.org/three/-/three-0.170.0.tgz
+Tarball SHA-1: 6087f97aab79e9e9312f9c89fcef6808642dfbb7
+License: MIT (see LICENSE)

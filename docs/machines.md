@@ -10,6 +10,13 @@ The catalog is `web/data/gvcs-machines.json`. Its stable contract is:
 {"version":1,"units":"mm","entries":[{"id":"safe-id","title":"…","family":"…","variant":"…","description":"…","source_url":"…","source_revision":"…","license_review":"pending","validation":{"geometry":"passed","engineering":"unreviewed"},"bounds_mm":[1,1,1],"parts":[{"id":"part","label":"…","mesh":"assets/gvcs/example.mesh.json","brep":"assets/gvcs/example.brp","color":"#112233"}]}],"demos":[{"id":"demo","title":"…","description":"…","instances":[{"id":"machine-1","entry_id":"safe-id","position_mm":[0,0,0],"rotation_deg":0}]}]}
 ```
 
+The generated catalog and machine assets are ignored by Git. Build them from
+the sibling `gvcs-library` using `libtools bake-web`, then run
+`python scripts/install_demo.py --iconic-web ../iconic-cad/web` from that library.
+Its README records source hashes, versions, validation and release status.
+Three.js 0.170.0 and its OrbitControls are vendored under `web/vendor/three/`
+with their MIT license; loading the machine workbench needs no CDN requests.
+
 Mesh JSON is a triangle payload with `vertices` (XYZ triples in entry-local
 millimetres) and `triangles` (indices). The preview only renders this source
 mesh. It does not infer dimensions or validate engineering. Catalogs may add

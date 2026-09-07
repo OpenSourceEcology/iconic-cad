@@ -14,6 +14,10 @@ exported/
 # Local stash
 icons/stash/
 
+# Generated machine catalog; source archive lives in sibling gvcs-library.
+web/assets/gvcs/
+web/data/gvcs-machines.json
+
 # Exported / test layout JSONs (root only; web/pricing.json stays tracked)
 /*.json
 
