@@ -71,8 +71,9 @@ node tests/machine_rotation.mjs
 ## FreeCAD placement fixture
 
 When the local catalog and source assets are available, generate an external
-FreeCAD parity input with nonzero XYZ placement and a 90° Z rotation for every
-catalog entry:
+FreeCAD parity input with nonzero XYZ placement for every catalog entry. Each
+component appears twice: once with a legacy 90° Z rotation and once with mixed
+X/Y/Z rotation:
 
 ```sh
 node tests/machine_fcstd_fixture.mjs --output-dir /tmp/iconic-machine-fixture
