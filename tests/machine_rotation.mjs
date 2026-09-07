@@ -1,5 +1,5 @@
 import * as THREE from '../web/vendor/three/three.module.js';
-import { rotationMatrixXYZ } from '../web/js/machine-core.js';
+import { normalizeDegrees, rotationMatrixXYZ } from '../web/js/machine-core.js';
 
 let passed = 0; let failed = 0;
 const ok = message => { passed++; if (process.env.VERBOSE) console.log(`  ok ${message}`); };
@@ -15,5 +15,6 @@ const sequential = new THREE.Matrix4().makeRotationZ(THREE.MathUtils.degToRad(de
 const sequentialRows = [sequential[0], sequential[4], sequential[8], sequential[1], sequential[5], sequential[9], sequential[2], sequential[6], sequential[10]];
 if (expected.every((value, index) => close(value, sequentialRows[index]))) ok('production rotation matrix matches independent sequential rotations'); else fail('production rotation matrix differs from sequential rotations');
 try { rotationMatrixXYZ(0, Infinity, 0); fail('rejects non-finite rotation'); } catch { ok('rejects non-finite rotation'); }
+if (normalizeDegrees(1080.5) === .5 && normalizeDegrees(-720) === 0) ok('normalizes finite degree values before conversion'); else fail('degree normalization is incorrect');
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

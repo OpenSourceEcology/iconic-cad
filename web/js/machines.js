@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { addMachineInstance, bomCsv, bomRows, createMachineHistory, newMachineWorkspace, recordMachineWorkspace, redoMachineWorkspace, undoMachineWorkspace, validateCatalog, validateMachineWorkspace, validateMeshPayload, workspaceFromDemo } from './machine-core.js';
+import { addMachineInstance, bomCsv, bomRows, createMachineHistory, newMachineWorkspace, normalizeDegrees, recordMachineWorkspace, redoMachineWorkspace, undoMachineWorkspace, validateCatalog, validateMachineWorkspace, validateMeshPayload, workspaceFromDemo } from './machine-core.js';
 import { buildMachineFcstd } from './machine-fcstd.js';
 
 const $ = id => document.getElementById(id);
@@ -74,8 +74,10 @@ function canonicalView(name) {
   const verticalFov = THREE.MathUtils.degToRad(camera.fov);
   const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect);
   const distance = Math.max(sphere.radius / Math.sin(Math.min(verticalFov, horizontalFov) / 2) * 1.22, 20);
-  const directions = { iso: [1, -1, 1], front: [0, -1, 0], top: [0, 0, 1], side: [1, 0, 0] };
-  camera.up.set(...(name === 'top' ? [0, 1, 0] : [0, 0, 1]));
+  // Keep Z-up for every view: OrbitControls cached this axis at construction.
+  // A tiny Y component avoids a collinear up/view vector at exact top-down.
+  const directions = { iso: [1, -1, 1], front: [0, -1, 0], top: [0, -.0001, 1], side: [1, 0, 0] };
+  camera.up.set(0, 0, 1);
   camera.position.copy(sphere.center).add(new THREE.Vector3(...directions[name]).normalize().multiplyScalar(distance));
   controls.target.copy(sphere.center); camera.near = Math.max(distance / 1000, .01); camera.far = Math.max(distance * 100, 1000);
   camera.updateProjectionMatrix(); controls.update();
@@ -122,7 +124,7 @@ async function redrawAssembly(fitWhenReady = false) {
       if (token !== buildToken) return;
       group.position.fromArray(instance.position_mm);
       // Three's ZYX intrinsic Euler order yields Rz * Ry * Rx: X, then Y, then Z.
-      group.rotation.set(THREE.MathUtils.degToRad(instance.rotation_x_deg ?? 0), THREE.MathUtils.degToRad(instance.rotation_y_deg ?? 0), THREE.MathUtils.degToRad(instance.rotation_deg), 'ZYX');
+      group.rotation.set(THREE.MathUtils.degToRad(normalizeDegrees(instance.rotation_x_deg ?? 0)), THREE.MathUtils.degToRad(normalizeDegrees(instance.rotation_y_deg ?? 0)), THREE.MathUtils.degToRad(normalizeDegrees(instance.rotation_deg)), 'ZYX');
       group.userData.instanceId = instance.id;
       group.traverse(node => { if (node.isMesh) node.userData.instanceId = instance.id; });
       assembly.add(group);

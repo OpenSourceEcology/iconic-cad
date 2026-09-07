@@ -87,11 +87,17 @@ export function validateMeshPayload(value) {
   return { ok: errors.length === 0, errors };
 }
 
+export function normalizeDegrees(value) {
+  if (!finite(value)) throw new Error('Rotation needs a finite degree value.');
+  const normalized = value % 360;
+  return Object.is(normalized, -0) ? 0 : normalized;
+}
+
 // Rotation convention shared by the preview and FreeCAD exporter: apply X,
 // then Y, then Z, which produces Rz * Ry * Rx in column-vector form.
 export function rotationMatrixXYZ(rotationXDeg = 0, rotationYDeg = 0, rotationZDeg = 0) {
   if (![rotationXDeg, rotationYDeg, rotationZDeg].every(finite)) throw new Error('Rotation matrix needs finite degree values.');
-  const x = rotationXDeg * Math.PI / 180, y = rotationYDeg * Math.PI / 180, z = rotationZDeg * Math.PI / 180;
+  const x = normalizeDegrees(rotationXDeg) * Math.PI / 180, y = normalizeDegrees(rotationYDeg) * Math.PI / 180, z = normalizeDegrees(rotationZDeg) * Math.PI / 180;
   const sx = Math.sin(x), cx = Math.cos(x), sy = Math.sin(y), cy = Math.cos(y), sz = Math.sin(z), cz = Math.cos(z);
   return [
     cz * cy, cz * sy * sx - sz * cx, cz * sy * cx + sz * sx,
