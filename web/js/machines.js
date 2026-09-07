@@ -4,7 +4,7 @@ import { addMachineInstance, bomCsv, bomRows, newMachineWorkspace, validateCatal
 import { buildMachineFcstd } from './machine-fcstd.js';
 
 const $ = id => document.getElementById(id);
-const ui = Object.fromEntries(['viewport', 'catalog-list', 'demo-list', 'catalog-status', 'empty-state', 'component-list', 'instance-list', 'selected-name', 'selected-detail', 'position-x', 'position-y', 'position-z', 'rotation-z', 'apply-transform', 'duplicate-instance', 'delete-instance', 'new-workspace', 'fit-view', 'save-workspace', 'load-workspace', 'load-file', 'export-bom', 'export-fcstd', 'message'].map(id => [id, $(id)]));
+const ui = Object.fromEntries(['viewport', 'catalog-list', 'demo-list', 'catalog-status', 'empty-state', 'component-list', 'instance-list', 'selected-name', 'selected-detail', 'transform-form', 'position-x', 'position-y', 'position-z', 'rotation-z', 'apply-transform', 'duplicate-instance', 'delete-instance', 'new-workspace', 'fit-view', 'save-workspace', 'load-workspace', 'load-file', 'export-bom', 'export-fcstd', 'message'].map(id => [id, $(id)]));
 let catalog = null;
 let workspace = newMachineWorkspace();
 let selectedId = null;
