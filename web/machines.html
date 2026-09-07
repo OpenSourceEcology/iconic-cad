@@ -37,8 +37,8 @@
         <label>Rotate Z <input id="rotation-z" type="number" step="1" disabled></label>
         <button id="apply-transform" type="submit" disabled>Apply transform</button>
       </form><p class="field-help">XYZ is millimetres. Rotation is degrees around Z.</p></section>
-      <section><h2>Files</h2><div class="actions"><button id="save-workspace" type="button">Save JSON</button><button id="load-workspace" type="button">Load JSON</button><input id="load-file" type="file" accept="application/json" hidden></div><div class="actions"><button id="export-bom" type="button">Export BOM CSV</button><button id="export-fcstd" type="button">Export FreeCAD</button></div></section>
-      <section><h2>Components</h2><div id="component-list" class="component-list"><p class="muted">No placed components.</p></div></section>
+      <section><h2>Files</h2><div class="actions"><button id="save-workspace" type="button">Save JSON</button><button id="load-workspace" type="button">Load JSON</button><input id="load-file" type="file" accept="application/json" hidden></div><div class="actions"><button id="export-bom" type="button">Export component BOM CSV</button><button id="export-fcstd" type="button">Export FreeCAD</button></div></section>
+      <section><h2>Component BOM</h2><div id="component-list" class="component-list"><p class="muted">No placed components.</p></div><p class="field-help">Counts catalog components only; it does not estimate materials, fabrication, or prices.</p></section>
       <p id="message" class="message" role="status"></p>
     </aside>
   </main>

@@ -13,19 +13,27 @@ export function validateCatalog(value) {
   if (!value || typeof value !== 'object') errors.push('Catalog must be an object.');
   if (value?.version !== 1) errors.push('Catalog version must be 1.');
   if (value?.units !== 'mm') errors.push('Catalog units must be mm.');
-  if (!Array.isArray(value?.entries) || !value.entries.length) errors.push('Catalog needs at least one entry.');
+  const entries = Array.isArray(value?.entries) ? value.entries : [];
+  const demos = Array.isArray(value?.demos) ? value.demos : [];
+  if (!entries.length) errors.push('Catalog needs at least one entry.');
   const entryIds = new Set();
-  for (const entry of value?.entries || []) {
+  for (const entry of entries) {
+    if (!entry || typeof entry !== 'object') { errors.push('Each catalog entry must be an object.'); continue; }
     if (!id(entry.id) || entryIds.has(entry.id)) errors.push('Each catalog entry needs a unique safe id.');
     entryIds.add(entry.id);
-    for (const key of ['title', 'family', 'variant', 'description', 'source_url', 'source_revision']) {
+    for (const key of ['title', 'family', 'variant', 'description', 'source_url']) {
       if (typeof entry[key] !== 'string' || !entry[key].trim()) errors.push(`Entry ${entry.id || '(unnamed)'} needs ${key}.`);
     }
+    if (!(typeof entry.source_revision === 'string' && entry.source_revision.trim()) && !Number.isSafeInteger(entry.source_revision)) errors.push(`Entry ${entry.id || '(unnamed)'} needs a nonempty source revision string or integer.`);
+    if (entry.license_review !== 'pending') errors.push(`Entry ${entry.id || '(unnamed)'} must record license_review as pending.`);
     if (!entry.validation || !['passed', 'failed'].includes(entry.validation.geometry) || entry.validation.engineering !== 'unreviewed') errors.push(`Entry ${entry.id || '(unnamed)'} has invalid validation status.`);
+    if (entry.validation?.assembly != null && !['passed', 'failed'].includes(entry.validation.assembly)) errors.push(`Entry ${entry.id || '(unnamed)'} has invalid assembly validation status.`);
+    if (entry.validation?.issues != null && (!Array.isArray(entry.validation.issues) || !entry.validation.issues.every(issue => typeof issue === 'string' && issue.trim()))) errors.push(`Entry ${entry.id || '(unnamed)'} has invalid validation issues.`);
     if (!Array.isArray(entry.bounds_mm) || entry.bounds_mm.length !== 3 || !entry.bounds_mm.every(n => finite(n) && n > 0)) errors.push(`Entry ${entry.id || '(unnamed)'} needs positive [width, depth, height] bounds_mm.`);
     if (!Array.isArray(entry.parts) || !entry.parts.length) errors.push(`Entry ${entry.id || '(unnamed)'} needs at least one part.`);
     const partIds = new Set();
-    for (const part of entry.parts || []) {
+    for (const part of (Array.isArray(entry.parts) ? entry.parts : [])) {
+      if (!part || typeof part !== 'object') { errors.push(`Entry ${entry.id || '(unnamed)'} has a non-object part.`); continue; }
       if (!id(part.id) || partIds.has(part.id)) errors.push(`Entry ${entry.id || '(unnamed)'} has invalid or duplicate part id.`);
       partIds.add(part.id);
       if (typeof part.label !== 'string' || !part.label.trim()) errors.push(`Part ${part.id || '(unnamed)'} needs a label.`);
@@ -35,9 +43,14 @@ export function validateCatalog(value) {
     }
   }
   if (!Array.isArray(value?.demos)) errors.push('Catalog demos must be an array.');
-  for (const demo of value?.demos || []) {
+  const demoIds = new Set();
+  for (const demo of demos) {
+    if (!demo || typeof demo !== 'object') { errors.push('Each demo must be an object.'); continue; }
     if (!id(demo.id) || typeof demo.title !== 'string' || typeof demo.description !== 'string' || !Array.isArray(demo.instances)) errors.push('Each demo needs id, title, description, and instances.');
-    for (const inst of demo.instances || []) {
+    if (demoIds.has(demo.id)) errors.push('Each demo needs a unique id.');
+    demoIds.add(demo.id);
+    for (const inst of (Array.isArray(demo.instances) ? demo.instances : [])) {
+      if (!inst || typeof inst !== 'object') { errors.push(`Demo ${demo.id || '(unnamed)'} has a non-object instance.`); continue; }
       if (!id(inst.id) || !entryIds.has(inst.entry_id) || !Array.isArray(inst.position_mm) || inst.position_mm.length !== 3 || !inst.position_mm.every(finite) || !finite(inst.rotation_deg)) errors.push(`Demo ${demo.id || '(unnamed)'} has an invalid instance.`);
     }
   }
@@ -51,9 +64,10 @@ export function newMachineWorkspace() {
 export function validateMachineWorkspace(value, catalog) {
   const errors = [];
   if (!value || typeof value !== 'object' || value.version !== MACHINE_WORKSPACE_VERSION || value.units !== 'mm' || !Array.isArray(value.instances)) errors.push('This is not a version 1 millimetre machine workspace.');
-  const entries = new Set((catalog?.entries || []).map(e => e.id));
+  const entries = new Set((Array.isArray(catalog?.entries) ? catalog.entries : []).filter(entry => entry && typeof entry === 'object').map(entry => entry.id));
   const ids = new Set();
-  for (const inst of value?.instances || []) {
+  for (const inst of (Array.isArray(value?.instances) ? value.instances : [])) {
+    if (!inst || typeof inst !== 'object') { errors.push('Each workspace instance must be an object.'); continue; }
     if (!id(inst.id) || ids.has(inst.id)) errors.push('Each instance must have a unique safe id.');
     ids.add(inst.id);
     if (!entries.has(inst.entry_id)) errors.push(`Instance ${inst.id || '(unnamed)'} references an unavailable catalog entry.`);

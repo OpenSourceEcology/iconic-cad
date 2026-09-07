@@ -6,7 +6,7 @@ let passed = 0; let failed = 0;
 const ok = message => { passed++; if (process.env.VERBOSE) console.log(`  ok ${message}`); };
 const fail = message => { failed++; console.error(`  FAIL ${message}`); };
 const assert = (test, message) => test ? ok(message) : fail(message);
-const catalog = { version: 1, units: 'mm', entries: [{ id: 'press', title: 'CEB Press', family: 'fabrication', variant: 'demo', description: 'source geometry', source_url: 'https://example.test/press', source_revision: 'rev-7', validation: { geometry: 'passed', engineering: 'unreviewed' }, bounds_mm: [1, 1, 1], parts: [{ id: 'body', label: 'Body', mesh: 'assets/gvcs/press.mesh.json', brep: 'assets/gvcs/press.brp', color: '#334455' }] }], demos: [{ id: 'demo', title: 'Demo', description: '', instances: [{ id: 'press-1', entry_id: 'press', position_mm: [125, -50, 8], rotation_deg: 90 }] }] };
+const catalog = { version: 1, units: 'mm', entries: [{ id: 'press', title: 'CEB Press', family: 'fabrication', variant: 'demo', description: 'source geometry', source_url: 'https://example.test/press', source_revision: 'rev-7', license_review: 'pending', validation: { geometry: 'passed', engineering: 'unreviewed' }, bounds_mm: [1, 1, 1], parts: [{ id: 'body', label: 'Body', mesh: 'assets/gvcs/press.mesh.json', brep: 'assets/gvcs/press.brp', color: '#334455' }] }], demos: [{ id: 'demo', title: 'Demo', description: '', instances: [{ id: 'press-1', entry_id: 'press', position_mm: [125, -50, 8], rotation_deg: 90 }] }] };
 const workspace = workspaceFromDemo(catalog.demos[0], catalog);
 const placement = zPlacement([125, -50, 8], 90);
 assert(Math.abs(placement.q2 - Math.SQRT1_2) < 1e-12 && Math.abs(placement.q3 - Math.SQRT1_2) < 1e-12, 'uses a Z-axis quaternion for placement rotation');
