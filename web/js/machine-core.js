@@ -95,6 +95,12 @@ export function normalizeDegrees(value) {
 
 export function fallbackCatalogPath(status) { return status === 404 ? 'data/machine-example.json' : null; }
 
+export function previewStateFor(expectedInstances, renderedInstances, failedInstances) {
+  if (![expectedInstances, renderedInstances, failedInstances].every(value => Number.isSafeInteger(value) && value >= 0)) throw new Error('Preview state counts must be non-negative integers.');
+  if (expectedInstances === 0) return 'empty';
+  return failedInstances > 0 || renderedInstances !== expectedInstances ? 'error' : 'ready';
+}
+
 // Rotation convention shared by the preview and FreeCAD exporter: apply X,
 // then Y, then Z, which produces Rz * Ry * Rx in column-vector form.
 export function rotationMatrixXYZ(rotationXDeg = 0, rotationYDeg = 0, rotationZDeg = 0) {

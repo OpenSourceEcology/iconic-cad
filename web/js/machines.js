@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { addMachineInstance, bomCsv, bomRows, createMachineHistory, fallbackCatalogPath, newMachineWorkspace, normalizeDegrees, recordMachineWorkspace, redoMachineWorkspace, undoMachineWorkspace, validateCatalog, validateMachineWorkspace, validateMeshPayload, workspaceFromDemo } from './machine-core.js';
+import { addMachineInstance, bomCsv, bomRows, createMachineHistory, fallbackCatalogPath, newMachineWorkspace, normalizeDegrees, previewStateFor, recordMachineWorkspace, redoMachineWorkspace, undoMachineWorkspace, validateCatalog, validateMachineWorkspace, validateMeshPayload, workspaceFromDemo } from './machine-core.js';
 import { buildMachineFcstd } from './machine-fcstd.js';
 
 const $ = id => document.getElementById(id);
-const ui = Object.fromEntries(['viewport', 'catalog-list', 'catalog-filter', 'demo-list', 'catalog-status', 'empty-state', 'component-list', 'instance-list', 'selected-name', 'selected-detail', 'transform-form', 'position-x', 'position-y', 'position-z', 'rotation-x', 'rotation-y', 'rotation-z', 'apply-transform', 'duplicate-instance', 'delete-instance', 'new-workspace', 'undo-workspace', 'redo-workspace', 'fit-view', 'save-workspace', 'load-workspace', 'load-file', 'export-bom', 'export-fcstd', 'message'].map(id => [id, $(id)]));
+const ui = Object.fromEntries(['viewport', 'preview-loading', 'catalog-list', 'catalog-filter', 'demo-list', 'catalog-status', 'empty-state', 'component-list', 'instance-list', 'selected-name', 'selected-detail', 'transform-form', 'position-x', 'position-y', 'position-z', 'rotation-x', 'rotation-y', 'rotation-z', 'apply-transform', 'duplicate-instance', 'delete-instance', 'new-workspace', 'undo-workspace', 'redo-workspace', 'fit-view', 'save-workspace', 'load-workspace', 'load-file', 'export-bom', 'export-fcstd', 'message'].map(id => [id, $(id)]));
 let catalog = null;
 let workspace = newMachineWorkspace();
 let workspaceHistory = createMachineHistory(workspace, null);
@@ -40,6 +40,12 @@ function download(textOrBytes, filename, type) { const url = URL.createObjectURL
 function fileStem() { return 'iconic-machines-assembly'; }
 function reconcileSelection() { if (!instanceFor(selectedId)) selectedId = workspace.instances[0]?.id || null; }
 function changeWorkspace(nextWorkspace) { workspaceHistory = recordMachineWorkspace(workspaceHistory, nextWorkspace, catalog); workspace = workspaceHistory.present; reconcileSelection(); }
+function setPreviewState(state, renderedInstances = 0) {
+  ui.viewport.dataset.previewState = state; ui.viewport.dataset.renderedInstances = String(renderedInstances); ui.viewport.setAttribute('aria-busy', String(state === 'loading'));
+  ui['preview-loading'].hidden = state === 'ready' || state === 'empty';
+  ui['preview-loading'].textContent = state === 'error' ? 'Source geometry could not be rendered.' : 'Loading source geometry…';
+}
+setPreviewState('loading');
 
 function resize() { const { width, height } = ui.viewport.getBoundingClientRect(); if (!width || !height) return; camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false); }
 new ResizeObserver(resize).observe(ui.viewport);
@@ -114,11 +120,15 @@ async function meshGroup(entry) {
 
 async function redrawAssembly(fitWhenReady = false) {
   const token = ++buildToken;
+  const expectedInstances = workspace.instances.length;
+  let renderedInstances = 0; let failedInstances = 0;
+  setPreviewState('loading');
   assembly.clear();
   updateSelectedHighlight();
-  ui['empty-state'].hidden = workspace.instances.length > 0;
+  ui['empty-state'].hidden = expectedInstances > 0;
   for (const instance of workspace.instances) {
-    const entry = entryFor(instance.entry_id); if (!entry) continue;
+    const entry = entryFor(instance.entry_id);
+    if (!entry) { failedInstances++; if (token === buildToken) message(`Preview issue: catalog entry ${instance.entry_id} is unavailable.`, 'error'); continue; }
     try {
       const group = (await meshGroup(entry)).clone(true);
       if (token !== buildToken) return;
@@ -128,9 +138,15 @@ async function redrawAssembly(fitWhenReady = false) {
       group.userData.instanceId = instance.id;
       group.traverse(node => { if (node.isMesh) node.userData.instanceId = instance.id; });
       assembly.add(group);
-    } catch (error) { if (token === buildToken) message(`Preview issue: ${error.message}`, 'error'); }
+      renderedInstances++;
+    } catch (error) { failedInstances++; if (token === buildToken) message(`Preview issue: ${error.message}`, 'error'); }
   }
-  if (token === buildToken) { updateSelectedHighlight(); if (fitWhenReady) fitAssembly(); }
+  if (token === buildToken) {
+    updateSelectedHighlight();
+    const state = previewStateFor(expectedInstances, renderedInstances, failedInstances);
+    setPreviewState(state, renderedInstances);
+    if (fitWhenReady && state !== 'empty') fitAssembly();
+  }
 }
 
 function renderCatalog() {
@@ -201,7 +217,7 @@ async function loadCatalog(path) {
   return candidate;
 }
 function activateCatalog(candidate, status) {
-  catalog = candidate; renderCatalog(); renderInspector(); ui['catalog-status'].textContent = status; ui['catalog-status'].className = 'status';
+  catalog = candidate; renderCatalog(); renderInspector(); setPreviewState('empty'); ui['catalog-status'].textContent = status; ui['catalog-status'].className = 'status';
 }
 async function initialize() {
   try {
@@ -211,6 +227,6 @@ async function initialize() {
       if (!fallback) throw error;
       activateCatalog(await loadCatalog(fallback), 'Example library — GVCS source library not installed');
     }
-  } catch (error) { ui['catalog-status'].textContent = `Catalog unavailable: ${error.message}`; ui['catalog-status'].className = 'status error'; message('The machine workbench could not load its local catalog.', 'error'); } finally { resize(); }
+  } catch (error) { setPreviewState('error'); ui['catalog-status'].textContent = `Catalog unavailable: ${error.message}`; ui['catalog-status'].className = 'status error'; message('The machine workbench could not load its local catalog.', 'error'); } finally { resize(); }
 }
 initialize();
