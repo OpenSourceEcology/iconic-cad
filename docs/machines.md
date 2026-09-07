@@ -21,10 +21,11 @@ Saved workspaces use `{ "version": 1, "units": "mm", "instances": [...] }`.
 Loads are validated before replacing the current workspace, so an invalid file
 leaves the current assembly intact.
 
-FreeCAD export packages each baked local BREP unchanged as a `Part::Feature`
-sidecar. The object's FreeCAD `Placement` holds the instance XYZ translation
-and its rotation about Z. This preserves the source geometry and keeps assembly
-placement inspectable in FreeCAD. The Component BOM CSV includes fixed catalog
+FreeCAD export packages each baked local BREP as a `Part::Feature` sidecar and
+appends the instance XYZ translation and Z rotation as an OCCT Location. The
+source BREP's existing top Location is retained in the resulting composite
+Location. XML object Placement remains identity because FreeCAD restores Shape
+after XML properties. The Component BOM CSV includes fixed catalog
 component counts plus the source URL and revision for provenance. It does not
 derive a material, fabrication, or price estimate. Catalog source licensing is
 recorded as review-pending rather than assumed.

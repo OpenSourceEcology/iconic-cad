@@ -1,6 +1,7 @@
-// A deliberately small FCStd writer for pre-baked machine BREP payloads.  Each
-// FreeCAD object keeps the source BREP intact and uses Placement for assembly
-// translation and Z rotation; the browser never claims to create geometry.
+// A deliberately small FCStd writer for pre-baked machine BREP payloads. The
+// browser never creates geometry: it appends a rigid OCCT Location to each
+// source BREP and leaves the XML object Placement at identity. FreeCAD restores
+// Shape after XML properties, so using object Placement would be overwritten.
 import { validateMachineWorkspace } from './machine-core.js';
 
 const esc = value => String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
@@ -12,8 +13,65 @@ export function zPlacement(position, rotationDeg) {
   return { x: position[0], y: position[1], z: position[2], q0: 0, q1: 0, q2: Math.sin(radians / 2), q3: Math.cos(radians / 2), angle: rotationDeg };
 }
 
+const identityPlacement = () => ({ x: 0, y: 0, z: 0, q0: 0, q1: 0, q2: 0, q3: 1, angle: 0 });
+
+// Append a rigid world-space Z transform to a textual OCCT BREP Location table.
+// The composite Location uses the same old-location + appended-transform order
+// as fcstd.js's proven translateBrep: it applies the new transform *after* the
+// baked top Location. That preserves source-local rotations/translations rather
+// than replacing the BREP's top Location.
+export function rigidZTransformBrep(text, position, rotationDeg) {
+  if (typeof text !== 'string') throw new Error('BREP must be text.');
+  if (!Array.isArray(position) || position.length !== 3 || !position.every(Number.isFinite) || !Number.isFinite(rotationDeg)) throw new Error('BREP transform needs finite XYZ coordinates and a Z rotation.');
+  const lines = text.replaceAll('\r\n', '\n').split('\n');
+  const locationLine = lines.findIndex(line => /^Locations\s+\d+\s*$/.test(line));
+  if (locationLine < 0) throw new Error('BREP has no readable Locations header.');
+  const countMatch = lines[locationLine].match(/^Locations\s+(\d+)\s*$/);
+  const count = Number(countMatch[1]);
+  if (!Number.isSafeInteger(count) || count < 0) throw new Error('BREP Locations count is invalid.');
+  let insertAt = locationLine + 1;
+  for (let index = 0; index < count; index++) {
+    const flag = lines[insertAt]?.trim();
+    if (flag === '1') {
+      const matrixLines = lines.slice(insertAt + 1, insertAt + 4);
+      if (matrixLines.length !== 3 || !matrixLines.every(line => line.trim().split(/\s+/).length === 4 && line.trim().split(/\s+/).every(value => Number.isFinite(Number(value))))) throw new Error(`BREP Location ${index + 1} has an unreadable transform.`);
+      insertAt += 4;
+    } else if (/^2(?:\s+-?\d+)+\s*$/.test(flag || '')) {
+      insertAt += 1;
+    } else {
+      throw new Error(`BREP Location ${index + 1} has an unknown encoding.`);
+    }
+  }
+  const finalLine = [...lines.keys()].reverse().find(index => lines[index].trim() !== '');
+  const topMatch = finalLine == null ? null : lines[finalLine].match(/^\+(\d+)\s+(\d+)\s*$/);
+  if (!topMatch) throw new Error('BREP has no readable top-shape location.');
+  const shapeId = Number(topMatch[1]);
+  const topLocation = Number(topMatch[2]);
+  if (!Number.isSafeInteger(shapeId) || shapeId < 1 || !Number.isSafeInteger(topLocation) || topLocation < 0 || topLocation > count) throw new Error('BREP top-shape location is invalid.');
+
+  const radians = rotationDeg * Math.PI / 180;
+  const cosine = Math.cos(radians); const sine = Math.sin(radians);
+  // Collapse near-zero trig noise so 90° fixtures remain clear and repeatable.
+  const clean = value => Math.abs(value) < 1e-14 ? 0 : value;
+  const transform = ['1',
+    `              ${g(clean(cosine))}               ${g(clean(-sine))}               0 ${g(position[0])} `,
+    `              ${g(clean(sine))}               ${g(clean(cosine))}               0 ${g(position[1])} `,
+    `              0               0               1 ${g(position[2])} `];
+  const transformIndex = count + 1;
+  let replacementTop;
+  let inserted;
+  if (topLocation === 0) { replacementTop = transformIndex; inserted = transform; }
+  else { replacementTop = count + 2; inserted = [...transform, `2 ${topLocation} 1 ${transformIndex} 1 0`]; }
+  lines.splice(insertAt, 0, ...inserted);
+  // A primitive Location adds one table item; a composite reference adds a
+  // second table item.
+  lines[locationLine] = `Locations ${topLocation === 0 ? count + 1 : count + 2}`;
+  lines[finalLine + inserted.length] = `+${shapeId} ${replacementTop}`;
+  return `${lines.join('\n').replace(/\s+$/, '')}\n`;
+}
+
 function objectBlock(part) {
-  const p = zPlacement(part.position_mm, part.rotation_deg);
+  const p = identityPlacement();
   return `        <Object name="${part.name}"><Properties Count="5" TransientCount="0">
                 <Property name="Label" type="App::PropertyString" status="134217728"><String value="${esc(part.label)}"/></Property>
                 <Property name="SourceURL" type="App::PropertyString"><String value="${esc(part.source_url)}"/></Property>
@@ -51,7 +109,7 @@ export function fcstdParts(workspace, catalog, breps) {
     for (const [partIndex, part] of entry.parts.entries()) {
       const key = part.brep;
       if (typeof breps[key] !== 'string' || !breps[key].trim()) throw new Error(`Missing source BREP for ${entry.title}: ${part.label}.`);
-      parts.push({ name: `Machine_${instanceIndex + 1}_${safeName(inst.id)}_${partIndex + 1}_${safeName(part.id)}`, label: `${entry.title} — ${part.label} (${inst.id})`, source_url: entry.source_url, source_revision: entry.source_revision, position_mm: inst.position_mm, rotation_deg: inst.rotation_deg, brep: breps[key] });
+      parts.push({ name: `Machine_${instanceIndex + 1}_${safeName(inst.id)}_${partIndex + 1}_${safeName(part.id)}`, label: `${entry.title} — ${part.label} (${inst.id})`, source_url: entry.source_url, source_revision: entry.source_revision, position_mm: inst.position_mm, rotation_deg: inst.rotation_deg, brep: rigidZTransformBrep(breps[key], inst.position_mm, inst.rotation_deg) });
     }
   }
   return parts;
