@@ -43,7 +43,7 @@ try {
   await page.locator('#catalog-filter').fill('no-match'); assert.equal(await page.locator('#catalog-list button').count(), 0);
   await page.locator('#catalog-filter').fill('tooling'); assert.equal(await page.locator('#catalog-list button').count(), 1);
   await page.locator('#demo-list button').click(); await count(1);
-  await page.waitForTimeout(500);
+  await page.waitForFunction(() => document.querySelector('#viewport').dataset.previewState === 'ready');
   assert.equal(await page.locator('#empty-state').isVisible(), false);
   for (const [id, value] of [['position-x','125'],['position-y','-250'],['position-z','75'],['rotation-x','27'],['rotation-y','-35'],['rotation-z','73']]) await page.locator(`#${id}`).fill(value);
   await click('apply-transform');
@@ -63,6 +63,7 @@ try {
   await page.locator('#load-file').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"version":1,"units":"mm","instances":{}}') });
   await page.waitForFunction(() => document.querySelector('#message').textContent.startsWith('Could not load workspace'));
   assert.deepEqual((await save('after-invalid')).value, before.value);
+  await page.waitForFunction(() => document.querySelector('#viewport').dataset.previewState === 'ready');
   for (const view of ['front','top','side','iso']) await page.locator(`[data-view="${view}"]`).click();
   await click('fit-view');
   for (const [id, name] of [['export-bom','component-bom.csv'],['export-fcstd','assembly.FCStd']]) { const pending = page.waitForEvent('download'); await click(id); const download = await pending; await download.saveAs(resolve(output,name)); assert((await readFile(resolve(output,name))).length > 100); }
@@ -79,6 +80,7 @@ try {
   await fallback.waitForFunction(() => document.querySelector('#demo-list').textContent.includes('Example assembly'));
   await fallback.locator('#demo-list button').click();
   await fallback.waitForFunction(() => document.querySelectorAll('#instance-list .instance-item').length === 2);
+  await fallback.waitForFunction(() => document.querySelector('#viewport').dataset.previewState === 'ready');
   assert.equal(await fallback.locator('#empty-state').isVisible(), false);
   await fallback.close();
   const invalidCatalog = await browser.newPage();
@@ -87,6 +89,14 @@ try {
   await invalidCatalog.waitForFunction(() => document.querySelector('#catalog-status').textContent.startsWith('Catalog unavailable'));
   assert.equal(await invalidCatalog.locator('#demo-list button').count(), 0, 'invalid source catalog must not silently fall back');
   await invalidCatalog.close();
+  const missingMesh = await browser.newPage();
+  await missingMesh.route('**/box.mesh.json', route => route.fulfill({ status: 503, body: '' }));
+  await missingMesh.goto(`${base}/machines.html`);
+  await missingMesh.locator('#demo-list button').click();
+  await missingMesh.waitForFunction(() => document.querySelector('#viewport').dataset.previewState === 'error');
+  assert.equal(await missingMesh.locator('#viewport').getAttribute('aria-busy'), 'false');
+  assert.equal(await missingMesh.locator('#viewport').getAttribute('data-rendered-instances'), '0');
+  await missingMesh.close();
   console.log('PASS machine browser: filtering, XYZ, history, legacy demo, save/load, invalid load, views, downloads, responsive viewport, offline assets');
 } finally {
   await browser?.close();
