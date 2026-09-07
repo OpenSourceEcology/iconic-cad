@@ -60,6 +60,16 @@ jobs:
           node tests/landing_hero.mjs
           node tests/aperture_envelope.mjs
 
+      - name: Machine workspace and export tests
+        run: |
+          for test in tests/machine*.mjs; do node "$test"; done
+
+      - name: Machine browser workflows with original fixture geometry
+        run: |
+          npm install --no-save --package-lock=false playwright@1.63.0
+          npx playwright install --with-deps chromium
+          node scripts/verify_machine_browser.mjs
+
       - name: Check Markdown relative links
         run: python scripts/check_links.py
 

@@ -2,7 +2,7 @@
 // browser never creates geometry: it appends a rigid OCCT Location to each
 // source BREP and leaves the XML object Placement at identity. FreeCAD restores
 // Shape after XML properties, so using object Placement would be overwritten.
-import { validateMachineWorkspace } from './machine-core.js';
+import { validateMachineWorkspace, rotationMatrixXYZ } from './machine-core.js';
 
 const esc = value => String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 const safeName = value => String(value).replace(/[^A-Za-z0-9_]/g, '_');
@@ -15,14 +15,20 @@ export function zPlacement(position, rotationDeg) {
 
 const identityPlacement = () => ({ x: 0, y: 0, z: 0, q0: 0, q1: 0, q2: 0, q3: 1, angle: 0 });
 
-// Append a rigid world-space Z transform to a textual OCCT BREP Location table.
+// Append a rigid world-space transform to a textual OCCT BREP Location table.
 // The composite Location uses the same old-location + appended-transform order
 // as fcstd.js's proven translateBrep: it applies the new transform *after* the
 // baked top Location. That preserves source-local rotations/translations rather
 // than replacing the BREP's top Location.
+export { rotationMatrixXYZ } from './machine-core.js';
+
 export function rigidZTransformBrep(text, position, rotationDeg) {
+  return rigidTransformBrep(text, position, [0, 0, rotationDeg]);
+}
+
+export function rigidTransformBrep(text, position, rotationXYZ) {
   if (typeof text !== 'string') throw new Error('BREP must be text.');
-  if (!Array.isArray(position) || position.length !== 3 || !position.every(Number.isFinite) || !Number.isFinite(rotationDeg)) throw new Error('BREP transform needs finite XYZ coordinates and a Z rotation.');
+  if (!Array.isArray(position) || position.length !== 3 || !position.every(Number.isFinite) || !Array.isArray(rotationXYZ) || rotationXYZ.length !== 3 || !rotationXYZ.every(Number.isFinite)) throw new Error('BREP transform needs finite XYZ coordinates and XYZ rotations.');
   const lines = text.replaceAll('\r\n', '\n').split('\n');
   const locationLine = lines.findIndex(line => /^Locations\s+\d+\s*$/.test(line));
   if (locationLine < 0) throw new Error('BREP has no readable Locations header.');
@@ -49,14 +55,11 @@ export function rigidZTransformBrep(text, position, rotationDeg) {
   const topLocation = Number(topMatch[2]);
   if (!Number.isSafeInteger(shapeId) || shapeId < 1 || !Number.isSafeInteger(topLocation) || topLocation < 0 || topLocation > count) throw new Error('BREP top-shape location is invalid.');
 
-  const radians = rotationDeg * Math.PI / 180;
-  const cosine = Math.cos(radians); const sine = Math.sin(radians);
-  // Collapse near-zero trig noise so 90° fixtures remain clear and repeatable.
+  const values = rotationMatrixXYZ(...rotationXYZ);
+  const matrix = [values.slice(0,3), values.slice(3,6), values.slice(6,9)];
   const clean = value => Math.abs(value) < 1e-14 ? 0 : value;
-  const transform = ['1',
-    `              ${g(clean(cosine))}               ${g(clean(-sine))}               0 ${g(position[0])} `,
-    `              ${g(clean(sine))}               ${g(clean(cosine))}               0 ${g(position[1])} `,
-    `              0               0               1 ${g(position[2])} `];
+  const transform = ['1', ...matrix.map((row, index) =>
+    `              ${g(clean(row[0]))}               ${g(clean(row[1]))}               ${g(clean(row[2]))} ${g(position[index])} `)];
   const transformIndex = count + 1;
   let replacementTop;
   let inserted;
@@ -109,7 +112,7 @@ export function fcstdParts(workspace, catalog, breps) {
     for (const [partIndex, part] of entry.parts.entries()) {
       const key = part.brep;
       if (typeof breps[key] !== 'string' || !breps[key].trim()) throw new Error(`Missing source BREP for ${entry.title}: ${part.label}.`);
-      parts.push({ name: `Machine_${instanceIndex + 1}_${safeName(inst.id)}_${partIndex + 1}_${safeName(part.id)}`, label: `${entry.title} — ${part.label} (${inst.id})`, source_url: entry.source_url, source_revision: entry.source_revision, position_mm: inst.position_mm, rotation_deg: inst.rotation_deg, brep: rigidZTransformBrep(breps[key], inst.position_mm, inst.rotation_deg) });
+      parts.push({ name: `Machine_${instanceIndex + 1}_${safeName(inst.id)}_${partIndex + 1}_${safeName(part.id)}`, label: `${entry.title} — ${part.label} (${inst.id})`, source_url: entry.source_url, source_revision: entry.source_revision, position_mm: inst.position_mm, rotation_deg: inst.rotation_deg, brep: rigidTransformBrep(breps[key], inst.position_mm, [inst.rotation_x_deg ?? 0, inst.rotation_y_deg ?? 0, inst.rotation_deg]) });
     }
   }
   return parts;

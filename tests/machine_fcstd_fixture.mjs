@@ -41,23 +41,27 @@ function bounds(vertices) {
   for (let i = 0; i < vertices.length; i += 3) for (let axis = 0; axis < 3; axis++) { min[axis] = Math.min(min[axis], vertices[i + axis]); max[axis] = Math.max(max[axis], vertices[i + axis]); }
   return { min_mm: min, max_mm: max };
 }
-function rotateZ90AndTranslate(box, position) {
-  const min = [Infinity, Infinity, Infinity], max = [-Infinity, -Infinity, -Infinity];
-  for (const x of [box.min_mm[0], box.max_mm[0]]) for (const y of [box.min_mm[1], box.max_mm[1]]) for (const z of [box.min_mm[2], box.max_mm[2]]) {
-    // x' = -y + tx, y' = x + ty, z' = z + tz
-    const point = [-y + position[0], x + position[1], z + position[2]];
-    for (let axis = 0; axis < 3; axis++) { min[axis] = Math.min(min[axis], point[axis]); max[axis] = Math.max(max[axis], point[axis]); }
+function placedBounds(vertices, instance) {
+  const [ax,ay,az]=[instance.rotation_x_deg || 0,instance.rotation_y_deg || 0,instance.rotation_deg].map(n=>n*Math.PI/180);
+  const points=[];
+  for(let i=0;i<vertices.length;i+=3) {
+    const [x,y,z]=vertices.slice(i,i+3);
+    const y1=y*Math.cos(ax)-z*Math.sin(ax), z1=y*Math.sin(ax)+z*Math.cos(ax);
+    const x2=x*Math.cos(ay)+z1*Math.sin(ay), z2=-x*Math.sin(ay)+z1*Math.cos(ay);
+    points.push(x2*Math.cos(az)-y1*Math.sin(az)+instance.position_mm[0],x2*Math.sin(az)+y1*Math.cos(az)+instance.position_mm[1],z2+instance.position_mm[2]);
   }
-  return { min_mm: min, max_mm: max };
+  return bounds(points);
 }
 
 // Each entry receives a separate, nonzero XYZ placement. Spacing keeps
-// fixtures readable in FreeCAD while retaining a 90-degree Z rotation for all
-// parts; every part in an instance inherits the same object Placement.
+// fixtures readable in FreeCAD while covering legacy Z and mixed XYZ rotation; every part in an instance inherits the same object Placement.
 const workspace = {
   version: 1,
   units: 'mm',
-  instances: catalog.entries.map((entry, index) => ({ id: `${entry.id}-placement`, entry_id: entry.id, position_mm: [125 + index * 5000, -250 - index * 3000, 75 + index * 100], rotation_deg: 90 })),
+  instances: catalog.entries.flatMap((entry, index) => [
+    { id: `${entry.id}-legacy-z`, entry_id: entry.id, position_mm: [125 + index * 5000, -250 - index * 3000, 75 + index * 100], rotation_deg: 90 },
+    { id: `${entry.id}-xyz`, entry_id: entry.id, position_mm: [-350 + index * 5000, 500 - index * 3000, -175 + index * 100], rotation_x_deg: 27, rotation_y_deg: -35, rotation_deg: 73 }
+  ]),
 };
 const fetchText = async assetPath => readFile(resolve(repoRoot, 'web', assetPath), 'utf8');
 const bytes = await buildMachineFcstd(workspace, catalog, fetchText, JSZip);
@@ -65,12 +69,12 @@ const breps = Object.fromEntries(await Promise.all([...new Set(catalog.entries.f
 const fcstd = fcstdParts(workspace, catalog, breps);
 const expectedParts = [];
 for (const [index, instance] of workspace.instances.entries()) {
-  const entry = catalog.entries[index];
+  const entry = catalog.entries.find(entry => entry.id === instance.entry_id);
   for (const part of entry.parts) {
     const mesh = JSON.parse(await readFile(resolve(repoRoot, 'web', part.mesh), 'utf8'));
     const localBounds = bounds(mesh.vertices);
     const fcstdPart = fcstd.find(candidate => candidate.label === `${entry.title} — ${part.label} (${instance.id})`);
-    expectedParts.push({ object_name: fcstdPart.name, instance_id: instance.id, entry_id: entry.id, part_id: part.id, mesh_path: part.mesh, brep_path: part.brep, placement: { position_mm: instance.position_mm, rotation_deg: 90, axis: [0, 0, 1] }, local_mesh_bounds_mm: localBounds, placed_mesh_bounds_mm: rotateZ90AndTranslate(localBounds, instance.position_mm) });
+    expectedParts.push({ object_name: fcstdPart.name, instance_id: instance.id, entry_id: entry.id, part_id: part.id, mesh_path: part.mesh, brep_path: part.brep, placement: { position_mm: instance.position_mm, rotation_x_deg: instance.rotation_x_deg || 0, rotation_y_deg: instance.rotation_y_deg || 0, rotation_deg: instance.rotation_deg }, local_mesh_bounds_mm: localBounds, placed_mesh_bounds_mm: placedBounds(mesh.vertices, instance) });
   }
 }
 const target = resolve(process.cwd(), outputDir);

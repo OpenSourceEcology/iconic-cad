@@ -1,4 +1,4 @@
-import { buildMachineFcstd, fcstdParts, machineDocumentXml, rigidZTransformBrep, zPlacement } from '../web/js/machine-fcstd.js';
+import { buildMachineFcstd, fcstdParts, machineDocumentXml, rigidZTransformBrep, rigidTransformBrep, rotationMatrixXYZ, zPlacement } from '../web/js/machine-fcstd.js';
 import { workspaceFromDemo } from '../web/js/machine-core.js';
 import JSZip from '../web/vendor/jszip.min.mjs';
 
@@ -25,6 +25,12 @@ const transformed = rigidZTransformBrep(sourceBrep, [125, -50, 8], 90);
 assert(transformed.includes('Locations 3') && transformed.includes('2 1 1 2 1 0'), 'appends a composite BREP Location without replacing the source top Location');
 assert(transformed.includes('0               -1               0 125') && transformed.includes('1               0               0 -50'), 'writes the requested rigid Z transform into the appended BREP Location');
 assert((() => { try { rigidZTransformBrep('not a BREP', [0, 0, 0], 0); return false; } catch { return true; } })(), 'fails closed when a BREP has no location header');
+const mixed = rotationMatrixXYZ(90,90,0).flat();
+assert(mixed.every((v,i)=>Math.abs(v-[0,1,0,0,0,-1,-1,0,0][i])<1e-12),'mixed rotation applies X before Y before Z');
+const xyzBrep=rigidTransformBrep(sourceBrep,[125,-50,8],[90,90,0]);
+assert(xyzBrep.includes('0               1               0 125')&&xyzBrep.includes('-1               0               0 8'),'mixed rotation is written into BREP Location');
+assert(rigidTransformBrep(sourceBrep,[1,2,3],[0,0,90])===rigidZTransformBrep(sourceBrep,[1,2,3],90),'legacy Z and XYZ paths agree exactly');
+assert((()=>{try{rigidTransformBrep(sourceBrep,[0,0,0],[NaN,0,0]);return false;}catch{return true;}})(),'nonfinite XYZ rotation rejected');
 const parts = fcstdParts(workspace, catalog, { 'assets/gvcs/press.brp': sourceBrep });
 const xml = machineDocumentXml(parts);
 assert(xml.includes('Px="0" Py="0" Pz="0"') && xml.includes('Q2="0" Q3="1" A="0" Ox="0" Oy="0" Oz="1"'), 'keeps XML Placement at identity so Shape restore cannot replace the assembly transform');
