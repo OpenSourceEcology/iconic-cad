@@ -65,10 +65,10 @@ export const FLOOR_TO_FLOOR_MM = 3095.63;
 // doc.levels[1]; that is this feature's job. Called on first switch to L2 and on
 // load when stories === 2 (so older 2-story files without an explicit L2 gain
 // one). No demote path exists, so there is no inverse / cleanup.
-export function ensureLevel2() {
-  if (doc.project.stories !== 2) return;
-  if (doc.levels.some(l => l.id === 'L2')) return;
-  doc.levels.push({ id: 'L2', name: 'Level 2', z_mm: FLOOR_TO_FLOOR_MM });
+export function ensureLevel2(target = doc) {
+  if (target.project.stories !== 2) return;
+  if (target.levels.some(l => l.id === 'L2')) return;
+  target.levels.push({ id: 'L2', name: 'Level 2', z_mm: FLOOR_TO_FLOOR_MM });
 }
 
 // ---- New-design reset ------------------------------------------------------
