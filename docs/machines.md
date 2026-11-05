@@ -85,7 +85,7 @@ derive a material, fabrication, or price estimate. Imported catalog licensing
 is review-pending rather than assumed; project-owned examples show their
 cleared status and stated license.
 
-Run the focused checks from the repository root:
+Run the focused checks from the repository root (`node tests/run_js.mjs machine` runs every machine test):
 
 ```sh
 node tests/machine_workspace.mjs

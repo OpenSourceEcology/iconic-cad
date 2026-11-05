@@ -37,32 +37,8 @@ jobs:
       - name: Validate library entry code
         run: python -m libtools validate-code --root . --all
 
-      - name: JS test suite
-        run: |
-          node tests/parity.mjs
-          node tests/enumerate_parity.mjs
-          node tests/build_summary.mjs
-          node tests/foundation_parity.mjs
-          node tests/cutlist_frac.mjs
-          node tests/stock_pricing.mjs
-          node tests/foundation_cost.mjs
-          node tests/load_reset.mjs
-          node tests/canvas_resize.mjs
-          node tests/project_shape.mjs
-          node tests/fcstd_local_jszip.mjs
-          node tests/ci_verify_gate.mjs
-          node tests/export_gate.mjs
-          node tests/assembly_translate.mjs
-          node tests/entry_files.mjs
-          node tests/custom_roundtrip.mjs
-          node tests/builtin_library.mjs
-          node tests/members_export.mjs
-          node tests/landing_hero.mjs
-          node tests/aperture_envelope.mjs
-
-      - name: Machine workspace and export tests
-        run: |
-          for test in tests/machine*.mjs; do node "$test"; done
+      - name: JS test suite (every tests/*.mjs, discovered)
+        run: node tests/run_js.mjs
 
       - name: Machine browser workflows with original fixture geometry
         run: |

@@ -267,7 +267,7 @@ wall_instances.yaml      # Module specifications (walls, interior walls, apertur
 scripts/gen_specs.py     # Generate web/assets/lib/specs.json from YAML (no FreeCAD)
 generate.sh              # Wrapper: run generate_wall_library.py via freecadcmd (cad_library only)
 compile.sh               # Wrapper: run compile_from_json.py via freecadcmd
-tests/                   # Parity + unit tests (no FreeCAD required)
+tests/                   # Parity + unit tests (no FreeCAD required); `node tests/run_js.mjs` runs every JS test
 icons/                   # 24 directional SVG icons (exterior + interior walls)
 cad_library/             # Generated .FCStd modules (run generate.sh)
 docs/                    # Module-authoring guide, aperture framing reference, design decisions
