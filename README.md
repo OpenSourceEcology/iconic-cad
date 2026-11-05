@@ -164,7 +164,7 @@ sudo zypper install freecad
 3. **Three output paths:**
    - **Browser FreeCAD export** (`web/js/fcstd.js`) — builds a `.FCStd` directly in the browser using pre-baked BREPs from `web/assets/lib/` and the same blocking math as the Python compiler. No terminal needed.
    - **Python FreeCAD compiler** (`compile_from_json.py`) — loads wall shapes from `cad_library/`, rotates, places, and builds blocking geometry via FreeCAD. Run via `./compile.sh layout.json`.
-   - **IFC export** (`export_ifc.py`) — **experimental, in testing, not fully supported.** Emits an IFC4 model with one box `IfcWall` per module (no framing geometry). Run via `python3 export_ifc.py layout.json`.
+   - **IFC export** (`export_ifc.py`) — **experimental, in testing, not fully supported.** Emits an IFC4 model with one box `IfcWall` per wall or interior-wall module (no framing geometry), with heights taken from `web/assets/lib/specs.json`. Foundation entities are not exported; the command names them in a warning. Run via `python3 export_ifc.py layout.json`.
 
 ## Wall modules
 
