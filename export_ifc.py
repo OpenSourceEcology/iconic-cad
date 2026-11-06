@@ -4,12 +4,14 @@ Export an IFC4 model from a web-UI layout JSON.
 
 IFC is the open multi-trade interchange format (IfcProject -> IfcSite ->
 IfcBuilding -> IfcBuildingStorey -> IfcWall). This reads the same JSON the
-web UI exports and emits one IfcWall per module, grouped by level/storey, so
-the model opens in any IFC viewer or hands off to a trade's software.
+web UI exports and emits one IfcWall per wall or interior-wall module, grouped
+by level/storey, so the model opens in any IFC viewer or hands off to a trade's
+software.
 
-Today it exports the structural walls (all that the model carries). As trade
-layers (electrical, plumbing, ...) gain real entities, they map onto their own
-IFC classes (IfcFlowSegment, IfcOutlet, ...) under the same storeys.
+Today it exports walls only; foundation entities are skipped and named in a
+warning until they have an IFC mapping. As trade layers (electrical, plumbing,
+...) gain real entities, they map onto their own IFC classes (IfcFlowSegment,
+IfcOutlet, ...) under the same storeys.
 
 Usage:
     python3 export_ifc.py layout.json [out.ifc]
