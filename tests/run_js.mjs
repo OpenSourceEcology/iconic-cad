@@ -6,6 +6,7 @@
 //
 // Usage: node tests/run_js.mjs [name-substring ...]
 //   With arguments, runs only tests whose file name contains one of them.
+// Works from any directory: each test runs with the repo root as cwd.
 // Exit status is 1 if any test fails.
 import { readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -13,6 +14,7 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
+const root = dirname(here); // tests run from the repo root, as CI runs them
 const self = basename(fileURLToPath(import.meta.url));
 const filters = process.argv.slice(2);
 
@@ -29,7 +31,7 @@ if (tests.length === 0) {
 const failed = [];
 for (const file of tests) {
   const started = Date.now();
-  const r = spawnSync(process.execPath, [join(here, file)], { encoding: 'utf8' });
+  const r = spawnSync(process.execPath, [join(here, file)], { cwd: root, encoding: 'utf8' });
   const ms = Date.now() - started;
   if (r.status === 0) {
     console.log(`PASS ${file} (${ms} ms)`);
