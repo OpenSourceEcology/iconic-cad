@@ -12,7 +12,7 @@
 import { doc } from './state.js';
 import { enumerateMembers } from './members.js';
 import { IN_TO_MM } from './constants.js';
-import { regionForLevel } from './region.js';
+import { computeRegion } from './region.js';
 import { getModuleBBox } from './geometry.js';
 import { inFrac } from './designs.js';
 import { isVcs12Active } from './systems.js';
@@ -187,7 +187,9 @@ export function foundationEstimate(entities) {
   const f = entities.find(e => e.kind === 'foundation');
   if (!f) return null;
   const p = f.params;
-  const region = regionForLevel('L1');
+  // Pure over the argument (SOL-16): the slab comes from the L1 walls passed in,
+  // never from the cached global document (regionForLevel reads doc.entities).
+  const region = computeRegion(entities.filter(e => (e.level || 'L1') === 'L1'));
   const slabArea = region.rects.reduce((s, r) => s + r.w_mm * r.h_mm, 0); // mm²
   let perim = 0; // sum of L1 exterior-wall run lengths = perimeter (incl. L-shapes)
   for (const w of entities) {
