@@ -4,4 +4,6 @@
 if [ -z "$1" ]; then
   echo "Usage: $0 <layout.json>"; exit 1
 fi
-freecadcmd -c "import sys; sys.argv=['compile_from_json.py',\"$1\"]; exec(open('compile_from_json.py').read())"
+# The filename travels as data in an environment variable, never spliced into
+# the Python source (SOL-20: a quote in the name broke or injected code).
+ICONIC_LAYOUT_JSON="$1" freecadcmd -c "import os, sys; sys.argv=['compile_from_json.py', os.environ['ICONIC_LAYOUT_JSON']]; exec(open('compile_from_json.py').read())"
