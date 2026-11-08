@@ -6,39 +6,9 @@
 import { doc } from './state.js';
 import { markModelChanged } from './app.js';
 import { applyLoadedData } from './load.js';
+import { serializeDoc } from './serialize.js';
 
-function serialize(includeMeta) {
-  const out = {
-    version: doc.version,
-    units: doc.units,
-    levels: doc.levels,
-    layers: doc.layers,
-    project: doc.project, // write-once setup intent (options.js); see state.js
-
-    entities: doc.entities.map(p => p.kind === 'foundation'
-      // Foundation is a derived entity: it carries params, not a module ref.
-      ? { id: p.id, kind: p.kind, layer: p.layer, level: p.level, params: p.params }
-      : {
-      id: p.id,
-      kind: p.kind,
-      module: p.mod.id,
-      system: p.system || doc.project.system || 'seh',
-      direction: p.dir,
-      x_mm: Math.round(p.x_mm * 100) / 100,
-      y_mm: Math.round(p.y_mm * 100) / 100,
-      level: p.level,
-      layer: p.layer,
-      width_mm: p.mod.width_mm,
-      depth_mm: p.mod.depth_mm,
-      ...(p.owner ? { owner: p.owner } : {}),
-      ...(p.connections && p.connections.length > 0 ? { connections: p.connections } : {}),
-    }),
-  };
-  if (includeMeta) {
-    out.metadata = { exported: new Date().toISOString(), count: doc.entities.length };
-  }
-  return out;
-}
+function serialize(includeMeta) { return serializeDoc(doc, includeMeta); }
 
 function download(obj, filename) {
   const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
