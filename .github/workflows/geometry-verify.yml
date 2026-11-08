@@ -33,7 +33,9 @@ on:
 
 jobs:
   verify:
-    runs-on: ubuntu-latest
+    # Pinned: the freecad-stable PPA has no Release for ubuntu-latest's
+    # current suite (404 for 'resolute', observed 2026-11-08).
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
