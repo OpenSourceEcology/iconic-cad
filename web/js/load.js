@@ -19,13 +19,24 @@ import { findSystemModule, setActiveSystem, systemIds } from './systems.js';
 // load throws ONE error listing them all before resetDoc() runs, so a bad file
 // never destroys the open design or leaves it half-loaded, and an unknown
 // module is an error rather than a silently dropped entity.
-export function applyLoadedData(data) {
+function record(value, label) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error(`Invalid ${label}: expected an object`);
+  }
+  return value;
+}
+
+export function applyLoadedData(input) {
+  record(input, 'layout');
+  // Saved JSON shares no mutable references with the editing session (a
+  // frozen or reused input must not be modified by ensureLevel2 or edits).
+  const data = JSON.parse(JSON.stringify(input));
   const errors = [];
   // Project setup intent. Older files lack `project` entirely; missing
   // sub-fields fall back individually so partial saves still open clean.
   // Defaults mirror state.js (single story, Zone 5 / Missouri).
-  const dp = data.project || {};
-  const dc = dp.climate || {};
+  const dp = data.project == null ? {} : record(data.project, 'project');
+  const dc = dp.climate == null ? {} : record(dp.climate, 'climate');
   const system = dp.system || 'seh';
   if (!systemIds().includes(system)) {
     throw new Error(`Unknown construction system: ${system}`);
@@ -46,7 +57,16 @@ export function applyLoadedData(data) {
   // Accept v2 (entities) or legacy flat (modules) format. Entities are built
   // with placeholder ids (null) where the file has none; ids are assigned from
   // ui.nextId only after the reset, exactly as before.
-  const list = data.entities || data.modules || [];
+  const list = data.entities ?? data.modules ?? [];
+  if (!Array.isArray(list)) throw new Error('Invalid entities: expected an array');
+  let levels = null;
+  if (data.levels != null) {
+    if (!Array.isArray(data.levels)) throw new Error('Invalid levels: expected an array');
+    data.levels.forEach((l, i) => {
+      if (!l || typeof l !== 'object' || typeof l.id !== 'string') errors.push(`level ${i}: expected an object with a string id`);
+    });
+    if (data.levels.length) levels = data.levels;
+  }
   const candidates = [];
   const seenIds = new Set();
   list.forEach((m, i) => {
@@ -106,9 +126,7 @@ export function applyLoadedData(data) {
   // Levels round-trip: restore the saved stack (so L2 + its z_mm reload), then
   // ensureLevel2() so an older 2-story file without an explicit L2 still gains
   // one (§9). Falls back to the single default level for legacy files.
-  if (Array.isArray(data.levels) && data.levels.length) {
-    doc.levels = data.levels;
-  }
+  if (levels) doc.levels = levels;
   ensureLevel2();
   for (const { prefix, entity } of candidates) {
     if (entity.id === null) {
