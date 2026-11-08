@@ -17,7 +17,7 @@ jobs:
           node-version: '20'
 
       - name: Install Python deps
-        run: pip install -r requirements.txt -r requirements-dev.txt 'libtools @ git+https://github.com/OpenSourceEcology/vcs-library'
+        run: pip install -r requirements.txt -r requirements-dev.txt
 
       - name: Assert wall_instances.yaml is generated from library entries
         run: python scripts/gen_wall_instances.py --verify

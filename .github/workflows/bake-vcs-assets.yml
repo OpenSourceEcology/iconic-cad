@@ -6,7 +6,9 @@ on:
   workflow_dispatch:
 jobs:
   bake:
-    runs-on: ubuntu-latest
+    # Pinned: the freecad-stable PPA has no Release for ubuntu-latest's
+    # current suite (404 for 'resolute', observed 2026-11-08).
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install FreeCAD
@@ -15,7 +17,7 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq freecad
           command -v freecadcmd
-      - run: python3 -m pip install --break-system-packages -r requirements.txt -r requirements-dev.txt 'libtools @ git+https://github.com/OpenSourceEcology/vcs-library'
+      - run: python3 -m pip install --break-system-packages -r requirements.txt -r requirements-dev.txt
       - run: git clone --depth 1 https://github.com/OpenSourceEcology/vcs-library /tmp/vcs-library
       - run: python3 scripts/bake_external_library.py /tmp/vcs-library
       - uses: actions/upload-artifact@v4

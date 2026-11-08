@@ -291,48 +291,51 @@ def main():
 
     if args.verify:
         tmp = tempfile.mkdtemp(prefix="build_lib_verify_")
-        tmp_lib = os.path.join(tmp, "lib")
-        tmp_cad = os.path.join(tmp, "cad_library")
-        tmp_specs = os.path.join(tmp, "specs.json")
-        tmp_thumbs = os.path.join(tmp, "thumbs")
-        tmp_instances = os.path.join(tmp, "wall_instances.yaml")
-        print("=== build_lib --verify (temp: %s) ===" % tmp)
-        write_instances_yaml(instances_data, tmp_instances)
+        try:
+            tmp_lib = os.path.join(tmp, "lib")
+            tmp_cad = os.path.join(tmp, "cad_library")
+            tmp_specs = os.path.join(tmp, "specs.json")
+            tmp_thumbs = os.path.join(tmp, "thumbs")
+            tmp_instances = os.path.join(tmp, "wall_instances.yaml")
+            print("=== build_lib --verify (temp: %s) ===" % tmp)
+            write_instances_yaml(instances_data, tmp_instances)
 
-        ok_yaml = verify_wall_instances()
+            ok_yaml = verify_wall_instances()
 
-        run_specs(tmp_specs, instances_data)
-        ok_specs = verify_specs(tmp_specs)
+            run_specs(tmp_specs, instances_data)
+            ok_specs = verify_specs(tmp_specs)
 
-        # members.json must be current BEFORE the geometry step: bake_geometry.py
-        # (via seh_lib.wall_builder) always reads the real committed
-        # web/assets/lib/members.json, not a temp copy — so if this is stale the
-        # geometry step below is comparing against stale framing math too.
-        ok_members = verify_members_export()
+            # members.json must be current BEFORE the geometry step: bake_geometry.py
+            # (via seh_lib.wall_builder) always reads the real committed
+            # web/assets/lib/members.json, not a temp copy — so if this is stale the
+            # geometry step below is comparing against stale framing math too.
+            ok_members = verify_members_export()
 
-        rc = run_geometry("verify", tmp_lib, tmp_cad, tmp_instances)  # compares .brp internally
-        ok_geo = rc == 0
+            rc = run_geometry("verify", tmp_lib, tmp_cad, tmp_instances)  # compares .brp internally
+            ok_geo = rc == 0
 
-        ok_thumbs = True
-        if args.no_thumbs:
-            print("  thumbs: skipped (--no-thumbs)")
-        else:
-            try:
-                run_thumbs(tmp_thumbs)
-                ok_thumbs = verify_thumbs(tmp_thumbs)
-            except SystemExit as e:
-                print("  thumbs: skipped (%s)" % e)
-                ok_thumbs = None  # could not check, not a hard fail
+            ok_thumbs = True
+            if args.no_thumbs:
+                print("  thumbs: skipped (--no-thumbs)")
+            else:
+                try:
+                    run_thumbs(tmp_thumbs)
+                    ok_thumbs = verify_thumbs(tmp_thumbs)
+                except SystemExit as e:
+                    print("  thumbs: skipped (%s)" % e)
+                    ok_thumbs = None  # could not check, not a hard fail
 
-        print("\n=== verify summary ===")
-        print("  wall YAML   : %s" % ("PASS" if ok_yaml else "DIFF"))
-        print("  specs.json  : %s" % ("PASS" if ok_specs else "DIFF"))
-        print("  members.json: %s" % ("PASS" if ok_members else "DIFF"))
-        print("  geometry    : %s" % ("PASS" if ok_geo else "FAIL"))
-        print("  thumbnails  : %s" % ("PASS" if ok_thumbs else
-                                      ("skipped" if ok_thumbs is None else "FAIL")))
-        hard_fail = (not ok_yaml) or (not ok_specs) or (not ok_members) or (not ok_geo) or (ok_thumbs is False)
-        shutil.rmtree(tmp, ignore_errors=True)
+            print("\n=== verify summary ===")
+            print("  wall YAML   : %s" % ("PASS" if ok_yaml else "DIFF"))
+            print("  specs.json  : %s" % ("PASS" if ok_specs else "DIFF"))
+            print("  members.json: %s" % ("PASS" if ok_members else "DIFF"))
+            print("  geometry    : %s" % ("PASS" if ok_geo else "FAIL"))
+            print("  thumbnails  : %s" % ("PASS" if ok_thumbs else
+                                          ("skipped" if ok_thumbs is None else "FAIL")))
+            hard_fail = (not ok_yaml) or (not ok_specs) or (not ok_members) or (not ok_geo) or (ok_thumbs is False)
+        finally:
+            # SOL-21: released on every exit path, not only after a clean run.
+            shutil.rmtree(tmp, ignore_errors=True)
         sys.exit(1 if hard_fail else 0)
 
     # ---- in-place regenerate -------------------------------------------- #

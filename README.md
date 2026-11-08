@@ -37,6 +37,14 @@ cd iconic-cad
 pip install -r requirements.txt
 ```
 
+Changing the module library (`python build_lib.py`, below) or running the test
+suite also needs the pinned `libtools` validator from
+[vcs-library](https://github.com/OpenSourceEcology/vcs-library):
+
+```bash
+pip install -r requirements-dev.txt   # pytest + requirements-build.txt (libtools)
+```
+
 ### 3. Generate the wall module library
 
 ```bash
