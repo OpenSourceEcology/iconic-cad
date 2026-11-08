@@ -235,7 +235,7 @@ committed copy, exiting nonzero on drift.
       with the entry change.
 - [ ] `compile_from_json.py` reassembles it (run `./compile.sh test_layout.json`)
 - [ ] `python build_lib.py --verify` clean, and `node tests/parity.mjs` passes
-- [ ] `node tests/enumerate_parity.mjs` and `node tests/members_export.mjs` pass
+- [ ] `node tests/run_js.mjs` passes (every JS test, including enumerate_parity and members_export)
 - [ ] `python scripts/gen_wall_instances.py --verify` clean
 - [ ] dims sourced from real CAD / code, not guessed — record them in
       [aperture_framing_reference.md](aperture_framing_reference.md)
