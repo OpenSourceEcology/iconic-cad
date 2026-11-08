@@ -12,7 +12,7 @@
 import { doc } from './state.js';
 import { enumerateMembers } from './members.js';
 import { IN_TO_MM } from './constants.js';
-import { regionForLevel } from './region.js';
+import { computeRegion } from './region.js';
 import { getModuleBBox } from './geometry.js';
 import { inFrac } from './designs.js';
 import { isVcs12Active } from './systems.js';
@@ -44,12 +44,33 @@ export function pickStock(nominal, lengthIn) {
   return `${nominal}_${ft}ft`;
 }
 
-// Map one framing member to its catalog stock key.
-export function stockKeyFor(m, is2x4, plateLenFt) {
-  if (PLATE_ROLES.has(m.role)) {
-    return is2x4 ? (plateLenFt <= 4 ? '2x4_8ft' : '2x4_10ft')
-                 : (plateLenFt <= 4 ? '2x6_8ft' : '2x6_12ft');
+// Saw kerf (in) charged between two cuts taken from the same board.
+const KERF_IN = 0.125;
+
+// Pack plate cuts (in) into stock boards of one nominal: first-fit decreasing,
+// opening the smallest board that covers each cut that fits no open board.
+// Returns {stock_key: qty}. A cut longer than every stocked board throws
+// rather than silently buying the longest board (SOL-11).
+export function packCuts(nominal, cutsIn) {
+  const opts = STOCK_LENGTHS[nominal] || [8];
+  const boards = []; // { ft, left }
+  for (const cut of [...cutsIn].sort((a, b) => b - a)) {
+    const open = boards.find(b => b.left + 1e-6 >= cut + KERF_IN);
+    if (open) { open.left -= cut + KERF_IN; continue; }
+    const ft = opts.find(o => o * 12 + 1e-6 >= cut);
+    if (ft === undefined) throw new Error(`${cut}" ${nominal} cut exceeds longest stock (${opts[opts.length - 1]} ft)`);
+    boards.push({ ft, left: ft * 12 - cut });
   }
+  const out = {};
+  for (const b of boards) { const k = `${nominal}_${b.ft}ft`; out[k] = (out[k] || 0) + 1; }
+  return out;
+}
+
+// Map one framing member to its catalog stock key. Plates, like studs, are
+// bought by their own cut length (SOL-11: a 12" door stub was charged as the
+// panel-width 12 ft board). plateLenFt is kept for call compatibility only.
+export function stockKeyFor(m, is2x4, plateLenFt) { // eslint-disable-line no-unused-vars
+  if (PLATE_ROLES.has(m.role)) return pickStock(is2x4 ? '2x4' : '2x6', m.length_mm / IN_TO_MM);
   // Headers: buy 2x8/2x10/2x12 stock by actual span (was returning a bare nominal
   // key that the catalog lacked, pricing every header at $0).
   if (m.role === 'header') return pickStock(m.nominal, m.length_mm / IN_TO_MM);
@@ -67,11 +88,18 @@ export function lineItemsForEntity(entity) {
   const mod = entity.mod;
   const is2x4 = !!mod.interior;
   const s = pricingData && pricingData.module_specs[mod.id];
-  const plateLenFt = s ? s.plate_length_ft : (mod.width_mm / IN_TO_MM / 12);
+  const plateCuts = [];
 
   for (const m of enumerateMembers(mod)) {
     if (m.role === 'sheathing') continue; // OSB sourced as sheets via the shim below
-    items.push({ material_key: stockKeyFor(m, is2x4, plateLenFt), qty: m.plies || 1, unit: 'each' });
+    if (PLATE_ROLES.has(m.role)) { // packed below so short plate cuts share a board
+      for (let i = 0; i < (m.plies || 1); i++) plateCuts.push(m.length_mm / IN_TO_MM);
+      continue;
+    }
+    items.push({ material_key: stockKeyFor(m, is2x4), qty: m.plies || 1, unit: 'each' });
+  }
+  for (const [key, qty] of Object.entries(packCuts(is2x4 ? '2x4' : '2x6', plateCuts))) {
+    items.push({ material_key: key, qty, unit: 'each' });
   }
 
   // Framing-specific shim: quantities the enumerator does not model yet (OSB
@@ -159,7 +187,9 @@ export function foundationEstimate(entities) {
   const f = entities.find(e => e.kind === 'foundation');
   if (!f) return null;
   const p = f.params;
-  const region = regionForLevel('L1');
+  // Pure over the argument (SOL-16): the slab comes from the L1 walls passed in,
+  // never from the cached global document (regionForLevel reads doc.entities).
+  const region = computeRegion(entities.filter(e => (e.level || 'L1') === 'L1'));
   const slabArea = region.rects.reduce((s, r) => s + r.w_mm * r.h_mm, 0); // mm²
   let perim = 0; // sum of L1 exterior-wall run lengths = perimeter (incl. L-shapes)
   for (const w of entities) {
