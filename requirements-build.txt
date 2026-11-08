@@ -1,0 +1,4 @@
+# Library build/validation toolkit: build_lib.py runs `python -m libtools`,
+# and tests/test_generated_entry.py imports it. Pinned to an immutable
+# vcs-library commit (SOL-17); bump deliberately.
+libtools @ git+https://github.com/OpenSourceEcology/vcs-library@9c3f5520c963951961c723f8d7340c9d7c8ddbff

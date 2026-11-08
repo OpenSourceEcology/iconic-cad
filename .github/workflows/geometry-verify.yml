@@ -55,9 +55,6 @@ jobs:
           sudo apt-get install -y -qq freecad
           command -v freecadcmd
 
-      - name: Install libtools
-        run: python3 -m pip install --break-system-packages 'libtools @ git+https://github.com/OpenSourceEcology/vcs-library'
-
       - name: Verify BREP assets match the generator
         run: python3 build_lib.py --verify --no-thumbs
 
