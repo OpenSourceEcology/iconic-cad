@@ -31,8 +31,8 @@ jobs:
       - name: Assert landing hero is in sync with its active module
         run: node scripts/gen_landing_hero.mjs --verify
 
-      - name: Python blocking-math unit tests
-        run: python -m pytest tests/test_aperture_envelope.py tests/test_blocking_math.py tests/test_library_drift.py tests/test_generated_entry.py tests/test_members_boxes.py tests/test_export_ifc.py -v
+      - name: Python test suite (every tests/test_*.py, discovered)
+        run: python -m pytest tests -v
 
       - name: Validate library entry code
         run: python -m libtools validate-code --root . --all
