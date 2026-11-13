@@ -23,7 +23,7 @@ test:
     - python scripts/gen_specs.py
     - python -c "import sys,json; a=json.load(open('/tmp/specs_orig.json')); b=json.load(open('web/assets/lib/specs.json')); sys.exit('specs.json out of sync -- re-run gen_specs.py' if a!=b else 0)"
     - node scripts/gen_landing_hero.mjs --verify
-    - python -m pytest tests/test_blocking_math.py -v
+    - python -m pytest tests -v
     - node tests/run_js.mjs
     - python scripts/check_links.py
   rules:
